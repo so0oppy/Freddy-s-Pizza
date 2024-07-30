@@ -19,7 +19,7 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-public:	
+public:
 	enum class LookAt
 	{
 		Left,
@@ -27,8 +27,8 @@ public:
 		Right,
 		Main,
 		Bed,
+		Back,
 	};
-
 	enum class CameraMove
 	{
 		LeftBoost,
@@ -55,11 +55,34 @@ public:
 	// 불 켰는 지 껐는 지 리턴
 	bool GetFlash();
 
+	// 문 닫았는 지, 열었는 지 리턴
+	bool GetrCloseDoor();
+
 	// 현재 보고 있는 위치 리턴
 	LookAt GetLookAtState();
 
 
 private:
+
+	// 인핸스드 인풋
+	UPROPERTY(EditDefaultsOnly, Category="Input")
+	class UInputMappingContext* PlayerInputContext;
+
+	UPROPERTY(EditDefaultsOnly, Category="Input")
+	class UInputAction* FlashAction;
+	UPROPERTY(EditDefaultsOnly, Category="Input")
+	class UInputAction* CloseDoorAction;
+
+	// 인풋 매핑 함수
+	UFUNCTION()
+	void OnFlash();
+	UFUNCTION()
+	void OffFlash();
+	UFUNCTION()
+	void CloseDoor();
+	UFUNCTION()
+	void OpenDoor();
+
 	// 스프링암 컴포넌트
 	UPROPERTY(VisibleDefaultsOnly, Category="Camera")
 	class USpringArmComponent* SpringArmComp;
@@ -85,8 +108,14 @@ private:
 	// 플레이어의 손전등 OnOff 여부
 	bool bFlash = false;
 
+	// 플레이어의 문 닫았는 지 여부
+	bool bClose = false;
+
 	// 마우스 입력 상태 변수
 	bool bAllowBack = true;
+
+	// 이동 중인 지 상태 변수
+	bool bMoving = false;
 
 	bool bReverse = false;
 
@@ -124,11 +153,19 @@ private:
 	UPROPERTY(VisibleDefaultsOnly, Category = "Light")
 	class USpotLightComponent* FlashlightComp;
 
+	// 켜고 끄는 손전등 컴포넌트
+	UPROPERTY(VisibleDefaultsOnly, Category = "Light")
+	class USpotLightComponent* HandlightComp;
+
 	// 손전등 위치를 업데이트하는 함수
 	void UpdateFlashlight(float DeltaTime);
 
+	// 뒤를 돌아보는 함수
+	void LookBack(float DeltaTime);
+
 	// 카메라를 돌리는 함수
 	void CameraTurn(float DeltaTime);
+
 	// 카메라 이동 속도
 	UPROPERTY(EditDefaultsOnly, Category = "Custom")
 	float RotationSpeed = 50.f; // 기본 회전 속도
@@ -136,13 +173,24 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Custom")
 	float BoostSpeed = 2.f; // 부스트 속도 배율
 
-	// 
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class UDownMouseUI> DownMouseUIFactory;
 
 	UPROPERTY()
 	class UDownMouseUI* DownMouseUI;
 
-	// 뒤를 돌아보는 함수
+	// 이동시 머리를 숙이고 드는 기능
 	
+	bool bHeadDown = false;
+	bool bHeadUp = false;
+	float HeadMovementTime = 0.5f; // 고개를 숙이고 드는 시간
+	float HeadCurrentTime = 0.0f;
+
+	void StartHeadDown();
+	void UpdateHeadMovement(float DeltaTime);
+
+	// 걸어가는 카메라 쉐이크
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<class UCameraShakeBase> WalkShake;
+
 };

@@ -7,6 +7,10 @@
 #include "Components/SpotLightComponent.h"
 #include "Components/SplineComponent.h"
 #include "HJS/DownMouseUI.h"
+#include "EnhancedInputSubsystems.h"
+#include "EnhancedInputComponent.h"
+#include "Camera/CameraShakeBase.h"
+
 // Sets default values
 AFreddyPlayer::AFreddyPlayer()
 {
@@ -25,6 +29,11 @@ AFreddyPlayer::AFreddyPlayer()
 	FlashlightComp->Intensity = 5000.f; // 원하는 강도로 설정
 	FlashlightComp->AttenuationRadius = 1000.f;
 
+	HandlightComp = CreateDefaultSubobject<USpotLightComponent>(TEXT("HandLightComp"));
+	HandlightComp->SetupAttachment(SpringArmComp);
+	HandlightComp->Intensity = 5000.f; // 원하는 강도로 설정
+	HandlightComp->AttenuationRadius = 1000.f;
+	HandlightComp->SetVisibility(false);
 	SplineComponent1 = CreateDefaultSubobject<USplineComponent>(TEXT("SplineComponent"));
 	SplineComponent1->SetupAttachment(RootComponent);
 	
@@ -50,6 +59,13 @@ void AFreddyPlayer::BeginPlay()
 		InputMode.SetHideCursorDuringCapture(false);
 		PlayerController->SetInputMode(InputMode);
 
+		UEnhancedInputLocalPlayerSubsystem* SubSystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer());
+
+		if (SubSystem)
+		{
+			SubSystem->AddMappingContext(PlayerInputContext, 0);
+		}
+		
 	}
 	
 	Splines.SetNum(3);
@@ -76,7 +92,11 @@ void AFreddyPlayer::SetUp()
 }
 
 void AFreddyPlayer::SetDown()
-{
+{	
+	if (bMoving)
+	{
+		return;
+	}
 	if (bAllowBack)
 	{
 		// UP하기 전에는 다시 불리더라도 이동이 안되게 만들기
@@ -88,23 +108,26 @@ void AFreddyPlayer::SetDown()
 		if (LookAtState == LookAt::Main)
 		{
 			// 뒤돌기
-
-
+			LookAtState = LookAt::Bed;
+			bMoving = true;
+			CurrentTime = 0.f;
+		}
+		else if (LookAtState == LookAt::Bed)
+		{
+			LookAtState = LookAt::Back;
+			bMoving = true;
+			CurrentTime = 0.f;
 		}
 		else
 		{
 			// 문 앞이나 옷장에 있을때는 돌아가기 (스플라인 원상복구하면 될 듯)
 			bReverse = true;
 			CurrentTime = 0.f;
-			UE_LOG(LogTemp,Warning,TEXT("2134"));
+			bMoving = true;
+			bHeadDown = true;
+			HeadCurrentTime = 0.0f;
 		}
-
-		
-
 	}
-
-
-
 }
 
 bool AFreddyPlayer::GetFlash()
@@ -112,9 +135,38 @@ bool AFreddyPlayer::GetFlash()
 	return bFlash;
 }
 
+bool AFreddyPlayer::GetrCloseDoor()
+{
+	return bClose;
+}
+
 AFreddyPlayer::LookAt AFreddyPlayer::GetLookAtState()
 {
 	return LookAtState;
+}
+
+void AFreddyPlayer::OnFlash()
+{
+	// 불 켜기
+	HandlightComp->SetVisibility(true);
+	bFlash = true;
+}
+
+void AFreddyPlayer::OffFlash()
+{
+	// 불 끄기
+	HandlightComp->SetVisibility(false);
+	bFlash = false;
+}
+
+void AFreddyPlayer::CloseDoor()
+{
+	// 문 닫기	
+}
+
+void AFreddyPlayer::OpenDoor()
+{
+	// 문 열기
 }
 
 // Called every frame
@@ -125,23 +177,58 @@ void AFreddyPlayer::Tick(float DeltaTime)
 	CameraTurn(DeltaTime);
 	UpdateFlashlight(DeltaTime);
 	Move(DeltaTime);
+	LookBack(DeltaTime);
+	UpdateHeadMovement(DeltaTime);
 }
 
 // Called to bind functionality to input
 void AFreddyPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
+
+	UEnhancedInputComponent* Input = Cast<UEnhancedInputComponent>(PlayerInputComponent);
+	if (Input)
+	{
+		if (FlashAction)
+		{
+			Input->BindAction(FlashAction, ETriggerEvent::Started, this, &AFreddyPlayer::OnFlash);
+			Input->BindAction(FlashAction, ETriggerEvent::Completed, this, &AFreddyPlayer::OffFlash);
+		}
+		if (CloseDoorAction)
+		{
+			Input->BindAction(CloseDoorAction, ETriggerEvent::Started, this, &AFreddyPlayer::CloseDoor);
+			Input->BindAction(CloseDoorAction, ETriggerEvent::Completed, this, &AFreddyPlayer::OpenDoor);
+		}
+	}
 }
 
 void AFreddyPlayer::SetMoveDoor(int32 DoorNum)
 {
+	// 무빙중이면 리턴
+	if (bMoving)
+	{
+		return;
+	}
+
+	if (LookAtState != LookAt::Main)
+	{
+		return;
+	}
+
 	bReverse = false;
 	LookAtState = static_cast<LookAt>(DoorNum);
 	CurrentTime = 0.0f;
+	bMoving = true;
+	bHeadDown = true; // 이동 시작 시 고개를 숙이기 시작
+	HeadCurrentTime = 0.0f;
 }
 
 void AFreddyPlayer::Move(float DeltaTime)
 {
+	if (!bMoving)
+	{
+		return;
+	}
 	int32 DoorNum = 0;
 	switch (LookAtState)
 	{
@@ -154,10 +241,16 @@ void AFreddyPlayer::Move(float DeltaTime)
 	case LookAt::Right:
 		DoorNum = 2;
 		break;
-	case LookAt::Main:
+	default:
 		return;
 	}
-	
+
+	APlayerController* PlayerController = Cast<APlayerController>(GetController());
+	if (PlayerController)
+	{
+		PlayerController->ClientStartCameraShake(WalkShake);
+	}
+
 	CurrentTime += DeltaTime;
 	float SplineLength = Splines[DoorNum]->GetSplineLength();
 	float MoveAmount;
@@ -167,13 +260,29 @@ void AFreddyPlayer::Move(float DeltaTime)
 		if (MoveAmount == 0.f)
 		{
 			LookAtState = LookAt::Main;
+			bHeadUp = true;
+			bMoving = false;
+			HeadCurrentTime = 0.0f;
 		}
 	}
 	else
 	{
 		MoveAmount = FMath::Clamp(CurrentTime * MovementSpeed / SplineLength, 0.f, 1.f);
+		
+		if (MoveAmount > 0.9f && bHeadUp == false)
+		{
+			bHeadUp = true;
+			HeadCurrentTime = 0.0f;
+		}
+		
+		if (MoveAmount == 1.f)
+		{
+			bMoving = false;
+		}
 	}
-	FVector SplineLocation = Splines[DoorNum]->GetLocationAtTime(MoveAmount, ESplineCoordinateSpace::World);
+	FVector SplineLocation = Splines[DoorNum]->GetLocationAtTime(MoveAmount, ESplineCoordinateSpace::Local);
+	//FRotator SplineRotation = Splines[DoorNum]->GetRotationAtDistanceAlongSpline(MoveAmount, ESplineCoordinateSpace::Local);
+	
 	SpringArmComp->SetRelativeLocation(SplineLocation);
 }
 
@@ -237,6 +346,44 @@ void AFreddyPlayer::UpdateFlashlight(float DeltaTime)
 	FlashlightComp->SetRelativeRotation(FMath::RInterpConstantTo(FlashlightComp->GetRelativeRotation(), DesiredRotation, DeltaTime, 200.f));
 }
 
+void AFreddyPlayer::LookBack(float DeltaTime)
+{
+	
+	if (!bMoving)
+	{
+		return;
+	}
+
+	// Bed 상태면 메인으로 되돌리기
+	FRotator NewRotation = SpringArmComp->GetRelativeRotation();
+
+	if (LookAtState==LookAt::Bed)
+	{
+		NewRotation.Yaw = FMath::Clamp(NewRotation.Yaw + RotationSpeed * 10 *BoostSpeed * DeltaTime, 0, 178);
+		SpringArmComp->SetRelativeRotation(NewRotation);
+		if (NewRotation.Yaw > 177)
+		{
+			bMoving = false;
+		}
+		if (NewRotation.Yaw == -180)
+		{
+			NewRotation.Yaw = 180;
+			bMoving = false;
+		}
+	}
+	// Main 상태면 Bed로 되돌리기 인데..
+	else if (LookAtState == LookAt::Back)
+	{
+		NewRotation.Yaw = FMath::Clamp(NewRotation.Yaw - RotationSpeed *10*BoostSpeed * DeltaTime, 0, 180);
+		SpringArmComp->SetRelativeRotation(NewRotation);
+		if (NewRotation.Yaw < 3)
+		{
+			bMoving = false;
+			LookAtState = LookAt::Main;
+		}
+	}
+}
+
 void AFreddyPlayer::CameraTurn(float DeltaTime)
 {
 	
@@ -251,7 +398,7 @@ void AFreddyPlayer::CameraTurn(float DeltaTime)
 		NewRotation.Yaw = FMath::Clamp(NewRotation.Yaw - RotationSpeed * DeltaTime, -CameraMaxAngle, CameraMaxAngle);
 		break;
 	case CameraMove::Stop:
-		break;
+		return;
 	case CameraMove::Right:
 		NewRotation.Yaw = FMath::Clamp(NewRotation.Yaw + RotationSpeed * DeltaTime, -CameraMaxAngle, CameraMaxAngle);
 		break;
@@ -260,4 +407,32 @@ void AFreddyPlayer::CameraTurn(float DeltaTime)
 		break;
 	}
 	SpringArmComp->SetRelativeRotation(NewRotation);
+}
+
+void AFreddyPlayer::StartHeadDown()
+{
+}
+
+void AFreddyPlayer::UpdateHeadMovement(float DeltaTime)
+{
+	if (bHeadDown || bHeadUp)
+	{
+		APlayerController* PlayerController = Cast<APlayerController>(GetController());
+		if (PlayerController)
+		{
+			PlayerController->ClientStopCameraShake(WalkShake);
+		}
+		HeadCurrentTime += DeltaTime;
+		float Alpha = FMath::Clamp(HeadCurrentTime / HeadMovementTime, 0.0f, 1.0f);
+		float Pitch = bHeadDown ? FMath::Lerp(0.0f, -80.0f, Alpha) : FMath::Lerp(-80.0f, 0.0f, Alpha);
+		FRotator NewRotation = SpringArmComp->GetRelativeRotation();
+		NewRotation.Pitch = Pitch;
+		SpringArmComp->SetRelativeRotation(NewRotation);
+		
+		if (Alpha >= 1.0f)
+		{
+			bHeadDown = false;
+			bHeadUp = false;
+		}
+	}
 }

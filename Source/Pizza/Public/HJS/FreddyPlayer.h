@@ -183,10 +183,14 @@ private:
 	
 	bool bHeadDown = false;
 	bool bHeadUp = false;
-	float HeadMovementTime = 0.3f; // 고개를 숙이고 드는 시간
+	float HeadMovementTime = 0.5f; // 고개를 숙이고 드는 시간
 	float HeadCurrentTime = 0.0f;
 
 	void StartHeadDown();
 	void UpdateHeadMovement(float DeltaTime);
+
+	// 걸어가는 카메라 쉐이크
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<class UCameraShakeBase> WalkShake;
 
 };

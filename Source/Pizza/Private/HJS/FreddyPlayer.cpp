@@ -9,6 +9,8 @@
 #include "HJS/DownMouseUI.h"
 #include "EnhancedInputSubsystems.h"
 #include "EnhancedInputComponent.h"
+#include "Camera/CameraShakeBase.h"
+
 // Sets default values
 AFreddyPlayer::AFreddyPlayer()
 {
@@ -63,7 +65,7 @@ void AFreddyPlayer::BeginPlay()
 		{
 			SubSystem->AddMappingContext(PlayerInputContext, 0);
 		}
-
+		
 	}
 	
 	Splines.SetNum(3);
@@ -243,6 +245,12 @@ void AFreddyPlayer::Move(float DeltaTime)
 		return;
 	}
 
+	APlayerController* PlayerController = Cast<APlayerController>(GetController());
+	if (PlayerController)
+	{
+		PlayerController->ClientStartCameraShake(WalkShake);
+	}
+
 	CurrentTime += DeltaTime;
 	float SplineLength = Splines[DoorNum]->GetSplineLength();
 	float MoveAmount;
@@ -260,11 +268,16 @@ void AFreddyPlayer::Move(float DeltaTime)
 	else
 	{
 		MoveAmount = FMath::Clamp(CurrentTime * MovementSpeed / SplineLength, 0.f, 1.f);
-		if (MoveAmount == 1.f)
+		
+		if (MoveAmount > 0.9f && bHeadUp == false)
 		{
 			bHeadUp = true;
-			bMoving = false;
 			HeadCurrentTime = 0.0f;
+		}
+		
+		if (MoveAmount == 1.f)
+		{
+			bMoving = false;
 		}
 	}
 	FVector SplineLocation = Splines[DoorNum]->GetLocationAtTime(MoveAmount, ESplineCoordinateSpace::Local);
@@ -346,10 +359,15 @@ void AFreddyPlayer::LookBack(float DeltaTime)
 
 	if (LookAtState==LookAt::Bed)
 	{
-		NewRotation.Yaw = FMath::Clamp(NewRotation.Yaw + RotationSpeed * 10 *BoostSpeed * DeltaTime, 0, 180);
+		NewRotation.Yaw = FMath::Clamp(NewRotation.Yaw + RotationSpeed * 10 *BoostSpeed * DeltaTime, 0, 178);
 		SpringArmComp->SetRelativeRotation(NewRotation);
 		if (NewRotation.Yaw > 177)
 		{
+			bMoving = false;
+		}
+		if (NewRotation.Yaw == -180)
+		{
+			NewRotation.Yaw = 180;
 			bMoving = false;
 		}
 	}
@@ -364,9 +382,6 @@ void AFreddyPlayer::LookBack(float DeltaTime)
 			LookAtState = LookAt::Main;
 		}
 	}
-
-	
-	
 }
 
 void AFreddyPlayer::CameraTurn(float DeltaTime)
@@ -400,11 +415,13 @@ void AFreddyPlayer::StartHeadDown()
 
 void AFreddyPlayer::UpdateHeadMovement(float DeltaTime)
 {
-	UE_LOG(LogTemp, Warning, TEXT("11111 : %d"), bHeadDown);
-	UE_LOG(LogTemp, Warning, TEXT("2222222 : %d"), bHeadUp);
-	UE_LOG(LogTemp, Warning, TEXT("33333333 : %d"), HeadCurrentTime);
 	if (bHeadDown || bHeadUp)
 	{
+		APlayerController* PlayerController = Cast<APlayerController>(GetController());
+		if (PlayerController)
+		{
+			PlayerController->ClientStopCameraShake(WalkShake);
+		}
 		HeadCurrentTime += DeltaTime;
 		float Alpha = FMath::Clamp(HeadCurrentTime / HeadMovementTime, 0.0f, 1.0f);
 		float Pitch = bHeadDown ? FMath::Lerp(0.0f, -80.0f, Alpha) : FMath::Lerp(-80.0f, 0.0f, Alpha);

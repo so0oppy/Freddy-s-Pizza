@@ -179,7 +179,14 @@ private:
 	UPROPERTY()
 	class UDownMouseUI* DownMouseUI;
 
-	// 뒤를 돌아보는 함수
+	// 이동시 머리를 숙이고 드는 기능
 	
-	
+	bool bHeadDown = false;
+	bool bHeadUp = false;
+	float HeadMovementTime = 0.3f; // 고개를 숙이고 드는 시간
+	float HeadCurrentTime = 0.0f;
+
+	void StartHeadDown();
+	void UpdateHeadMovement(float DeltaTime);
+
 };

@@ -122,14 +122,10 @@ void AFreddyPlayer::SetDown()
 			bReverse = true;
 			CurrentTime = 0.f;
 			bMoving = true;
+			bHeadDown = true;
+			HeadCurrentTime = 0.0f;
 		}
-
-		
-
 	}
-
-
-
 }
 
 bool AFreddyPlayer::GetFlash()
@@ -180,6 +176,7 @@ void AFreddyPlayer::Tick(float DeltaTime)
 	UpdateFlashlight(DeltaTime);
 	Move(DeltaTime);
 	LookBack(DeltaTime);
+	UpdateHeadMovement(DeltaTime);
 }
 
 // Called to bind functionality to input
@@ -220,10 +217,16 @@ void AFreddyPlayer::SetMoveDoor(int32 DoorNum)
 	LookAtState = static_cast<LookAt>(DoorNum);
 	CurrentTime = 0.0f;
 	bMoving = true;
+	bHeadDown = true; // 이동 시작 시 고개를 숙이기 시작
+	HeadCurrentTime = 0.0f;
 }
 
 void AFreddyPlayer::Move(float DeltaTime)
 {
+	if (!bMoving)
+	{
+		return;
+	}
 	int32 DoorNum = 0;
 	switch (LookAtState)
 	{
@@ -239,7 +242,7 @@ void AFreddyPlayer::Move(float DeltaTime)
 	default:
 		return;
 	}
-	
+
 	CurrentTime += DeltaTime;
 	float SplineLength = Splines[DoorNum]->GetSplineLength();
 	float MoveAmount;
@@ -249,19 +252,24 @@ void AFreddyPlayer::Move(float DeltaTime)
 		if (MoveAmount == 0.f)
 		{
 			LookAtState = LookAt::Main;
+			bHeadUp = true;
 			bMoving = false;
+			HeadCurrentTime = 0.0f;
 		}
 	}
 	else
 	{
 		MoveAmount = FMath::Clamp(CurrentTime * MovementSpeed / SplineLength, 0.f, 1.f);
-	}
-	if (MoveAmount == 1.f)
-	{
-		bMoving = false;
+		if (MoveAmount == 1.f)
+		{
+			bHeadUp = true;
+			bMoving = false;
+			HeadCurrentTime = 0.0f;
+		}
 	}
 	FVector SplineLocation = Splines[DoorNum]->GetLocationAtTime(MoveAmount, ESplineCoordinateSpace::Local);
-	UE_LOG(LogTemp,Warning,TEXT("%s"),*SplineLocation.ToString());
+	//FRotator SplineRotation = Splines[DoorNum]->GetRotationAtDistanceAlongSpline(MoveAmount, ESplineCoordinateSpace::Local);
+	
 	SpringArmComp->SetRelativeLocation(SplineLocation);
 }
 
@@ -327,6 +335,12 @@ void AFreddyPlayer::UpdateFlashlight(float DeltaTime)
 
 void AFreddyPlayer::LookBack(float DeltaTime)
 {
+	
+	if (!bMoving)
+	{
+		return;
+	}
+
 	// Bed 상태면 메인으로 되돌리기
 	FRotator NewRotation = SpringArmComp->GetRelativeRotation();
 
@@ -369,7 +383,7 @@ void AFreddyPlayer::CameraTurn(float DeltaTime)
 		NewRotation.Yaw = FMath::Clamp(NewRotation.Yaw - RotationSpeed * DeltaTime, -CameraMaxAngle, CameraMaxAngle);
 		break;
 	case CameraMove::Stop:
-		break;
+		return;
 	case CameraMove::Right:
 		NewRotation.Yaw = FMath::Clamp(NewRotation.Yaw + RotationSpeed * DeltaTime, -CameraMaxAngle, CameraMaxAngle);
 		break;
@@ -378,4 +392,30 @@ void AFreddyPlayer::CameraTurn(float DeltaTime)
 		break;
 	}
 	SpringArmComp->SetRelativeRotation(NewRotation);
+}
+
+void AFreddyPlayer::StartHeadDown()
+{
+}
+
+void AFreddyPlayer::UpdateHeadMovement(float DeltaTime)
+{
+	UE_LOG(LogTemp, Warning, TEXT("11111 : %d"), bHeadDown);
+	UE_LOG(LogTemp, Warning, TEXT("2222222 : %d"), bHeadUp);
+	UE_LOG(LogTemp, Warning, TEXT("33333333 : %d"), HeadCurrentTime);
+	if (bHeadDown || bHeadUp)
+	{
+		HeadCurrentTime += DeltaTime;
+		float Alpha = FMath::Clamp(HeadCurrentTime / HeadMovementTime, 0.0f, 1.0f);
+		float Pitch = bHeadDown ? FMath::Lerp(0.0f, -80.0f, Alpha) : FMath::Lerp(-80.0f, 0.0f, Alpha);
+		FRotator NewRotation = SpringArmComp->GetRelativeRotation();
+		NewRotation.Pitch = Pitch;
+		SpringArmComp->SetRelativeRotation(NewRotation);
+		
+		if (Alpha >= 1.0f)
+		{
+			bHeadDown = false;
+			bHeadUp = false;
+		}
+	}
 }

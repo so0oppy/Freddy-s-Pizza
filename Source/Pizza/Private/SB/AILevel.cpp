@@ -20,7 +20,6 @@ void UAILevel::BeginPlay()
 {
 	Super::BeginPlay();
 
-	//Chica = FindComponentByClass<AChica>();
 }
 
 

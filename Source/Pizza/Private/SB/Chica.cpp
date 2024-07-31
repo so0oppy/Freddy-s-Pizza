@@ -1,5 +1,6 @@
 #include "Chica.h"
 #include "LocationState.h"
+#include "../Public/HJS/FreddyPlayer.h"
 #include "AILevel.h"
 #include "Kismet/GameplayStatics.h"
 #include "NavigationSystem.h"
@@ -147,6 +148,7 @@ void AChica::Move(FName Tag) // 손전등 켜고 있으면 1,3,4로만 이동
 	// room8 -> room6 가능
 	else if (CurrentTag == "Room8")  // <<<<<(추후 Door에 있을 때 위치정보 받아와야 함)
 	{
+		Cast<AFreddyPlayer>
 		//→ 플레이어 위치 == Door && 손전등 ON : 점프스퀘어(공격) 
 		if (bIsDoorOpen && bIsFlashlightOn)
 		{
@@ -221,12 +223,12 @@ void AChica::MoveToTaggedLocation(FName Tag)
 	}
 }
 
-void AChica::EndPlay(const EEndPlayReason::Type EndPlayReason)
-{
-	Super::EndPlay(EndPlayReason);
-
-	GetWorld()->GetTimerManager().ClearTimer(Timer);
-}
+//void AChica::EndPlay(const EEndPlayReason::Type EndPlayReason)
+//{
+//	Super::EndPlay(EndPlayReason);
+//
+//	GetWorld()->GetTimerManager().ClearTimer(Timer);
+//}
 
 // 손전등 ON 함수
 void AChica::OnCtrlKeyPressed()

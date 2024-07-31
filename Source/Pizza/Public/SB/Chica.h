@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "LocationState.h"
+#include "../Public/HJS/FreddyPlayer.h"
 #include "GameFramework/Character.h"
 #include "Chica.generated.h"
 UCLASS()
@@ -44,11 +45,14 @@ private:
 
 	void MoveToTaggedLocation(FName Tag);
 
-	void EndPlay(const EEndPlayReason::Type EndPlayReason);
+//	void EndPlay(const EEndPlayReason::Type EndPlayReason);
 
 	FTimerHandle Timer;
 	// 컨트롤 키 입력 함수
 	void OnCtrlKeyPressed();
 	bool bIsFlashlightOn = false;
 	bool bIsDoorOpen = true;
+
+	UPROPERTY()
+	AFreddyPlayer::LookAt DoorState;
 };

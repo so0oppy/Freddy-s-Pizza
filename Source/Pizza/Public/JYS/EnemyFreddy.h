@@ -52,7 +52,7 @@ private:
 	int32 GetRandomNumber();
 
 	// Player가 Bed를 보고 있는지 체크
-	bool IsPlayerLookingAtBed();
+	bool IsPlayerLookingAtBedAndFlashOn();
 
 	// 큐브(Freddy)가 delay이후에 작아지는 함수
 	void StartShrinkingCubes();

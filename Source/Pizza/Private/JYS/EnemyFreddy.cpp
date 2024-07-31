@@ -39,12 +39,17 @@ void AEnemyFreddy::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	if (IsPlayerLookingAtBedAndFlashOn() && !GetWorld()->GetTimerManager().IsTimerActive(ShrinkTimerHandle))
+	{
+		// 딜레이가 끝난 후 큐브가 작아지기
+		GetWorld()->GetTimerManager().SetTimer(ShrinkTimerHandle, this, &AEnemyFreddy::StartShrinkingCubes, SHRINK_DELAY, false);  
+	}
 }
 
 void AEnemyFreddy::AttemptSpawnCube()
 {
 	// 만약 플레이어가 침대를 바라보고 있지 않다면
-	if (!IsPlayerLookingAtBed())
+	if (!IsPlayerLookingAtBedAndFlashOn())
 	{
 		// 랜덤 넘버를 고른다
 		int32 RandomNumber = GetRandomNumber();
@@ -62,15 +67,15 @@ void AEnemyFreddy::AttemptSpawnCube()
 			{
 			// Middle Freddy
 			case 0: 
-				SpawnLocation += FVector(0, 0, 50);
+				SpawnLocation += FVector(-60, 4580, 530);
 				break;
 			// Right Freddy
 			case 1:
-				SpawnLocation += FVector(50, 50, 50);
+				SpawnLocation += FVector(-530, 4580, 530);
 				break;
 			// Left Freddy
 			case 2:
-				SpawnLocation += FVector(-50, 50, 50);
+				SpawnLocation += FVector(420, 4580, 530);
 				break;
 			}
 
@@ -140,11 +145,11 @@ int32 AEnemyFreddy::GetRandomNumber()
 	return FMath::RandRange(1,20);
 }
 
-bool AEnemyFreddy::IsPlayerLookingAtBed()
+bool AEnemyFreddy::IsPlayerLookingAtBedAndFlashOn()
 {
 	if (Player)
 	{
-		return Player->GetLookAtState() == AFreddyPlayer::LookAt::Bed;
+		return Player->GetLookAtState() == AFreddyPlayer::LookAt::Bed && Player->GetFlash();
 	}
 	return false;
 }

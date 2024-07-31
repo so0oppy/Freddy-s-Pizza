@@ -2,6 +2,7 @@
 
 
 #include "JYS/AllEnemyCharacter.h"
+#include "HJS/FreddyPlayer.h"
 
 // Sets default values
 AAllEnemyCharacter::AAllEnemyCharacter()
@@ -16,6 +17,11 @@ void AAllEnemyCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	AFreddyPlayer* Temp = Cast<AFreddyPlayer>(GetWorld()->GetFirstPlayerController()->GetCharacter());
+	if (Temp)
+	{
+		Player = Temp;
+	}
 }
 
 // Called every frame

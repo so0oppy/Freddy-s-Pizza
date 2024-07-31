@@ -39,11 +39,11 @@ void AEnemyBonnie::BeginPlay()
 	GetWorld()->GetTimerManager().SetTimer(MoveTimerHandle, this, &AEnemyBonnie::AttemptMove, 4.97f, true);
 
 	// 플레이어 객체 찾기
-	for (TActorIterator<AFreddyPlayer> It(GetWorld()); It; ++It)
-	{
-		Player = *It;
-		break;
-	}
+	//for (TActorIterator<AFreddyPlayer> It(GetWorld()); It; ++It)
+	//{
+	//	Player = *It;
+	//	break;
+	//}
 }
 
 // Called every frame

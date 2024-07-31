@@ -24,8 +24,6 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 private:
-	// AI Level
-	int32 Level;
 
 	UPROPERTY(EditAnywhere)
 	class UBoxComponent* Freddy0;
@@ -48,12 +46,8 @@ private:
 	// 큐브(Freddy) 스폰 배열
 	TArray<USkeletalMeshComponent*> FreddysArr;
 
-
 	// 큐브(Freddy)가 스폰 되는 타이머
 	FTimerHandle FreddysVisibleTimerHandle;
-
-	// 플레이어 가져오기
-	class AFreddyPlayer* Player;
 
 	// 큐브(Freddy)가 스폰 되는 함수
 	void AttemptSpawnCube();
@@ -61,6 +55,7 @@ private:
 	// 큐브(Freddy) Hide
 	void HideFreddy(float DeltaTime);
 
+	// +1초 
 	float HiddenTime = 0;
 
 	// 랜덤 숫자 고르는 함수
@@ -68,6 +63,4 @@ private:
 
 	// Player가 Bed를 보고 있는지 체크
 	bool IsPlayerLookingAtBedAndFlashOn();
-
-
 };

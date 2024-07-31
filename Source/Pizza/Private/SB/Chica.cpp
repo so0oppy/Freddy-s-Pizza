@@ -1,11 +1,12 @@
-#include "Chica.h"
-#include "LocationState.h"
-#include "../Public/HJS/FreddyPlayer.h"
-#include "AILevel.h"
+#include "SB/Chica.h"
+#include "SB/LocationState.h"
+#include "SB/AILevel.h"
 #include "Kismet/GameplayStatics.h"
 #include "NavigationSystem.h"
 #include "AIController.h"
 #include "Navigation/PathFollowingComponent.h"
+#include "HJS/FreddyPlayer.h"
+#include "GameFramework/PlayerController.h"
 
 // Sets default values
 AChica::AChica()
@@ -14,7 +15,7 @@ AChica::AChica()
 	PrimaryActorTick.bCanEverTick = true;
 
 	CurrentState = ELocationState::IDLE;
-
+	AILevelComp = CreateDefaultSubobject<UAILevel>(TEXT("AILevelComp"));
 }
 
 // Called when the game starts or when spawned
@@ -22,8 +23,21 @@ void AChica::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	// UAILevel 컴포넌트 가져오기
-	AILevelComp = FindComponentByClass<UAILevel>();
+	UE_LOG(LogTemp, Warning, TEXT("Game Start"));
+
+	TagArr.Add(FVector(0,0,0)); //[0]
+	TagArr.Add(FindActorsWithTag(FName("Room1"))); //[1]
+	TagArr.Add(FindActorsWithTag(FName("Room2"))); //[2]
+	TagArr.Add(FindActorsWithTag(FName("Room3"))); //[3]
+	TagArr.Add(FindActorsWithTag(FName("Room4"))); //[4]
+	TagArr.Add(FindActorsWithTag(FName("Room5"))); //[5]
+	TagArr.Add(FindActorsWithTag(FName("Room6"))); //[6]
+	TagArr.Add(FindActorsWithTag(FName("Room7"))); //[7]
+	TagArr.Add(FindActorsWithTag(FName("Room8"))); //[8]
+	TagArr.Add(FindActorsWithTag(FName("Closet"))); //[9]
+	TagArr.Add(FindActorsWithTag(FName("Bed"))); //[10]
+
+	UE_LOG(LogTemp, Warning, TEXT("Room array complete"));
 }
 
 // Called every frame
@@ -32,15 +46,19 @@ void AChica::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 	// 계속 레벨 확인 (AlLevel 에 있는 SetLevel())
 	AILevelComp->SetLevel(this);
+
+	// 계속 손전등On/Off, 문 Open/Close 확인
+	FlashOn();
+	DoorOpen();
 }
 
-void AChica::SetUpLocation(ELocationState State, float DeltaTime, FName Tag)
+void AChica::SetUpLocation(ELocationState State, float DeltaTime)
 {
 	switch (State)
 	{
-	case ELocationState::IDLE:	Idle(DeltaTime, Tag);
+	case ELocationState::IDLE:	Idle(DeltaTime);
 		break;
-	case ELocationState::MOVE:	Move(Tag);
+	case ELocationState::MOVE:	Move();
 		break;
 	case ELocationState::ATTACK:	Attack();
 		break;
@@ -56,44 +74,10 @@ void AChica::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
-	// 컨트롤 키 입력 설정
-	PlayerInputComponent->BindAction("MoveToRoom1", IE_Pressed, this, &AChica::OnCtrlKeyPressed);
-
 }
 
-FName AChica::GetCurrentLocationTag()
-{
-	TArray<AActor*> OverlappingActors;
-	GetOverlappingActors(OverlappingActors);
 
-	for (AActor* Actor : OverlappingActors)
-	{
-		if (Actor->ActorHasTag("Room1"))
-		{
-			return FName("Room1");
-		}
-		else if (Actor->ActorHasTag("Room3"))
-		{
-			return FName("Room3");
-		}
-		else if (Actor->ActorHasTag("Room4"))
-		{
-			return FName("Room4");
-		}
-		else if (Actor->ActorHasTag("Room6"))
-		{
-			return FName("Room6");
-		}
-		else if (Actor->ActorHasTag("Room8"))
-		{
-			return FName("Room8");
-		}
-	}
-
-	return FName("");
-}
-
-void AChica::Idle(float DeltaTime, FName Tag)
+void AChica::Idle(float DeltaTime)
 {
 	// 현재 위치 == room1 || room3 || room4 || room6 || room8 가능
 	
@@ -101,81 +85,93 @@ void AChica::Idle(float DeltaTime, FName Tag)
 	CurrentTime += DeltaTime;
 	if (CurrentTime > MovableTime)
 	{
-		AILevelComp->RandomMove(this, DeltaTime, Tag); // RandomMove안에 상태전이 있음
+		AILevelComp->RandomMove(this, DeltaTime); // RandomMove안에 상태전이 있음
 
 		CurrentTime = 0.f;
 	}
 }
 
-void AChica::Move(FName Tag) // 손전등 켜고 있으면 1,3,4로만 이동
+void AChica::Move() // 손전등 켜고 있으면 1,3,4로만 이동
 {
-	FName CurrentTag = GetCurrentLocationTag();
+	FVector CurrentLocation = this->GetActorLocation();
+	// 치카 위치가 room number 몇 인지
+	for(int i=1; i<11; i++)
+	{
+		if(CurrentLocation == TagArr[i])
+			RoomNum = i;
+	}
 
 	// room1 || room4 -> room3 가능
-	if (CurrentTag == "Room1" || CurrentTag == "Room4")
+	if (RoomNum == 1 || RoomNum == 4)
 	{
-		MoveToTaggedLocation(FName("Room3"));
+		SetActorLocation(TagArr[3]);
 	}
 	// room3 -> room1 || room4 || room6 가능
-	else if (CurrentTag == "Room3")
+	else if (RoomNum == 3)
 	{
-		TArray<FName> RoomTags = { FName("Room1"), FName("Room4"), FName("Room6") };
+		TArray<int32> RoomTags = { 1, 4, 6 };
 		int32 RandomIndex = FMath::RandRange(0, RoomTags.Num() - 1);
 
-		MoveToTaggedLocation(RoomTags[RandomIndex]);
+		SetActorLocation(TagArr[RoomTags[RandomIndex]] );
 	}
 	// room6 -> room3 || room8 가능
-	else if (CurrentTag == "Room6")
+	else if (RoomNum == 6)
 	{
-		TArray<FName> RoomTags = { FName("Room3"), FName("Room8") };
+		TArray<int32> RoomTags = { 3, 8 };
 		int32 RandomIndex = FMath::RandRange(0, RoomTags.Num() - 1);
 
-		MoveToTaggedLocation(RoomTags[RandomIndex]);
+		SetActorLocation(TagArr[RoomTags[RandomIndex]]);
 
 		// 발소리
 
 		//	만약, 손전등 ON -> room1로 이동 (순간이동X)
-		if(bIsFlashlightOn) 
+		if(bIsFlashlightOn == true) 
 		{
 			// 손전등 ON && Door: Close -> room8로 이동
-			if (!bIsDoorOpen)
+			if (bIsDoorClose == true)
 			{
-				MoveToTaggedLocation(FName("Room8"));
+				SetActorLocation(TagArr[8]);
 			}
-			MoveToTaggedLocation(FName("Room1"));
+			MoveToTaggedLocation(1);
 		}
 	}
 	// room8 -> room6 가능
-	else if (CurrentTag == "Room8")  // <<<<<(추후 Door에 있을 때 위치정보 받아와야 함)
+	else if (RoomNum == 8)
 	{
-		Cast<AFreddyPlayer>
-		//→ 플레이어 위치 == Door && 손전등 ON : 점프스퀘어(공격) 
-		if (bIsDoorOpen && bIsFlashlightOn)
-		{
-			CurrentState = ELocationState::ATTACK;
-		}
-		//→ 플레이어 위치 == Door && bCLOSE == true (일정 시간동안 CLOSE ⇒ 확률적으로 1,3,4 중 이동)
-		if (!bIsDoorOpen)
-		{	
-			for (float cnt = 0.f; cnt < 6.f; cnt++)
-			{
-				if (cnt > MovableTime)
-				{
-					TArray<FName> RoomTags = { FName("Room1"), FName("Room3"), FName("Room4") };
-					int32 RandomIndex = FMath::RandRange(0, RoomTags.Num() - 1);
+		AFreddyPlayer* FreddyPlayer = Cast<AFreddyPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
 
-					MoveToTaggedLocation(RoomTags[RandomIndex]);
+		AFreddyPlayer::LookAt LookState;
+
+		if(FreddyPlayer)
+		{
+			LookState = FreddyPlayer->GetLookAtState();
+			//→ 플레이어 위치 == Door && 손전등 ON : 점프스퀘어(공격) 
+			if ((LookState == AFreddyPlayer::LookAt::Right && bIsDoorClose == false) && bIsFlashlightOn == true)
+			{
+				CurrentState = ELocationState::ATTACK;
+			}
+			//→ 플레이어 위치 == Door && bCLOSE == true (일정 시간동안 CLOSE ⇒ 확률적으로 1,3,4 중 이동)
+			if (LookState == AFreddyPlayer::LookAt::Right && bIsDoorClose == true)
+			{
+				for (float cnt = 0.f; cnt < 6.f; cnt++)
+				{
+					if (cnt > MovableTime)
+					{
+						TArray<int32> RoomTags = { 1, 3, 4 };
+						int32 RandomIndex = FMath::RandRange(0, RoomTags.Num() - 1);
+
+						SetActorLocation(TagArr[RoomTags[RandomIndex]]);
+					}
 				}
 			}
 		}
-		
 		//→ 플레이어 위치≠Door 일 때, 일정 시간 후에 컵케이크 점프스퀘어(공격) → GAME OVER
-		if (bIsDoorOpen)
+		if (LookState != AFreddyPlayer::LookAt::Right)
 		{
 			CurrentState = ELocationState::CUPCAKE;
 		}
 		
-		MoveToTaggedLocation(FName("Room6"));
+		SetActorLocation(TagArr[6]);
 	}
 }
 
@@ -196,8 +192,9 @@ void AChica::Cupcake()
 	// 게임 오버
 }
 
-void AChica::MoveToTaggedLocation(FName Tag)
+FVector AChica::FindActorsWithTag(FName Tag)
 {
+	// 각 방의 위치 정보를 태그로 받아와서 배열로 저장
 	TArray<AActor*> FoundActors;
 	UGameplayStatics::GetAllActorsWithTag(GetWorld(), Tag, FoundActors);
 
@@ -206,33 +203,47 @@ void AChica::MoveToTaggedLocation(FName Tag)
 		AActor* TargetActor = FoundActors[0];
 		FVector TargetLocation = TargetActor->GetActorLocation();
 
-		UE_LOG(LogTemp, Warning, TEXT("Moving to Location: %s"), *Tag.ToString());
+		return TargetLocation;
+		// 배열 인덱스 값 = 방 번호
+	}
 
-		GetController()->StopMovement();
+	return FVector::ZeroVector; // FoundActors가 비어있을 경우, 기본값 반환
+}
 
-		AAIController* AIController = Cast<AAIController>(GetController());
-		if (AIController)
-		{
-			FAIMoveRequest MoveRequest;
-			MoveRequest.SetGoalLocation(TargetLocation);
-			MoveRequest.SetAcceptanceRadius(5.0f); // 목표 위치에 도달하는 범위 설정
+void AChica::MoveToTaggedLocation(int32 room)
+{
+	GetController()->StopMovement();
 
-			FNavPathSharedPtr NavPath;
-			AIController->MoveTo(MoveRequest, &NavPath);
-		}
+	AAIController* AIController = Cast<AAIController>(GetController());
+	if (AIController)
+	{
+		FAIMoveRequest MoveRequest;
+		MoveRequest.SetGoalLocation(TagArr[room]);
+		MoveRequest.SetAcceptanceRadius(5.0f); // 목표 위치에 도달하는 범위 설정
+
+		FNavPathSharedPtr NavPath;
+		AIController->MoveTo(MoveRequest, &NavPath);
 	}
 }
 
-//void AChica::EndPlay(const EEndPlayReason::Type EndPlayReason)
-//{
-//	Super::EndPlay(EndPlayReason);
-//
-//	GetWorld()->GetTimerManager().ClearTimer(Timer);
-//}
-
-// 손전등 ON 함수
-void AChica::OnCtrlKeyPressed()
+// 손전등 상태 가져오는 함수
+void AChica::FlashOn()
 {
-	bIsFlashlightOn = !bIsFlashlightOn; // 손전등 상태 토글
+	AFreddyPlayer* FreddyPlayer = Cast<AFreddyPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
+	if(FreddyPlayer)
+	{
+		bIsFlashlightOn = FreddyPlayer->GetFlash();
+	}
+}
+
+// 문 상태 가져오는 함수
+void AChica::DoorOpen()
+{
+	AFreddyPlayer* FreddyPlayer = Cast<AFreddyPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
+
+	if(FreddyPlayer)
+	{
+		bIsDoorClose = FreddyPlayer->GetrCloseDoor();
+	}
 }
 

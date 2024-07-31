@@ -1,8 +1,7 @@
-#include "AILevel.h"
-#include "AILevel.h"
-#include "LocationState.h"
-#include "AllEnemy.h"
-#include "Chica.h"
+#include "SB/AILevel.h"
+#include "SB/LocationState.h"
+#include "SB/AllEnemy.h"
+#include "SB/Chica.h"
 
 
 // Sets default values for this component's properties
@@ -38,7 +37,7 @@ void UAILevel::SetLevel(ACharacter* character)
 	Chica = Cast<AChica>(character);
 
 	// 시간마다 레벨 다르게 설정
-	if (Chica) // 각 캐릭터 코드에서 이 함수 불러오기 위함
+	if (character == Chica) // 각 캐릭터 코드에서 이 함수 불러오기 위함
 	{
 		tempLV = LV_chica[Day - 1]; // 각 Day 내의 정보를 저장
 	}
@@ -47,7 +46,7 @@ void UAILevel::SetLevel(ACharacter* character)
 	Level = tempLV[Hour]; // 그 정보 내의 시간별로 레벨 할당
 }
 
-void UAILevel::RandomMove(ACharacter* character,float DeltaTime, FName Tag)
+void UAILevel::RandomMove(ACharacter* character,float DeltaTime)
 {
 	Chica = Cast<AChica>(character);
 
@@ -60,7 +59,7 @@ void UAILevel::RandomMove(ACharacter* character,float DeltaTime, FName Tag)
 		{
 			// 다른 방으로 이동
 			if(Chica)
-				Chica->SetUpLocation(ELocationState::MOVE, DeltaTime, Tag);
+				Chica->SetUpLocation(ELocationState::MOVE, DeltaTime);
 			// else if(character == Foxy)
 		}
 	}

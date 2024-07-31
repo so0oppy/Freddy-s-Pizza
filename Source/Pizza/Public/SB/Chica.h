@@ -2,9 +2,10 @@
 
 #include "CoreMinimal.h"
 #include "LocationState.h"
-#include "../Public/HJS/FreddyPlayer.h"
 #include "GameFramework/Character.h"
+#include "AILevel.h"
 #include "Chica.generated.h"
+
 UCLASS()
 class PIZZA_API AChica : public ACharacter
 {
@@ -13,7 +14,7 @@ class PIZZA_API AChica : public ACharacter
 public:
 	AChica();
 
-	void SetUpLocation(ELocationState State, float DeltaTime, FName Tag);
+	void SetUpLocation(ELocationState State, float DeltaTime);
 
 protected:
 	virtual void BeginPlay() override;
@@ -24,11 +25,17 @@ public:
 
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	UPROPERTY()
+	class UAILevel* AILevelComp;
+
+	TArray<FVector> TagArr;
+	int32 RoomNum;
+
 	// 현 위치 태그 확인
-	FName GetCurrentLocationTag();
+	// FName GetCurrentLocationTag();
 	
-	void Idle(float DeltaTime, FName Tag);
-	void Move(FName Tag);
+	void Idle(float DeltaTime);
+	void Move();
 	void Attack();
 	void Cupcake();
 
@@ -36,23 +43,23 @@ private:
 	UPROPERTY(EditDefaultsOnly)
 	ELocationState CurrentState;
 
-	UPROPERTY()
-	class UAILevel* AILevelComp;
-
 	// 매 4.98초마다 이동 가능
 	float CurrentTime = 0.f;
 	float MovableTime = 4.98f;
 
-	void MoveToTaggedLocation(FName Tag);
+	FVector FindActorsWithTag(FName Tag);
+	void MoveToTaggedLocation(int32 room);
 
 //	void EndPlay(const EEndPlayReason::Type EndPlayReason);
 
-	FTimerHandle Timer;
-	// 컨트롤 키 입력 함수
-	void OnCtrlKeyPressed();
+	//FTimerHandle Timer;
+	// 컨트롤 키 입력 함수 -> 손전등 ON/OFF
+	void FlashOn();
+	// Shift 키 입력 함수 -> 문/옷장 Open/Close
+	void DoorOpen();
 	bool bIsFlashlightOn = false;
-	bool bIsDoorOpen = true;
+	bool bIsDoorClose = false;
 
 	UPROPERTY()
-	AFreddyPlayer::LookAt DoorState;
+	class AFreddyPlayer* player;
 };

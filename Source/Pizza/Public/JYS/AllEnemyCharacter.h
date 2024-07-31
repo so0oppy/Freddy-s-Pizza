@@ -31,4 +31,7 @@ public:
 
 	UFUNCTION()
 	void SetAILevel(int32 Value);
+
+	UPROPERTY()
+	class AFreddyPlayer* Player;
 };

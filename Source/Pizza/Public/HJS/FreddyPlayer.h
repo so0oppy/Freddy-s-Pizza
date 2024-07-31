@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -194,8 +194,23 @@ private:
 
 	// 위치 도착 후 문 열면서 몸 기울이기
 	// 문 변수 3개 흠... 배열?  LookAt으로 문 배열에 접근
-	
-	// 해당 문이 왼쪽 혹은 오른쪽이라면 문의 Rotation을 -12만큼 Clamp로 돌리기
+	UPROPERTY(VisibleAnywhere)
+	TArray<class ADoor*> Doors;
+	// 문 열면서 고개 기울이는 함수
+	void DoorRotAndCameraMove(float DeltaTime);
 
-	// 해당 문이 가운데라면 양옆으로 밀기
+	// 
+
+	// 추가할 변수들
+	bool bOpenDoor=false;
+	int32 DoorIndex=-1;
+	FRotator DoorRotation;
+	FVector CameraOffset;
+	FRotator CameraRotation;
+	void SetUpdateDoor(int32 DoorNum);
+
+	UPROPERTY(EditAnywhere)
+	USceneComponent* LeftDoorMovePoint;
+	UPROPERTY(EditAnywhere)
+	USceneComponent* RightDoorMovePoint;
 };

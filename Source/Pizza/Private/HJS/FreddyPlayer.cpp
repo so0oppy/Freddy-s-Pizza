@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "HJS/FreddyPlayer.h"
@@ -10,7 +10,8 @@
 #include "EnhancedInputSubsystems.h"
 #include "EnhancedInputComponent.h"
 #include "Camera/CameraShakeBase.h"
-
+#include "Kismet/GameplayStatics.h"
+#include "HJS/Door.h"
 // Sets default values
 AFreddyPlayer::AFreddyPlayer()
 {
@@ -42,6 +43,11 @@ AFreddyPlayer::AFreddyPlayer()
 
 	SplineComponent3 = CreateDefaultSubobject<USplineComponent>(TEXT("SplineComponent3"));
 	SplineComponent3->SetupAttachment(RootComponent);
+
+	LeftDoorMovePoint = CreateDefaultSubobject<USceneComponent>(TEXT("LeftDoorMovePoint"));
+	LeftDoorMovePoint->SetupAttachment(RootComponent);
+	RightDoorMovePoint=CreateDefaultSubobject<USceneComponent>(TEXT("RightDoorMovePoint"));
+	RightDoorMovePoint->SetupAttachment(RootComponent);
 }
 
 // Called when the game starts or when spawned
@@ -81,6 +87,45 @@ void AFreddyPlayer::BeginPlay()
 			DownMouseUI->AddToViewport();
 			DownMouseUI->SetPlayer(this);
 		}
+	}
+
+	// 문 태그로 찾아서 가져와서 배열에 하나씩 넣기
+	Doors.SetNum(3);
+	TArray<AActor*> FoundActors;
+	UGameplayStatics::GetAllActorsWithTag(GetWorld(), TEXT("LeftDoor"), FoundActors);
+	if ( FoundActors.Num() > 0 )
+	{
+		 ADoor* LeftDoor = Cast<ADoor>(FoundActors[0]);
+		 
+		 if ( LeftDoor )
+		 {
+			 Doors[0] = LeftDoor;
+		 }
+
+	}
+
+	UGameplayStatics::GetAllActorsWithTag(GetWorld(), TEXT("CenterDoor"), FoundActors);
+	if ( FoundActors.Num() > 0 )
+	{
+		ADoor* CenterDoor=Cast<ADoor>(FoundActors[0]);
+
+		if ( CenterDoor )
+		{
+			Doors[1]=CenterDoor;
+		}
+
+	}
+
+	UGameplayStatics::GetAllActorsWithTag(GetWorld(), TEXT("RightDoor"), FoundActors);
+	if ( FoundActors.Num() > 0 )
+	{
+		ADoor* RightDoor=Cast<ADoor>(FoundActors[0]);
+
+		if ( RightDoor )
+		{
+			Doors[2]=RightDoor;
+		}
+
 	}
 
 }
@@ -179,6 +224,7 @@ void AFreddyPlayer::Tick(float DeltaTime)
 	Move(DeltaTime);
 	LookBack(DeltaTime);
 	UpdateHeadMovement(DeltaTime);
+	DoorRotAndCameraMove(DeltaTime);
 }
 
 // Called to bind functionality to input
@@ -269,7 +315,7 @@ void AFreddyPlayer::Move(float DeltaTime)
 	{
 		MoveAmount = FMath::Clamp(CurrentTime * MovementSpeed / SplineLength, 0.f, 1.f);
 		
-		if (MoveAmount > 0.9f && bHeadUp == false)
+		if (MoveAmount > 0.8f && bHeadUp == false)
 		{
 			bHeadUp = true;
 			HeadCurrentTime = 0.0f;
@@ -278,6 +324,9 @@ void AFreddyPlayer::Move(float DeltaTime)
 		if (MoveAmount == 1.f)
 		{
 			bMoving = false;
+			bOpenDoor=true;  // 문 회전을 시작
+			DoorIndex=DoorNum;
+			SetUpdateDoor(DoorNum);
 		}
 	}
 	FVector SplineLocation = Splines[DoorNum]->GetLocationAtTime(MoveAmount, ESplineCoordinateSpace::Local);
@@ -324,8 +373,8 @@ void AFreddyPlayer::SetTurnState()
 void AFreddyPlayer::UpdateFlashlight(float DeltaTime)
 {
 	FRotator DesiredRotation = FlashlightComp->GetRelativeRotation();
-	FRotator CameraRotation = SpringArmComp->GetRelativeRotation();
-	float Yaw = CameraRotation.Yaw;
+	FRotator TempCameraRotation = SpringArmComp->GetRelativeRotation();
+	float Yaw =TempCameraRotation.Yaw;
 
 	if (Yaw <= -18.f && Yaw >= -CameraMaxAngle)
 	{
@@ -429,6 +478,67 @@ void AFreddyPlayer::UpdateHeadMovement(float DeltaTime)
 		{
 			bHeadDown = false;
 			bHeadUp = false;
+		}
+	}
+}
+
+void AFreddyPlayer::DoorRotAndCameraMove(float DeltaTime)
+{
+	if ( !bOpenDoor || DoorIndex == -1 )
+	{
+		return;
+	}
+
+	ADoor* Door=Doors[DoorIndex];
+	if ( Door )
+	{
+		FRotator NewRotation=FMath::RInterpTo(Door->GetActorRotation(), DoorRotation, DeltaTime, 2.0f);
+		Door->SetActorRotation(NewRotation);
+	}
+
+	FVector NewCameraOffset=FMath::VInterpTo(SpringArmComp->GetRelativeLocation(), SpringArmComp->GetRelativeLocation() + CameraOffset, DeltaTime, 2.0f);
+	SpringArmComp->SetRelativeLocation(NewCameraOffset);
+
+	//FRotator NewCameraRotation=FMath::RInterpTo(SpringArmComp->GetRelativeRotation(), SpringArmComp->GetRelativeRotation()+CameraRotation, DeltaTime, 2.0f);
+	//SpringArmComp->SetRelativeRotation(NewCameraRotation);
+
+	// 목표 위치와 회전각에 도달했는지 확인
+	//NewCameraRotation.Equals(CameraRotation, 0.1f)
+	if ( NewCameraOffset.Equals(SpringArmComp->GetRelativeLocation()+CameraOffset, 0.1f) && Door->GetActorRotation().Equals(DoorRotation, 0.1f) )
+	{
+		bOpenDoor=false;
+		DoorIndex=-1;
+	}
+}
+
+void AFreddyPlayer::SetUpdateDoor(int32 DoorNum)
+{
+	if ( DoorNum == 0 ) // Left door
+	{
+		ADoor* Door=Doors[DoorNum];
+		if ( Door )
+		{
+			DoorRotation=Door->GetActorRotation();
+			DoorRotation.Yaw-=12.0f;
+
+			// 왼쪽으로 카메라 기울이기
+			CameraOffset=FVector(-20.0f, 0.0f, 0.0f); // 원하는 값으로 설정
+			CameraRotation=SpringArmComp->GetRelativeRotation();
+			CameraRotation.Roll-=10.0f; // 원하는 값으로 설정
+		}
+	}
+	else if ( DoorNum == 2 ) // Right door
+	{
+		ADoor* Door=Doors[DoorNum];
+		if ( Door )
+		{
+			DoorRotation=Door->GetActorRotation();
+			DoorRotation.Yaw+=12.0f;
+
+			// 오른쪽으로 카메라 기울이기
+			CameraOffset=FVector(20.0f, 0.0f, 0.0f); // 원하는 값으로 설정
+			CameraRotation=SpringArmComp->GetRelativeRotation();
+			CameraRotation.Roll+=10.0f; // 원하는 값으로 설정
 		}
 	}
 }

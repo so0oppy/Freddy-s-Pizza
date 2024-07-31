@@ -186,11 +186,16 @@ private:
 	float HeadMovementTime = 0.5f; // 고개를 숙이고 드는 시간
 	float HeadCurrentTime = 0.0f;
 
-	void StartHeadDown();
 	void UpdateHeadMovement(float DeltaTime);
 
 	// 걸어가는 카메라 쉐이크
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<class UCameraShakeBase> WalkShake;
 
+	// 위치 도착 후 문 열면서 몸 기울이기
+	// 문 변수 3개 흠... 배열?  LookAt으로 문 배열에 접근
+	
+	// 해당 문이 왼쪽 혹은 오른쪽이라면 문의 Rotation을 -12만큼 Clamp로 돌리기
+
+	// 해당 문이 가운데라면 양옆으로 밀기
 };

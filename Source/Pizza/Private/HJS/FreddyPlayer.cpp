@@ -409,10 +409,6 @@ void AFreddyPlayer::CameraTurn(float DeltaTime)
 	SpringArmComp->SetRelativeRotation(NewRotation);
 }
 
-void AFreddyPlayer::StartHeadDown()
-{
-}
-
 void AFreddyPlayer::UpdateHeadMovement(float DeltaTime)
 {
 	if (bHeadDown || bHeadUp)

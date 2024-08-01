@@ -7,6 +7,9 @@
 #include "Navigation/PathFollowingComponent.h"
 #include "HJS/FreddyPlayer.h"
 #include "GameFramework/PlayerController.h"
+#include "Engine/World.h"
+#include "TimerManager.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 // Sets default values
 AChica::AChica()
@@ -40,6 +43,11 @@ void AChica::BeginPlay()
 	UE_LOG(LogTemp, Warning, TEXT("Room array complete"));
 
 	CurrentState = ELocationState::IDLE;
+}
+
+void AChica::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
 }
 
 // Called every frame
@@ -133,11 +141,16 @@ void AChica::Idle(float DeltaTime)
 					//→ 플레이어 위치 == Door && 손전등 ON : 점프스퀘어(공격) 
 					if ((LookState == AFreddyPlayer::LookAt::Right && bIsDoorClose == false) && bIsFlashlightOn == true)
 					{
-						CurrentState = ELocationState::ATTACK;
+						CurrentTime += DeltaTime;
+						if (CurrentTime > 0)
+						{
+							CurrentState = ELocationState::ATTACK;
+							CurrentTime = 0.f;
+						}
 					}
 
 					//→ 플레이어 위치 == Door && bCLOSE == true (일정 시간동안 CLOSE ⇒ 확률적으로 1,3,4 중 이동)
-					else if (LookState == AFreddyPlayer::LookAt::Right && bIsDoorClose == true)
+					else if (LookState == AFreddyPlayer::LookAt::Right || bIsDoorClose == true)
 					{
 						CurrentTime += DeltaTime;
 						if (CurrentTime > MovableTime)
@@ -148,12 +161,13 @@ void AChica::Idle(float DeltaTime)
 							SetActorLocation(TagArr[RoomTags[RandomIndex]]);
 
 							CurrentTime = 0.f;
+
+							CurrentState = ELocationState::MOVE;
 						}
-						
 					}
 				}
 				//→ 플레이어 위치≠Door 일 때, 일정 시간 후에 컵케이크 점프스퀘어(공격) → GAME OVER
-				if (LookState != AFreddyPlayer::LookAt::Right)
+				if (LookState == AFreddyPlayer::LookAt::Main)
 				{
 					CurrentTime += DeltaTime;
 					if (CurrentTime > MovableTime)
@@ -161,11 +175,6 @@ void AChica::Idle(float DeltaTime)
 						CurrentState = ELocationState::CUPCAKE;
 						CurrentTime = 0.f;
 					}
-				}
-
-				else
-				{
-					SetActorLocation(TagArr[6]);  // 기본 로직 = Room6으로 이동
 				}
 			}
 		}
@@ -213,25 +222,27 @@ void AChica::Move() // 손전등 켜고 있으면 1,3,4로만 이동
 
 		//SetActorLocation(TagArr[RoomTags[RandomIndex]]);
 		SetActorLocation(TagArr[8]);
+		RoomNum = 8;
 
 		// 발소리
 
 		//	만약, 손전등 ON -> room1로 이동 (순간이동X)
 		if(bIsFlashlightOn == true) 
 		{
+			SetActorLocation(TagArr[6]);
 			// 손전등 ON && Door: Close -> room8로 이동
 			if (bIsDoorClose == true)
 			{
 				SetActorLocation(TagArr[8]);
+				RoomNum = 8;
+				CurrentState = ELocationState::IDLE;
 			}
-			MoveToTaggedLocation(1);
+			else
+			{
+				MoveToTaggedLocation(3);
+			}
 		}
 	}
-	// room8 -> room6 가능
-	//else if (RoomNum == 8)
-	//{
-	//	
-	//}
 
 	CurrentState = ELocationState::IDLE;
 }
@@ -275,6 +286,13 @@ void AChica::MoveToTaggedLocation(int32 room)
 {
 	GetController()->StopMovement();
 
+	ACharacter* Character = Cast<ACharacter>(this);
+	if (Character)
+	{ 
+		Character->bUseControllerRotationYaw = false; // 캐릭터 회전을 잠금
+		Character->GetCharacterMovement()->bOrientRotationToMovement = false; // 이동 방향으로 회전하지 않음
+	}
+
 	AAIController* AIController = Cast<AAIController>(GetController());
 	if (AIController)
 	{
@@ -299,6 +317,20 @@ void AChica::MoveToTaggedLocation(int32 room)
 			break;
 		}
 	}
+
+	if (room == 3)
+	{
+		RoomNum = 3;
+		GetWorld()->GetTimerManager().SetTimer(Handle, this, &AChica::CanMove, MovableTime, false);
+	}
+}
+
+void AChica::CanMove()
+{
+	RoomNum = 1;
+
+	SetActorLocation(TagArr[1]);
+	CurrentState = ELocationState::IDLE;
 }
 
 // 손전등 상태 가져오는 함수

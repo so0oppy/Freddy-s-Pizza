@@ -43,7 +43,8 @@ void UAILevel::SetLevel(ACharacter* character)
 	}
 	//else if(character == Foxy)
 	
-	Level = tempLV[Hour]; // 그 정보 내의 시간별로 레벨 할당
+	//Level = tempLV[Hour]; // 그 정보 내의 시간별로 레벨 할당
+	Level = 20;
 }
 
 bool UAILevel::RandomMove(ACharacter* character,float DeltaTime)

@@ -19,7 +19,7 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
-	
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 public:	
 	virtual void Tick(float DeltaTime) override;
@@ -50,16 +50,19 @@ private:
 
 	FVector FindActorsWithTag(FName Tag);
 	void MoveToTaggedLocation(int32 room);
+	void CanMove();
+	FTimerHandle Handle;
 
-//	void EndPlay(const EEndPlayReason::Type EndPlayReason);
-
-	//FTimerHandle Timer;
 	// 컨트롤 키 입력 함수 -> 손전등 ON/OFF
 	void FlashOn();
 	// Shift 키 입력 함수 -> 문/옷장 Open/Close
 	void DoorOpen();
 	bool bIsFlashlightOn = false;
 	bool bIsDoorClose = false;
+
+
+
+	//bool bIsAtDoor = false; // 테스트용 변수
 
 	UPROPERTY()
 	class AFreddyPlayer* player;

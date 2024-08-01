@@ -49,8 +49,8 @@ private:
 	// 4.97초마다 이동 타이머
 	FTimerHandle MoveTimerHandle;
 
-	// 플레이어 객체 참조
-	AFreddyPlayer* Player;
+	//// 플레이어 객체 참조
+	//AFreddyPlayer* Player;
 	
 	void TickRoom0(const float& DeltaTime);
 	void TickRoom1(const float& DeltaTime);

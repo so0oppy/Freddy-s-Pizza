@@ -34,7 +34,7 @@ void AEnemyBonnie::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	SetAILevel(20);
+	SetAILevel(7);
 
 	GetWorld()->GetTimerManager().SetTimer(MoveTimerHandle, this, &AEnemyBonnie::AttemptMove, 4.97f, true);
 

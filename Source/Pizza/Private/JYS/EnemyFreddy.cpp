@@ -29,8 +29,6 @@ AEnemyFreddy::AEnemyFreddy()
 	FreddyMesh2 = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("FreddyMesh2"));
 	FreddyMesh2->SetupAttachment(Freddy2);
 	FreddyMesh2->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-
-
 }
 
 // Called when the game starts or when spawned

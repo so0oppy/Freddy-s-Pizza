@@ -109,10 +109,70 @@ void AChica::Idle(float DeltaTime)
 	
 	// 4.98초마다 AILevel에 있는 RandomMove() 호출 && Move로 상태전이
 	CurrentTime += DeltaTime;
-	if (CurrentTime > MovableTime)
-	{
-		AILevelComp->RandomMove(this, DeltaTime); // RandomMove안에 상태전이 있음
 
+	if (CurrentTime > MovableTime) // 이동 가능한 시간이 되면
+	{
+		// RandomMove가 true일 때만 move
+		if(AILevelComp->RandomMove(this, DeltaTime) == true)
+		{
+
+			if(RoomNum != 8) // room8이 아닐 때는 Move()
+			{
+				CurrentState = ELocationState::MOVE;
+			}
+
+			else if (RoomNum == 8)  //room8일 때 'attack, cupcake, 이동' 세가지 조건이므로 따로 분류
+			{
+				AFreddyPlayer* FreddyPlayer = Cast<AFreddyPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
+				AFreddyPlayer::LookAt LookState;
+
+				if (FreddyPlayer)
+				{
+					LookState = FreddyPlayer->GetLookAtState();
+
+					//→ 플레이어 위치 == Door && 손전등 ON : 점프스퀘어(공격) 
+					if ((LookState == AFreddyPlayer::LookAt::Right && bIsDoorClose == false) && bIsFlashlightOn == true)
+					{
+						CurrentState = ELocationState::ATTACK;
+					}
+
+					//→ 플레이어 위치 == Door && bCLOSE == true (일정 시간동안 CLOSE ⇒ 확률적으로 1,3,4 중 이동)
+					else if (LookState == AFreddyPlayer::LookAt::Right && bIsDoorClose == true)
+					{
+						CurrentTime += DeltaTime;
+						if (CurrentTime > MovableTime)
+						{
+							TArray<int32> RoomTags = { 1, 3, 4 };
+							int32 RandomIndex = FMath::RandRange(0, RoomTags.Num() - 1);
+
+							SetActorLocation(TagArr[RoomTags[RandomIndex]]);
+
+							CurrentTime = 0.f;
+						}
+						
+					}
+				}
+				//→ 플레이어 위치≠Door 일 때, 일정 시간 후에 컵케이크 점프스퀘어(공격) → GAME OVER
+				if (LookState != AFreddyPlayer::LookAt::Right)
+				{
+					CurrentTime += DeltaTime;
+					if (CurrentTime > MovableTime)
+					{
+						CurrentState = ELocationState::CUPCAKE;
+						CurrentTime = 0.f;
+					}
+				}
+
+				else
+				{
+					SetActorLocation(TagArr[6]);  // 기본 로직 = Room6으로 이동
+				}
+			}
+		}
+		else
+		{
+			AILevelComp->RandomMove(this, DeltaTime);
+		}
 		CurrentTime = 0.f;
 	}
 }
@@ -142,7 +202,8 @@ void AChica::Move() // 손전등 켜고 있으면 1,3,4로만 이동
 		TArray<int32> RoomTags = { 1, 4, 6 };
 		int32 RandomIndex = FMath::RandRange(0, RoomTags.Num() - 1);
 
-		SetActorLocation(TagArr[RoomTags[RandomIndex]] );
+		//SetActorLocation(TagArr[RoomTags[RandomIndex]] );
+		SetActorLocation(TagArr[6]);
 	}
 	// room6 -> room3 || room8 가능
 	else if (RoomNum == 6)
@@ -150,7 +211,8 @@ void AChica::Move() // 손전등 켜고 있으면 1,3,4로만 이동
 		TArray<int32> RoomTags = { 3, 8 };
 		int32 RandomIndex = FMath::RandRange(0, RoomTags.Num() - 1);
 
-		SetActorLocation(TagArr[RoomTags[RandomIndex]]);
+		//SetActorLocation(TagArr[RoomTags[RandomIndex]]);
+		SetActorLocation(TagArr[8]);
 
 		// 발소리
 
@@ -166,43 +228,10 @@ void AChica::Move() // 손전등 켜고 있으면 1,3,4로만 이동
 		}
 	}
 	// room8 -> room6 가능
-	else if (RoomNum == 8)
-	{
-		AFreddyPlayer* FreddyPlayer = Cast<AFreddyPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
-
-		AFreddyPlayer::LookAt LookState;
-
-		if(FreddyPlayer)
-		{
-			LookState = FreddyPlayer->GetLookAtState();
-			//→ 플레이어 위치 == Door && 손전등 ON : 점프스퀘어(공격) 
-			if ((LookState == AFreddyPlayer::LookAt::Right && bIsDoorClose == false) && bIsFlashlightOn == true)
-			{
-				CurrentState = ELocationState::ATTACK;
-			}
-			//→ 플레이어 위치 == Door && bCLOSE == true (일정 시간동안 CLOSE ⇒ 확률적으로 1,3,4 중 이동)
-			if (LookState == AFreddyPlayer::LookAt::Right && bIsDoorClose == true)
-			{
-				for (float cnt = 0.f; cnt < 6.f; cnt++)
-				{
-					if (cnt > MovableTime)
-					{
-						TArray<int32> RoomTags = { 1, 3, 4 };
-						int32 RandomIndex = FMath::RandRange(0, RoomTags.Num() - 1);
-
-						SetActorLocation(TagArr[RoomTags[RandomIndex]]);
-					}
-				}
-			}
-		}
-		//→ 플레이어 위치≠Door 일 때, 일정 시간 후에 컵케이크 점프스퀘어(공격) → GAME OVER
-		if (LookState != AFreddyPlayer::LookAt::Right)
-		{
-			CurrentState = ELocationState::CUPCAKE;
-		}
-		
-		SetActorLocation(TagArr[6]);
-	}
+	//else if (RoomNum == 8)
+	//{
+	//	
+	//}
 
 	CurrentState = ELocationState::IDLE;
 }

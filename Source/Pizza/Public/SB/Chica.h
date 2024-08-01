@@ -30,7 +30,7 @@ public:
 	class UAILevel* AILevelComp;
 
 	TArray<FVector> TagArr;
-	int32 RoomNum;
+	int32 RoomNum = 1;
 
 	// 현 위치 태그 확인
 	// FName GetCurrentLocationTag();

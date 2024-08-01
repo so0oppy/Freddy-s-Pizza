@@ -39,5 +39,5 @@ public:
 	// 프레디, 보니 추가
 
 	void SetLevel(ACharacter* character);
-	void RandomMove(ACharacter* character, float DeltaTime);
+	bool RandomMove(ACharacter* character, float DeltaTime);
 };

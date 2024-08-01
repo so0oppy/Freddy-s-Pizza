@@ -200,7 +200,8 @@ private:
 	void DoorRotAndCameraMove(float DeltaTime);
 
 	// 
-
+	int32 CloseBoost = 3.f;
+	bool bCloseDoor = false;
 	// 추가할 변수들
 	bool bOpenDoor=false;
 	int32 DoorIndex=-1;
@@ -208,9 +209,21 @@ private:
 	FVector CameraOffset;
 	FRotator CameraRotation;
 	void SetUpdateDoor(int32 DoorNum);
-
+	void SetBackDoor(int32 BackNum);
 	UPROPERTY(EditAnywhere)
 	USceneComponent* LeftDoorMovePoint;
 	UPROPERTY(EditAnywhere)
 	USceneComponent* RightDoorMovePoint;
+
+	UPROPERTY(EditAnywhere)
+	USceneComponent* RightBackMovePoint;
+
+	UPROPERTY(EditAnywhere)
+	USceneComponent* LeftBackMovePoint;
+
+	UPROPERTY(EditAnywhere)
+	USceneComponent* CenterBackMovePoint;
+
+	FVector OriginCameraVector;
+	FRotator OriginCameraRotate;
 };

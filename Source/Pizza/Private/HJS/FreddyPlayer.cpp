@@ -48,6 +48,15 @@ AFreddyPlayer::AFreddyPlayer()
 	LeftDoorMovePoint->SetupAttachment(RootComponent);
 	RightDoorMovePoint=CreateDefaultSubobject<USceneComponent>(TEXT("RightDoorMovePoint"));
 	RightDoorMovePoint->SetupAttachment(RootComponent);
+
+	RightBackMovePoint=CreateDefaultSubobject<USceneComponent>(TEXT("RightBackMovePoint"));
+	RightBackMovePoint->SetupAttachment(RootComponent);
+
+	LeftBackMovePoint=CreateDefaultSubobject<USceneComponent>(TEXT("LeftBackMovePoint"));
+	LeftBackMovePoint->SetupAttachment(RootComponent);
+
+	CenterBackMovePoint=CreateDefaultSubobject<USceneComponent>(TEXT("CenterBackMovePoint"));
+	CenterBackMovePoint->SetupAttachment(RootComponent);
 }
 
 // Called when the game starts or when spawned
@@ -113,7 +122,6 @@ void AFreddyPlayer::BeginPlay()
 		{
 			Doors[1]=CenterDoor;
 		}
-
 	}
 
 	UGameplayStatics::GetAllActorsWithTag(GetWorld(), TEXT("RightDoor"), FoundActors);
@@ -127,7 +135,9 @@ void AFreddyPlayer::BeginPlay()
 		}
 
 	}
-
+	//		(Pitch=6.336300,Yaw=0.000000,Roll=0.000000)
+	OriginCameraRotate = FRotator(6.336300f, 0.f, 0.f);
+	OriginCameraVector = FVector(0.f,0.f,-30.f);
 }
 
 void AFreddyPlayer::SetUp()
@@ -138,6 +148,10 @@ void AFreddyPlayer::SetUp()
 
 void AFreddyPlayer::SetDown()
 {	
+	if ( bOpenDoor )
+	{
+		return;
+	}
 	if (bMoving)
 	{
 		return;
@@ -171,6 +185,7 @@ void AFreddyPlayer::SetDown()
 			bMoving = true;
 			bHeadDown = true;
 			HeadCurrentTime = 0.0f;
+			SetUpdateDoor(3);
 		}
 	}
 }
@@ -309,6 +324,7 @@ void AFreddyPlayer::Move(float DeltaTime)
 			bHeadUp = true;
 			bMoving = false;
 			HeadCurrentTime = 0.0f;
+			SetUpdateDoor(4);
 		}
 	}
 	else
@@ -324,8 +340,6 @@ void AFreddyPlayer::Move(float DeltaTime)
 		if (MoveAmount == 1.f)
 		{
 			bMoving = false;
-			bOpenDoor=true;  // 문 회전을 시작
-			DoorIndex=DoorNum;
 			SetUpdateDoor(DoorNum);
 		}
 	}
@@ -484,27 +498,40 @@ void AFreddyPlayer::UpdateHeadMovement(float DeltaTime)
 
 void AFreddyPlayer::DoorRotAndCameraMove(float DeltaTime)
 {
-	if ( !bOpenDoor || DoorIndex == -1 )
+	if ( (!bOpenDoor && !bCloseDoor) || DoorIndex == -1 )
 	{
 		return;
 	}
 
+	float DoorRotateSpeed=25.f;
+	float CameraRotateSpeed=18.f;
+	float CameraOffsetSpeed=220.f;
+
+	if ( !bCloseDoor )
+	{
+		DoorRotateSpeed*=CloseBoost;
+		CameraRotateSpeed*=CloseBoost;
+		CameraOffsetSpeed*=CloseBoost;
+	}
+
 	ADoor* Door=Doors[DoorIndex];
+
 	if ( Door )
 	{
-		FRotator NewRotation=FMath::RInterpTo(Door->GetActorRotation(), DoorRotation, DeltaTime, 2.0f);
+		FRotator NewRotation=FMath::RInterpConstantTo(Door->GetActorRotation(), DoorRotation, DeltaTime, DoorRotateSpeed);
 		Door->SetActorRotation(NewRotation);
 	}
 
-	FVector NewCameraOffset=FMath::VInterpTo(SpringArmComp->GetRelativeLocation(), SpringArmComp->GetRelativeLocation() + CameraOffset, DeltaTime, 2.0f);
+	FVector NewCameraOffset=FMath::VInterpConstantTo(SpringArmComp->GetRelativeLocation(), CameraOffset, DeltaTime, CameraOffsetSpeed);
 	SpringArmComp->SetRelativeLocation(NewCameraOffset);
 
-	//FRotator NewCameraRotation=FMath::RInterpTo(SpringArmComp->GetRelativeRotation(), SpringArmComp->GetRelativeRotation()+CameraRotation, DeltaTime, 2.0f);
-	//SpringArmComp->SetRelativeRotation(NewCameraRotation);
+	FRotator NewCameraRotation=FMath::RInterpConstantTo(SpringArmComp->GetRelativeRotation(), CameraRotation, DeltaTime, CameraRotateSpeed);
+	SpringArmComp->SetRelativeRotation(NewCameraRotation);
 
 	// 목표 위치와 회전각에 도달했는지 확인
-	//NewCameraRotation.Equals(CameraRotation, 0.1f)
-	if ( NewCameraOffset.Equals(SpringArmComp->GetRelativeLocation()+CameraOffset, 0.1f) && Door->GetActorRotation().Equals(DoorRotation, 0.1f) )
+	//
+	if ( NewCameraOffset.Equals(CameraOffset, 0.1f)
+		&& NewCameraRotation.Equals(CameraRotation, 0.1f) && Door->GetActorRotation().Equals(DoorRotation, 0.1f))
 	{
 		bOpenDoor=false;
 		DoorIndex=-1;
@@ -513,18 +540,19 @@ void AFreddyPlayer::DoorRotAndCameraMove(float DeltaTime)
 
 void AFreddyPlayer::SetUpdateDoor(int32 DoorNum)
 {
+	bOpenDoor = true;
+	DoorIndex=DoorNum;
 	if ( DoorNum == 0 ) // Left door
 	{
 		ADoor* Door=Doors[DoorNum];
 		if ( Door )
 		{
 			DoorRotation=Door->GetActorRotation();
-			DoorRotation.Yaw-=12.0f;
+			DoorRotation.Yaw-=22.0f;
 
 			// 왼쪽으로 카메라 기울이기
-			CameraOffset=FVector(-20.0f, 0.0f, 0.0f); // 원하는 값으로 설정
-			CameraRotation=SpringArmComp->GetRelativeRotation();
-			CameraRotation.Roll-=10.0f; // 원하는 값으로 설정
+			CameraOffset=LeftDoorMovePoint->GetRelativeLocation(); // 원하는 값으로 설정
+			CameraRotation=LeftDoorMovePoint->GetRelativeRotation();
 		}
 	}
 	else if ( DoorNum == 2 ) // Right door
@@ -533,12 +561,57 @@ void AFreddyPlayer::SetUpdateDoor(int32 DoorNum)
 		if ( Door )
 		{
 			DoorRotation=Door->GetActorRotation();
-			DoorRotation.Yaw+=12.0f;
+			DoorRotation.Yaw+=22.0f;
 
 			// 오른쪽으로 카메라 기울이기
-			CameraOffset=FVector(20.0f, 0.0f, 0.0f); // 원하는 값으로 설정
-			CameraRotation=SpringArmComp->GetRelativeRotation();
-			CameraRotation.Roll+=10.0f; // 원하는 값으로 설정
+			CameraOffset=RightDoorMovePoint->GetRelativeLocation(); // 원하는 값으로 설정
+			CameraRotation=RightDoorMovePoint->GetRelativeRotation();
 		}
+	}
+	else
+	{
+		bOpenDoor=false;
+	}
+}
+
+void AFreddyPlayer::SetBackDoor(int32 BackNum)
+{
+	bCloseDoor=true;
+	
+	// 1은 왼쪽일 때
+	ADoor* Door;
+	if ( BackNum == 1 )
+	{
+		Door = Doors[0];
+		DoorRotation=Door->GetActorRotation();
+		DoorRotation.Yaw+=22.0f;
+		DoorIndex=0;
+		// 왼쪽으로 카메라 기울이기
+		CameraOffset=LeftBackMovePoint->GetRelativeLocation(); // 원하는 값으로 설정
+		CameraRotation=LeftBackMovePoint->GetRelativeRotation();
+	}
+	// 2는 중앙일 때
+	else if ( BackNum == 2 )
+	{
+		Door=Doors[2];
+		DoorIndex=2;
+		DoorRotation=Door->GetActorRotation();
+		DoorRotation.Yaw-=22.0f;
+
+		// 왼쪽으로 카메라 기울이기
+		CameraOffset=RightBackMovePoint->GetRelativeLocation(); // 원하는 값으로 설정
+		CameraRotation=RightBackMovePoint->GetRelativeRotation();
+	}// 3은 오른쪽일 때
+	else if( BackNum == 3 )
+	{
+		// 왼쪽으로 카메라 기울이기
+		CameraOffset=CenterBackMovePoint->GetRelativeLocation(); // 원하는 값으로 설정
+		CameraRotation=CenterBackMovePoint->GetRelativeRotation();
+	}
+	// 4는 메인일 때
+	else if ( BackNum == 4 )
+	{
+		CameraOffset = OriginCameraVector;
+		CameraRotation = OriginCameraRotate;
 	}
 }

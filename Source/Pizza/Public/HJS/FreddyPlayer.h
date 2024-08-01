@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -61,6 +61,7 @@ public:
 	// 현재 보고 있는 위치 리턴
 	LookAt GetLookAtState();
 
+	FTransform GetCameraTransform();
 
 private:
 
@@ -186,11 +187,44 @@ private:
 	float HeadMovementTime = 0.5f; // 고개를 숙이고 드는 시간
 	float HeadCurrentTime = 0.0f;
 
-	void StartHeadDown();
 	void UpdateHeadMovement(float DeltaTime);
 
 	// 걸어가는 카메라 쉐이크
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<class UCameraShakeBase> WalkShake;
 
+	// 위치 도착 후 문 열면서 몸 기울이기
+	// 문 변수 3개 흠... 배열?  LookAt으로 문 배열에 접근
+	UPROPERTY(VisibleAnywhere)
+	TArray<class ADoor*> Doors;
+	// 문 열면서 고개 기울이는 함수
+	void DoorRotAndCameraMove(float DeltaTime);
+
+	// 
+	int32 CloseBoost = 3.f;
+	bool bCloseDoor = false;
+	// 추가할 변수들
+	bool bOpenDoor=false;
+	int32 DoorIndex=-1;
+	FRotator DoorRotation;
+	FVector CameraOffset;
+	FRotator CameraRotation;
+	void SetUpdateDoor(int32 DoorNum);
+	void SetBackDoor(int32 BackNum);
+	UPROPERTY(EditAnywhere)
+	USceneComponent* LeftDoorMovePoint;
+	UPROPERTY(EditAnywhere)
+	USceneComponent* RightDoorMovePoint;
+
+	UPROPERTY(EditAnywhere)
+	USceneComponent* RightBackMovePoint;
+
+	UPROPERTY(EditAnywhere)
+	USceneComponent* LeftBackMovePoint;
+
+	UPROPERTY(EditAnywhere)
+	USceneComponent* CenterBackMovePoint;
+
+	FVector OriginCameraVector;
+	FRotator OriginCameraRotate;
 };

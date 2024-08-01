@@ -61,6 +61,7 @@ public:
 	// 현재 보고 있는 위치 리턴
 	LookAt GetLookAtState();
 
+	FTransform GetCameraTransform();
 
 private:
 

@@ -171,10 +171,10 @@ void AChica::Move() // 손전등 켜고 있으면 1,3,4로만 이동
 		AFreddyPlayer* FreddyPlayer = Cast<AFreddyPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
 
 		AFreddyPlayer::LookAt LookState;
+		LookState = FreddyPlayer->GetLookAtState();
 
 		if(FreddyPlayer)
 		{
-			LookState = FreddyPlayer->GetLookAtState();
 			//→ 플레이어 위치 == Door && 손전등 ON : 점프스퀘어(공격) 
 			if ((LookState == AFreddyPlayer::LookAt::Right && bIsDoorClose == false) && bIsFlashlightOn == true)
 			{
@@ -203,8 +203,6 @@ void AChica::Move() // 손전등 켜고 있으면 1,3,4로만 이동
 		
 		SetActorLocation(TagArr[6]);
 	}
-
-	CurrentState = ELocationState::IDLE;
 }
 
 void AChica::Attack()

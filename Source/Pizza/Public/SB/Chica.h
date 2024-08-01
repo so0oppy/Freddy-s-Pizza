@@ -15,6 +15,7 @@ public:
 	AChica();
 
 	void SetUpLocation(ELocationState State, float DeltaTime);
+	void UpdateState(float DeltaTime);
 
 protected:
 	virtual void BeginPlay() override;

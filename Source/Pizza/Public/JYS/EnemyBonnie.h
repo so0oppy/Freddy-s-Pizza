@@ -79,5 +79,5 @@ private:
 
 	// 문을 닫으면 보니가 룸1에서 룸3으로 순간이동
 	UFUNCTION()
-	bool CloseDoorRoom1ToRoom3();
+	bool CloseDoorRoom0ToRoom2();
 };

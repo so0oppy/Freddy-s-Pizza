@@ -36,9 +36,7 @@ public:
 	class AFreddyPlayer* Player;
 
 	// JumpScare
-	// UFUNCTION()
-	// void JumpScare();
+	 UFUNCTION()
+	 void JumpScare();
 
-	// camera 가져오기
-	// class AFreddyPlayer* CameraComp;
 };

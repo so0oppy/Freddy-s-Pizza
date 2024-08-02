@@ -68,5 +68,8 @@ private:
 	// Player가 Bed를 보고 있는지 체크
 	bool IsPlayerLookingAtBedAndFlashOn();
 
+	UPROPERTY(EditAnywhere)
+	class USoundBase* JumpScareFreddySFX;
 
+	void JumpScareFreddySound();
 };

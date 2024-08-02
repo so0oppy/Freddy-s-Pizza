@@ -80,4 +80,19 @@ private:
 	// 문을 닫으면 보니가 룸1에서 룸3으로 순간이동
 	UFUNCTION()
 	bool CloseDoorRoom0ToRoom2();
+
+	UPROPERTY(EditAnywhere)
+	class USoundBase* JumpScareSFX;
+
+	void JumpScareSound();
+
+	UPROPERTY(EditAnywhere)
+	class USoundBase* FootStepsSFX;
+
+	void FootStepsSound();
+
+	UPROPERTY(EditAnywhere)
+	class USoundBase* BreathSFX;
+
+	void BreathSound();
 };

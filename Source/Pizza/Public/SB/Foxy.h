@@ -65,9 +65,22 @@ private:
 	bool bIsFlashlightOn = false;
 	bool bIsDoorClose = false;
 
-	bool bClosetAnim = false;
+	bool bClosetAnim = false; // 옷장 애니메이션 한 번만 실행되게 하는 플래그
+	bool bCTtoZero = false; // currentTime이 한 번만 0이 되게 하는 플래그
 
 	//bool bIsAtDoor = false; // 테스트용 변수
+	void ShowFoxyDoll(AActor* actor, bool bShow);
+
+
+	// 발소리
+	UPROPERTY(EditDefaultsOnly)
+	class USoundBase* FootStepsSFX;
+	// 숨소리
+	UPROPERTY(EditDefaultsOnly)
+	class USoundBase* BreathSFX;
+	// 점프스케어 소리
+	UPROPERTY(EditDefaultsOnly)
+	class USoundBase* JumpScareSFX;
 
 	UPROPERTY()
 	class AFreddyPlayer* player;

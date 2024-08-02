@@ -13,6 +13,8 @@
 #include "Engine/World.h"
 #include "TimerManager.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Components/StaticMeshComponent.h"
+#include "SB/FoxDoll.h"
 
 // Sets default values
 AFoxy::AFoxy()
@@ -134,6 +136,7 @@ void AFoxy::Idle(float DeltaTime)
 				AFreddyPlayer::LookAt LookState;
 				
 				// 발소리
+				UGameplayStatics::PlaySound2D(this, FootStepsSFX);
 
 				//	만약, 손전등 ON -> room1로 이동 (순간이동X)
 				if (bIsFlashlightOn == true)
@@ -165,7 +168,9 @@ void AFoxy::Idle(float DeltaTime)
 			{
 				AFreddyPlayer* FreddyPlayer = Cast<AFreddyPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
 				AFreddyPlayer::LookAt LookState;
+
 				// 발소리
+				UGameplayStatics::PlaySound2D(this, FootStepsSFX);
 
 				//	만약, 손전등 ON -> room1로 이동 (순간이동X)
 				if (bIsFlashlightOn == true)
@@ -198,11 +203,13 @@ void AFoxy::Idle(float DeltaTime)
 				AFreddyPlayer* FreddyPlayer = Cast<AFreddyPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
 				AFreddyPlayer::LookAt LookState;
 
+				AActor * FoxDollInstance = UGameplayStatics::GetActorOfClass(GetWorld(), AFoxDoll::StaticClass());
+
+				ShowFoxyDoll(FoxDollInstance, false); // 폭시 들어왔을 땐 안 보이게
+
 				if (FreddyPlayer)
 				{
 					LookState = FreddyPlayer->GetLookAtState();
-
-					// !!!!!!!!!!!!!!플레이어 쪽에서 다른 곳으로 움직일 때마다 이 Idle을 계속 실행해줘야 함. ?? !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 					// 플레이어 위치 == 가운데, 옷장이 살짝 움직임
 					if (LookState == AFreddyPlayer::LookAt::Main && bClosetAnim == false)
@@ -217,6 +224,12 @@ void AFoxy::Idle(float DeltaTime)
 					// 플레이어 위치 == CLOSET, 놀래키는 anim 실행
 					else if (LookState == AFreddyPlayer::LookAt::Center)
 					{
+						if (bCTtoZero == true) // 반복적으로 currentTime이 0이 되지 않도록
+						{
+							CurrentTime = 0.f;
+							bCTtoZero = false;
+						}
+
 						// 놀래키기만 하는 anim 실행
 						UE_LOG(LogTemp, Log, TEXT("Foxy anim"));
 
@@ -238,6 +251,7 @@ void AFoxy::Idle(float DeltaTime)
 							{
 								// 인형 스폰
 								// 테스트용 오브젝트 배치
+								ShowFoxyDoll(FoxDollInstance, true);
 
 								SetActorLocation(TagArr[1]);
 								RoomNum = 1;
@@ -252,6 +266,11 @@ void AFoxy::Idle(float DeltaTime)
 					// 플레이어 위치 ≠ CLOSET (폭시 상태 바뀔 시간동안), 점프스케어 (공격) → GAME OVER
 					else if (LookState != AFreddyPlayer::LookAt::Center)
 					{
+						if (bCTtoZero == false) // 반복적으로 currentTime이 0이 되지 않도록
+						{
+							CurrentTime = 0.f;
+							bCTtoZero = true;
+						}
 						CurrentTime += DeltaTime;
 						if (CurrentTime > MovableTime)
 							CurrentState = ELocationState::ATTACK;
@@ -325,6 +344,14 @@ void AFoxy::Attack()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Attack !"));
 	// 점프스퀘어 anim 재생
+
+	// 테스트용 -> 카메라 앞으로 SetActorLocation
+	AFreddyPlayer* FreddyPlayer = Cast<AFreddyPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
+	FTransform JmpScare = FreddyPlayer->GetCameraTransform();
+	SetActorTransform(JmpScare); // 카메라 위치로 이동 (점프스케어)
+
+	// 점프스케어 소리
+	UGameplayStatics::PlaySound2D(this, JumpScareSFX);
 
 	// 게임 오버
 
@@ -420,6 +447,16 @@ void AFoxy::DoorOpen()
 	if (FreddyPlayer)
 	{
 		bIsDoorClose = FreddyPlayer->GetrCloseDoor();
+	}
+}
+
+void AFoxy::ShowFoxyDoll(AActor* actor, bool bShow)
+{
+	AFoxDoll* FoxyDoll = Cast<AFoxDoll>(actor);
+
+	if (FoxyDoll && FoxyDoll->FoxyDollComp)
+	{
+		FoxyDoll->FoxyDollComp->SetVisibility(bShow);
 	}
 }
 

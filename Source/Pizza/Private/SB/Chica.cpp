@@ -10,6 +10,9 @@
 #include "Engine/World.h"
 #include "TimerManager.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Components/StaticMeshComponent.h"
+#include "Sound/SoundBase.h"
+#include "SB/CupCake.h"
 
 // Sets default values
 AChica::AChica()
@@ -17,7 +20,6 @@ AChica::AChica()
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	
 	AILevelComp = CreateDefaultSubobject<UAILevel>(TEXT("AILevelComp"));
 }
 
@@ -131,10 +133,13 @@ void AChica::Idle(float DeltaTime)
 
 			else if (RoomNum == 8)  //room8일 때 'attack, cupcake, 이동' 세가지 조건이므로 따로 분류
 			{
+				// 숨소리
+				UGameplayStatics::PlaySound2D(this, BreathSFX);
+
 				AFreddyPlayer* FreddyPlayer = Cast<AFreddyPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
 				AFreddyPlayer::LookAt LookState;
 
-				if (FreddyPlayer)
+				if (FreddyPlayer) // 플레이어와 연동될 부분
 				{
 					LookState = FreddyPlayer->GetLookAtState();
 
@@ -225,6 +230,7 @@ void AChica::Move() // 손전등 켜고 있으면 1,3,4로만 이동
 		RoomNum = 8;
 
 		// 발소리
+		UGameplayStatics::PlaySound2D(this, FootStepsSFX);
 
 		//	만약, 손전등 ON -> room1로 이동 (순간이동X)
 		if(bIsFlashlightOn == true) 
@@ -252,6 +258,11 @@ void AChica::Attack()
 	UE_LOG(LogTemp, Warning, TEXT("Attack !"));
 	// 점프스퀘어 anim 재생
 
+	// 테스트용 -> 카메라 앞으로 SetActorLocation
+	AFreddyPlayer* FreddyPlayer = Cast<AFreddyPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
+	FTransform JmpScare = FreddyPlayer->GetCameraTransform();
+	SetActorTransform(JmpScare); // 카메라 위치로 이동 (점프스케어)
+
 	// 게임 오버
 	
 }
@@ -260,6 +271,22 @@ void AChica::Cupcake()
 {
 	UE_LOG(LogTemp, Warning, TEXT("CupCake Attack !"));
 	// 컵케이크 점프스퀘어 anim 재생
+
+	// 테스트용 -> 카메라 앞으로 SetActorLocation
+	AFreddyPlayer* FreddyPlayer = Cast<AFreddyPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
+	AActor* CupCakeInstance = UGameplayStatics::GetActorOfClass(GetWorld(), ACupCake::StaticClass());
+	ACupCake* CupCake = Cast<ACupCake>(CupCakeInstance);
+	FTransform JmpScare = FreddyPlayer->GetCameraTransform();
+
+
+	if(CupCake)
+	{
+		// 컵케이크 임시 큐브로
+		CupCake->SetActorTransform(JmpScare); // 카메라 위치로 이동 (점프스케어)
+
+		// 점프스케어 소리 재생
+		UGameplayStatics::PlaySound2D(this, JumpScareSFX);
+	}
 
 	// 게임 오버
 }

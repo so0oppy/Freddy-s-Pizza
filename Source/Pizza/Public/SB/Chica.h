@@ -60,9 +60,19 @@ private:
 	bool bIsFlashlightOn = false;
 	bool bIsDoorClose = false;
 
-
-
 	//bool bIsAtDoor = false; // 테스트용 변수
+
+
+	// 발소리
+	UPROPERTY(EditDefaultsOnly)
+	class USoundBase* FootStepsSFX;
+	// 숨소리
+	UPROPERTY(EditDefaultsOnly)
+	class USoundBase* BreathSFX;
+	// 점프스케어 소리
+	UPROPERTY(EditDefaultsOnly)
+	class USoundBase* JumpScareSFX;
+
 
 	UPROPERTY()
 	class AFreddyPlayer* player;

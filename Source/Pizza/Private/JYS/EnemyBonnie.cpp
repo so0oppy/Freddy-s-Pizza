@@ -34,16 +34,9 @@ void AEnemyBonnie::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	SetAILevel(20);
+	SetAILevel(7);
 
 	GetWorld()->GetTimerManager().SetTimer(MoveTimerHandle, this, &AEnemyBonnie::AttemptMove, 4.97f, true);
-
-	// 플레이어 객체 찾기
-	//for (TActorIterator<AFreddyPlayer> It(GetWorld()); It; ++It)
-	//{
-	//	Player = *It;
-	//	break;
-	//}
 }
 
 // Called every frame
@@ -55,6 +48,12 @@ void AEnemyBonnie::Tick(float DeltaTime)
 	if (ShouldMoveToRoom3())
 	{
 		Move(EBonnieState::Room3);
+	}
+	
+	// Room0에서 Room2로 이동
+	if (CloseDoorRoom1ToRoom3())
+	{
+		Move(EBonnieState::Room2);
 	}
 
 	if (bIsMovingToRoom3)
@@ -113,6 +112,10 @@ void AEnemyBonnie::Move(EBonnieState MoveState)
 
 void AEnemyBonnie::TickRoom0(const float& DeltaTime)
 {
+	if (ShouldMoveToRoom3())
+	{
+		JumpScare();
+	}
 }
 
 void AEnemyBonnie::TickRoom1(const float& DeltaTime)
@@ -184,8 +187,22 @@ bool AEnemyBonnie::ShouldMoveToRoom3()
 	// 플레이어가 왼쪽에서 Flash를 비추고 Bonnie가 1번방에 있을 때
 	if (Player)
 	{
-		return Player->GetFlash()&& Player ->GetLookAtState() == AFreddyPlayer::LookAt::Left && State == EBonnieState::Room1;
+		return Player->GetFlash() && Player ->GetLookAtState() == AFreddyPlayer::LookAt::Left && State == EBonnieState::Room1;
 	}
 	return false;      
 }
 
+void AEnemyBonnie::JumpScareBonnie()
+{
+	FVector CameraLoc = Player->GetCameraTransform().GetLocation();
+	CameraLoc.X += 100;
+	SetActorLocation(CameraLoc);
+}
+
+bool AEnemyBonnie::CloseDoorRoom1ToRoom3()
+{
+	if (Player)
+	{
+		return Player->GetrCloseDoor() && State == EBonnieState::Room1;
+	}
+}

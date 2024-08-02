@@ -34,4 +34,9 @@ public:
 
 	UPROPERTY()
 	class AFreddyPlayer* Player;
+
+	// JumpScare
+	 UFUNCTION()
+	 void JumpScare();
+
 };

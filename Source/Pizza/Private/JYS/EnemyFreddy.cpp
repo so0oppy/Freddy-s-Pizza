@@ -29,8 +29,6 @@ AEnemyFreddy::AEnemyFreddy()
 	FreddyMesh2 = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("FreddyMesh2"));
 	FreddyMesh2->SetupAttachment(Freddy2);
 	FreddyMesh2->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-
-
 }
 
 // Called when the game starts or when spawned
@@ -54,6 +52,7 @@ void AEnemyFreddy::BeginPlay()
 		FreddysArr[i]->SetHiddenInGame(true);
 	}
 
+	GetMesh()->SetHiddenInGame(true);
 }
 
 // Called every frame
@@ -81,6 +80,10 @@ void AEnemyFreddy::AttemptSpawnCube()
 		// 랜덤 넘버가 Freddy의 레벨보다 낮거나 같다면
 		if (RandomNumber <= Level)
 		{
+			if (FreddyMesh2->bHiddenInGame == false && HiddenTime >= 3)
+			{
+				JumpScare();
+			}
 			// Freddy를 차례대로 Visible
 			if (FreddyMesh0->bHiddenInGame)
 			{
@@ -134,5 +137,19 @@ bool AEnemyFreddy::IsPlayerLookingAtBedAndFlashOn()
 		return Player->GetLookAtState() == AFreddyPlayer::LookAt::Bed && Player->GetFlash();
 	}
 	return false;
+}
+
+void AEnemyFreddy::JumpScareFreddy()
+{
+	FVector CameraLoc = Player->GetCameraTransform().GetLocation();
+	CameraLoc.X += 100;
+	SetActorLocation(CameraLoc);
+
+	GetMesh()->SetHiddenInGame(false);
+
+	for (int32 i = 0; i < FreddysArr.Num(); ++i)
+	{
+		FreddysArr[i]->SetHiddenInGame(true);
+	}
 }
 

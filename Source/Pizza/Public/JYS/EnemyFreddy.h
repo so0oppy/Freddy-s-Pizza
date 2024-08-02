@@ -23,6 +23,10 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	// JumpScare
+	UFUNCTION()
+	void JumpScareFreddy();
+
 private:
 
 	UPROPERTY(EditAnywhere)
@@ -63,4 +67,6 @@ private:
 
 	// Player�� Bed�� ���� �ִ��� üũ
 	bool IsPlayerLookingAtBedAndFlashOn();
+
+
 };

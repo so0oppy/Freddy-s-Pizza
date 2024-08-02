@@ -42,4 +42,3 @@ void AAllEnemyCharacter::SetAILevel(int32 Value)
 {
 	Level = Value;
 }
-

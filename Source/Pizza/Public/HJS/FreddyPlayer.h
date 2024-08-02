@@ -201,7 +201,7 @@ private:
 	void DoorRotAndCameraMove(float DeltaTime);
 
 	// 
-	int32 CloseBoost = 3.f;
+	int32 CloseBoost = 5;
 	bool bCloseDoor = false;
 	// 추가할 변수들
 	bool bOpenDoor=false;
@@ -227,4 +227,33 @@ private:
 
 	FVector OriginCameraVector;
 	FRotator OriginCameraRotate;
+
+
+	// 문 닫기/열기 로테이트는 기존 변수 재사용
+	// 문 닫기/열기 완료 스테이트
+	bool bCompleteOpenOrClose;
+	// 카메라 이동 위치를 저장할 MovePoint
+	UPROPERTY(EditAnywhere)
+	float LeftDoorClosePoint = 0.f;
+	UPROPERTY(EditAnywhere)
+	float LeftDoorOpenPoint = -35.f;
+	UPROPERTY(EditAnywhere)
+	float LeftDoorOriginPoint = -13.f;
+	UPROPERTY(EditAnywhere)
+	float RightDoorClosePoint = 0.f;
+	UPROPERTY(EditAnywhere)
+	float RightDoorOriginPoint = 13.f;
+
+	UPROPERTY(EditAnywhere)
+	float RightDoorOpenPoint = 40.f;
+
+	UPROPERTY(EditAnywhere)
+	USceneComponent* LeftCameraClosePoint;
+	UPROPERTY(EditAnywhere)
+	USceneComponent* RightCameraClosePoint;
+
+	UPROPERTY(EditAnywhere)
+	USceneComponent* CenterDoorClosePoint;
+	UPROPERTY(EditAnywhere)
+	USceneComponent* CenterDoorOpenPoint;
 };

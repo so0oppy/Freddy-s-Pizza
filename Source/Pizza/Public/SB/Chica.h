@@ -15,6 +15,7 @@ public:
 	AChica();
 
 	void SetUpLocation(ELocationState State, float DeltaTime);
+	void UpdateState(float DeltaTime);
 
 protected:
 	virtual void BeginPlay() override;
@@ -29,7 +30,7 @@ public:
 	class UAILevel* AILevelComp;
 
 	TArray<FVector> TagArr;
-	int32 RoomNum;
+	int32 RoomNum = 1;
 
 	// 현 위치 태그 확인
 	// FName GetCurrentLocationTag();

@@ -46,8 +46,9 @@ void UAILevel::SetLevel(ACharacter* character)
 	Level = tempLV[Hour]; // 그 정보 내의 시간별로 레벨 할당
 }
 
-void UAILevel::RandomMove(ACharacter* character,float DeltaTime)
+bool UAILevel::RandomMove(ACharacter* character,float DeltaTime)
 {
+	UE_LOG(LogTemp, Warning, TEXT("Random Move()"));
 	Chica = Cast<AChica>(character);
 
 	// 1~20 사이 랜덤 숫자 <= AI 레벨일 경우 이동 (확률로)
@@ -58,9 +59,15 @@ void UAILevel::RandomMove(ACharacter* character,float DeltaTime)
 		if (moveRand < 5 * Level) // 레벨마다 확률 낮아지므로
 		{
 			// 다른 방으로 이동
-			if(Chica)
-				Chica->SetUpLocation(ELocationState::MOVE, DeltaTime);
+			if(nullptr != Chica)
+				return true;
 			// else if(character == Foxy)
 		}
+		else
+		{
+			return false;
+		}
 	}
+		
+	return false;
 }

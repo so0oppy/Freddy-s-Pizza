@@ -35,7 +35,7 @@ public:
 
 	UPROPERTY()
 	class AChica* Chica;
-	//class AFoxy* Foxy;
+	class AFoxy* Foxy;
 	// 프레디, 보니 추가
 
 	void SetLevel(ACharacter* character);

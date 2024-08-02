@@ -148,6 +148,11 @@ void AFreddyPlayer::SetUp()
 
 void AFreddyPlayer::SetDown()
 {	
+	if(bCompleteOpenOrClose)
+	{
+		return;
+	}
+	
 	if ( bOpenDoor )
 	{
 		return;
@@ -183,9 +188,9 @@ void AFreddyPlayer::SetDown()
 			bReverse = true;
 			CurrentTime = 0.f;
 			bMoving = true;
-			bHeadDown = true;
+			//bHeadDown = true;
 			HeadCurrentTime = 0.0f;
-			SetBackDoor(DoorIndex);
+			SetBackDoor(static_cast<int32>(LookAtState));
 		}
 	}
 }
@@ -207,7 +212,6 @@ AFreddyPlayer::LookAt AFreddyPlayer::GetLookAtState()
 
 FTransform AFreddyPlayer::GetCameraTransform()
 {
-	UE_LOG(LogTemp, Warning, TEXT("%s"), *SpringArmComp->GetComponentTransform().ToString());
 	return SpringArmComp->GetComponentTransform();
 }
 
@@ -227,12 +231,75 @@ void AFreddyPlayer::OffFlash()
 
 void AFreddyPlayer::CloseDoor()
 {
-	// 문 닫기	
+
+	// 아직 무브중이라면 return
+	if ( bCloseDoor == true || bOpenDoor == true)
+	{
+		return;
+	}
+	
+	// 현재 위치가 메인 혹은 배드라면 return
+	if ( LookAtState == LookAt::Bed || LookAtState == LookAt::Main || LookAtState == LookAt::Back )
+	{
+		return;
+	}
+
+	// 문 닫기 변수 변화
+	bClose= true;
+	
+	// 문닫기
+	// 1. 문의 Yaw를 목표 위치으로 만들기 ( 선형 보간 )
+	// 2. 카메라를 뒤로 이동하기 ( 선형 보간 )
+	// 1,2를 같은 함수에서 처리할 수 있도록 합치기
+	// 필요 변수 문 : 목표 위치(센터), 목표 회전( 양쪽 문 ), 
+	// 필요 변수 카메라 : 목표 위치 ( 양쪽 문에서는 카메라 이동, 센터에서는 이동 X)
+	// 위치대로 이동시켜주는 틱 함수
+	// 목표 위치 및 트리거를 ON 시키는 일 -> 여기서
+	DoorIndex = static_cast<int32>(LookAtState);
+	DoorRotation = Doors[DoorIndex]->GetActorRotation();
+	switch ( LookAtState )
+	{
+		case LookAt::Left:
+		CameraOffset=LeftCameraClosePoint->GetRelativeLocation();
+		break;
+		case LookAt::Right:
+		CameraOffset=RightCameraClosePoint->GetRelativeLocation();
+		break;
+		case LookAt::Center:
+		CameraOffset=SpringArmComp->GetRelativeLocation(); 
+	}
+	bCompleteOpenOrClose = true;
+
 }
 
 void AFreddyPlayer::OpenDoor()
 {
-	// 문 열기
+	if ( bCloseDoor == true || bOpenDoor == true )
+	{
+		return;
+	}
+
+	if ( LookAtState == LookAt::Bed || LookAtState == LookAt::Main )
+	{
+		return;
+	}
+	// 문 열기 변수 변화
+	bClose= false;
+
+	DoorRotation=FRotator(0.f);
+	DoorIndex=static_cast<int32>(LookAtState);
+	switch ( LookAtState )
+	{
+	case LookAt::Left:
+		CameraOffset=LeftDoorMovePoint->GetRelativeLocation();
+		break;
+	case LookAt::Right:
+		CameraOffset=RightDoorMovePoint->GetRelativeLocation();
+		break;
+	case LookAt::Center:
+		CameraOffset=SpringArmComp->GetRelativeLocation();
+	}
+	bCompleteOpenOrClose=true;
 }
 
 // Called every frame
@@ -331,7 +398,9 @@ void AFreddyPlayer::Move(float DeltaTime)
 			bHeadUp = true;
 			bMoving = false;
 			HeadCurrentTime = 0.0f;
-			SetBackDoor(4);
+			bCloseDoor = false;
+			SpringArmComp->SetRelativeRotation(FRotator(-80.f,0.f,0.f));
+			//SetBackDoor(4);
 		}
 	}
 	else
@@ -467,7 +536,7 @@ void AFreddyPlayer::CameraTurn(float DeltaTime)
 	case CameraMove::Left:
 		NewRotation.Yaw = FMath::Clamp(NewRotation.Yaw - RotationSpeed * DeltaTime, -CameraMaxAngle, CameraMaxAngle);
 		break;
-	case CameraMove::Stop:
+	case CameraMove::Stop:	
 		return;
 	case CameraMove::Right:
 		NewRotation.Yaw = FMath::Clamp(NewRotation.Yaw + RotationSpeed * DeltaTime, -CameraMaxAngle, CameraMaxAngle);
@@ -514,7 +583,7 @@ void AFreddyPlayer::DoorRotAndCameraMove(float DeltaTime)
 	float CameraRotateSpeed=18.f;
 	float CameraOffsetSpeed=220.f;
 
-	if ( !bCloseDoor )
+	if ( bCloseDoor )
 	{
 		DoorRotateSpeed*=CloseBoost;
 		CameraRotateSpeed*=CloseBoost;
@@ -561,7 +630,7 @@ void AFreddyPlayer::SetUpdateDoor(int32 DoorNum)
 		if ( Door )
 		{
 			DoorRotation=Door->GetActorRotation();
-			DoorRotation.Yaw-=22.0f;
+			DoorRotation.Yaw=LeftDoorOpenPoint;
 
 			// 왼쪽으로 카메라 기울이기
 			CameraOffset=LeftDoorMovePoint->GetRelativeLocation(); // 원하는 값으로 설정
@@ -574,7 +643,7 @@ void AFreddyPlayer::SetUpdateDoor(int32 DoorNum)
 		if ( Door )
 		{
 			DoorRotation=Door->GetActorRotation();
-			DoorRotation.Yaw+=22.0f;
+			DoorRotation.Yaw=RightDoorOpenPoint;
 
 			// 오른쪽으로 카메라 기울이기
 			CameraOffset=RightDoorMovePoint->GetRelativeLocation(); // 원하는 값으로 설정
@@ -597,25 +666,25 @@ void AFreddyPlayer::SetBackDoor(int32 BackNum)
 	{
 		Door = Doors[BackNum];
 		DoorRotation=Door->GetActorRotation();
-		DoorRotation.Yaw+=22.0f;
-		DoorIndex = BackNum;;
+		DoorRotation.Yaw=LeftDoorOriginPoint;
+		DoorIndex = BackNum;
 		// 왼쪽으로 카메라 기울이기
 		CameraOffset=LeftBackMovePoint->GetRelativeLocation(); // 원하는 값으로 설정
 		CameraRotation=LeftBackMovePoint->GetRelativeRotation();
 	}
-	// 2는 중앙일 때
+	// 2는 오른쪽일 때
 	else if ( BackNum == 2 )
 	{
 		Door=Doors[BackNum];
 		DoorIndex=DoorIndex=BackNum;;
 		DoorRotation=Door->GetActorRotation();
-		DoorRotation.Yaw-=22.0f;
+		DoorRotation.Yaw=RightDoorOriginPoint;
 
 		// 왼쪽으로 카메라 기울이기
 		CameraOffset=RightBackMovePoint->GetRelativeLocation(); // 원하는 값으로 설정
 		CameraRotation=RightBackMovePoint->GetRelativeRotation();
 	}// 3은 오른쪽일 때
-	else if( BackNum == 3 )
+	else if( BackNum == 1 )
 	{	
 		DoorIndex =BackNum;
 		// 왼쪽으로 카메라 기울이기

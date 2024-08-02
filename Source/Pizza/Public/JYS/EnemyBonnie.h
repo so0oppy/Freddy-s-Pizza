@@ -37,6 +37,9 @@ public:
 
 	void Move(EBonnieState MoveState);
 
+	// JumpScare
+	UFUNCTION()
+	void JumpScareBonnie();
 private:
 	// 방을 배열로 구현
 	UPROPERTY(EditAnywhere)
@@ -73,4 +76,8 @@ private:
 	float MoveSpeed;
 	// 이동 중인지 여부
 	bool bIsMovingToRoom3;
+
+	// 문을 닫으면 보니가 룸1에서 룸3으로 순간이동
+	UFUNCTION()
+	bool CloseDoorRoom0ToRoom2();
 };

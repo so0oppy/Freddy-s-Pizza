@@ -51,7 +51,7 @@ void AEnemyBonnie::Tick(float DeltaTime)
 	}
 	
 	// Room0에서 Room2로 이동
-	if (CloseDoorRoom1ToRoom3())
+	if (CloseDoorRoom0ToRoom2())
 	{
 		Move(EBonnieState::Room2);
 	}
@@ -114,7 +114,7 @@ void AEnemyBonnie::TickRoom0(const float& DeltaTime)
 {
 	if (ShouldMoveToRoom3())
 	{
-		JumpScare();
+		JumpScareBonnie();
 	}
 }
 
@@ -199,10 +199,11 @@ void AEnemyBonnie::JumpScareBonnie()
 	SetActorLocation(CameraLoc);
 }
 
-bool AEnemyBonnie::CloseDoorRoom1ToRoom3()
+bool AEnemyBonnie::CloseDoorRoom0ToRoom2()
 {
 	if (Player)
 	{
-		return Player->GetrCloseDoor() && State == EBonnieState::Room1;
+		return Player->GetrCloseDoor() && Player->GetLookAtState() == AFreddyPlayer::LookAt::Left && State == EBonnieState::Room0;
 	}
+	return false;
 }

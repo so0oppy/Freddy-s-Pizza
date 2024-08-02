@@ -82,7 +82,7 @@ void AEnemyFreddy::AttemptSpawnCube()
 		{
 			if (FreddyMesh2->bHiddenInGame == false && HiddenTime >= 3)
 			{
-				JumpScare();
+				JumpScareFreddy();
 			}
 			// Freddy¸¦ Â÷·Ê´ë·Î Visible
 			if (FreddyMesh0->bHiddenInGame)

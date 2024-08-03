@@ -485,8 +485,18 @@ void AFreddyPlayer::UpdateFlashlight(float DeltaTime)
 {
 	FRotator DesiredRotation = FlashlightComp->GetRelativeRotation();
 	FRotator TempCameraRotation = SpringArmComp->GetRelativeRotation();
+	
+	if ( LookAtState == AFreddyPlayer::LookAt::Main )
+	{
+		FlashlightComp->SetHiddenInGame(false);
+	}
+	else
+	{
+		FlashlightComp->SetHiddenInGame(true);
+	}
+	
 	float Yaw =TempCameraRotation.Yaw;
-
+	
 	if (Yaw <= -18.f && Yaw >= -CameraMaxAngle)
 	{
 		// 왼쪽 비춤

@@ -68,5 +68,8 @@ private:
 	// Player�� Bed�� ���� �ִ��� üũ
 	bool IsPlayerLookingAtBedAndFlashOn();
 
+	UPROPERTY(EditAnywhere)
+	class USoundBase* JumpScareFreddySFX;
 
+	void JumpScareFreddySound();
 };

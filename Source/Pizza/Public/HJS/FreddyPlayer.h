@@ -252,8 +252,11 @@ private:
 	UPROPERTY(EditAnywhere)
 	USceneComponent* RightCameraClosePoint;
 
+	FVector DoorLocation;
+
 	UPROPERTY(EditAnywhere)
-	USceneComponent* CenterDoorClosePoint;
-	UPROPERTY(EditAnywhere)
-	USceneComponent* CenterDoorOpenPoint;
+	float DoorMovePoint = -180.f;
+	float DoorOriginPoint = 0.f;
+	// 문 닫고 열때 적용시키는 함수
+	void DoorOpenAndClose(float DeltaTime);
 };

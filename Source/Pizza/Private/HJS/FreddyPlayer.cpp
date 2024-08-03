@@ -57,6 +57,12 @@ AFreddyPlayer::AFreddyPlayer()
 
 	CenterBackMovePoint=CreateDefaultSubobject<USceneComponent>(TEXT("CenterBackMovePoint"));
 	CenterBackMovePoint->SetupAttachment(RootComponent);
+
+	LeftCameraClosePoint=CreateDefaultSubobject<USceneComponent>(TEXT("LeftCameraClosePoint"));
+	LeftCameraClosePoint->SetupAttachment(RootComponent);
+	RightCameraClosePoint=CreateDefaultSubobject<USceneComponent>(TEXT("RightCameraClosePoint"));
+	RightCameraClosePoint->SetupAttachment(RootComponent);
+
 }
 
 // Called when the game starts or when spawned
@@ -80,7 +86,6 @@ void AFreddyPlayer::BeginPlay()
 		{
 			SubSystem->AddMappingContext(PlayerInputContext, 0);
 		}
-		
 	}
 	
 	Splines.SetNum(3);
@@ -148,7 +153,7 @@ void AFreddyPlayer::SetUp()
 
 void AFreddyPlayer::SetDown()
 {	
-	if(bCompleteOpenOrClose)
+	if(bCompleteOpenOrClose || bClose == true)
 	{
 		return;
 	}
@@ -231,7 +236,10 @@ void AFreddyPlayer::OffFlash()
 
 void AFreddyPlayer::CloseDoor()
 {
-
+	if ( bMoving )
+	{
+		return;
+	}
 	// 아직 무브중이라면 return
 	if ( bCloseDoor == true || bOpenDoor == true)
 	{
@@ -257,16 +265,20 @@ void AFreddyPlayer::CloseDoor()
 	// 목표 위치 및 트리거를 ON 시키는 일 -> 여기서
 	DoorIndex = static_cast<int32>(LookAtState);
 	DoorRotation = Doors[DoorIndex]->GetActorRotation();
+	DoorLocation = Doors[DoorIndex]->GetActorLocation();
 	switch ( LookAtState )
 	{
 		case LookAt::Left:
 		CameraOffset=LeftCameraClosePoint->GetRelativeLocation();
+		DoorRotation.Yaw = LeftDoorClosePoint;
 		break;
 		case LookAt::Right:
 		CameraOffset=RightCameraClosePoint->GetRelativeLocation();
+		DoorRotation.Yaw = RightDoorClosePoint;
 		break;
 		case LookAt::Center:
 		CameraOffset=SpringArmComp->GetRelativeLocation(); 
+		DoorLocation.X = DoorMovePoint;
 	}
 	bCompleteOpenOrClose = true;
 
@@ -274,6 +286,10 @@ void AFreddyPlayer::CloseDoor()
 
 void AFreddyPlayer::OpenDoor()
 {
+	if ( bMoving )
+	{
+		return;
+	}
 	if ( bCloseDoor == true || bOpenDoor == true )
 	{
 		return;
@@ -286,18 +302,22 @@ void AFreddyPlayer::OpenDoor()
 	// 문 열기 변수 변화
 	bClose= false;
 
-	DoorRotation=FRotator(0.f);
 	DoorIndex=static_cast<int32>(LookAtState);
+	DoorRotation=Doors[DoorIndex]->GetActorRotation();
+	DoorLocation=Doors[DoorIndex]->GetActorLocation();
 	switch ( LookAtState )
 	{
 	case LookAt::Left:
 		CameraOffset=LeftDoorMovePoint->GetRelativeLocation();
+		DoorRotation.Yaw=LeftDoorOpenPoint;
 		break;
 	case LookAt::Right:
 		CameraOffset=RightDoorMovePoint->GetRelativeLocation();
+		DoorRotation.Yaw=RightDoorOpenPoint;
 		break;
 	case LookAt::Center:
 		CameraOffset=SpringArmComp->GetRelativeLocation();
+		DoorLocation.X=DoorOriginPoint;
 	}
 	bCompleteOpenOrClose=true;
 }
@@ -314,6 +334,7 @@ void AFreddyPlayer::Tick(float DeltaTime)
 	UpdateHeadMovement(DeltaTime);
 	DoorRotAndCameraMove(DeltaTime);
 	GetCameraTransform();
+	DoorOpenAndClose(DeltaTime);
 }
 
 // Called to bind functionality to input
@@ -464,8 +485,18 @@ void AFreddyPlayer::UpdateFlashlight(float DeltaTime)
 {
 	FRotator DesiredRotation = FlashlightComp->GetRelativeRotation();
 	FRotator TempCameraRotation = SpringArmComp->GetRelativeRotation();
+	
+	if ( LookAtState == AFreddyPlayer::LookAt::Main )
+	{
+		FlashlightComp->SetHiddenInGame(false);
+	}
+	else
+	{
+		FlashlightComp->SetHiddenInGame(true);
+	}
+	
 	float Yaw =TempCameraRotation.Yaw;
-
+	
 	if (Yaw <= -18.f && Yaw >= -CameraMaxAngle)
 	{
 		// 왼쪽 비춤
@@ -698,4 +729,57 @@ void AFreddyPlayer::SetBackDoor(int32 BackNum)
 		CameraOffset = OriginCameraVector;
 		CameraRotation = OriginCameraRotate;
 	}
+}
+
+void AFreddyPlayer::DoorOpenAndClose(float DeltaTime)
+{
+
+	if ( bCompleteOpenOrClose == false || DoorIndex == -1 )
+	{
+		return;
+	}
+	float DoorRotateSpeed=25.f;
+	float CameraRotateSpeed=18.f;
+	float CameraOffsetSpeed=220.f;
+	float DoorOffsetSpeed=220.f;
+	DoorRotateSpeed*=CloseBoost;
+	CameraRotateSpeed*=CloseBoost;
+	CameraOffsetSpeed*=CloseBoost;
+	DoorOffsetSpeed*=CloseBoost;
+	ADoor* Door=nullptr;
+	if ( DoorIndex < 3 )
+	{
+		Door=Doors[DoorIndex];
+	}
+
+
+	if ( Door )
+	{
+		FRotator NewRotation=FMath::RInterpConstantTo(Door->GetActorRotation(), DoorRotation, DeltaTime, DoorRotateSpeed);
+		Door->SetActorRotation(NewRotation);
+		FVector NewDoorOffset=FMath::VInterpConstantTo(Door->GetActorLocation(), DoorLocation, DeltaTime, DoorOffsetSpeed);
+		Door->SetActorLocation(NewDoorOffset);
+		UE_LOG(LogTemp,Warning,TEXT("%s"), *Door->GetActorRotation().ToString());
+		FVector NewCameraOffset=FMath::VInterpConstantTo(SpringArmComp->GetRelativeLocation(), CameraOffset, DeltaTime, CameraOffsetSpeed);
+		SpringArmComp->SetRelativeLocation(NewCameraOffset);
+
+		// 목표 위치와 회전각에 도달했는지 확인
+//
+		if ( NewCameraOffset.Equals(CameraOffset, 0.1f) )
+		{	
+			if ( DoorIndex == 1 ) {
+				if ( NewDoorOffset.Equals(DoorLocation, 0.1f) ) {
+					bCompleteOpenOrClose=false;
+					DoorIndex=-1;
+				}
+			}else{
+				if ( NewRotation.Yaw == Door->GetActorRotation().Yaw) {
+					Door->SetActorRotation(DoorRotation);
+					bCompleteOpenOrClose=false;
+					DoorIndex=-1;
+				}
+			}
+		}
+	}
+
 }

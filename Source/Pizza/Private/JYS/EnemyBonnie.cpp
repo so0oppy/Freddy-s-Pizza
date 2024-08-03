@@ -4,6 +4,8 @@
 #include "JYS/EnemyBonnie.h"
 #include "HJS/FreddyPlayer.h"
 #include "EngineUtils.h"
+#include "Sound/SoundBase.h"
+#include "Kismet/GameplayStatics.h"
 
 // Sets default values
 AEnemyBonnie::AEnemyBonnie()
@@ -27,6 +29,27 @@ AEnemyBonnie::AEnemyBonnie()
 	MoveSpeed = 500.0f;
 	// 이동 중 여부 초기화
 	bIsMovingToRoom3 = false;
+	
+	// JumpScare Sound
+	ConstructorHelpers::FObjectFinder<USoundBase> tempSound(TEXT("/Script/Engine.SoundWave'/Game/SFX/FNAFSFX01/Scream2.Scream2'"));
+		if (tempSound.Succeeded()) 
+		{
+			JumpScareSFX = tempSound.Object;
+		}
+	
+	// 발자국 소리
+	ConstructorHelpers::FObjectFinder<USoundBase> tempSound(TEXT("/Script/Engine.SoundWave'/Game/SFX/FNAFSFX02/deepfootsteps1.deepfootsteps1'"));
+	if (tempSound.Succeeded()) 
+	{
+		FootStepsSFX = tempSound.Object;
+	}	
+	
+	// 숨소리
+	ConstructorHelpers::FObjectFinder<USoundBase> tempSound(TEXT("/Script/Engine.SoundWave'/Game/SFX/FNAFSFX02/animatronicbreath.animatronicbreath'"));
+	if (tempSound.Succeeded())
+	{
+		BreathSFX = tempSound.Object;
+	}
 }
 
 // Called when the game starts or when spawned
@@ -115,6 +138,9 @@ void AEnemyBonnie::TickRoom0(const float& DeltaTime)
 	if (ShouldMoveToRoom3())
 	{
 		JumpScareBonnie();
+
+		JumpScareSound();
+		
 	}
 }
 
@@ -144,11 +170,15 @@ void AEnemyBonnie::AttemptMove()
 		{
 			// Room0은 Room1으로만 이동할 수 있다
 			case EBonnieState::Room0:
+				// 숨소리
+				BreathSound();
 				NewState = EBonnieState::Room1;
 				break;
 			// Room1은 Room0, Room2, Room3로 이동할 수 있다
 			case EBonnieState::Room1:
 			{
+				// 발자국 소리 (1번방에 있을때)
+				FootStepsSound();
 				int32 MoveChoice = FMath::RandRange(0, 2);
 				switch (MoveChoice)
 				{
@@ -206,4 +236,19 @@ bool AEnemyBonnie::CloseDoorRoom0ToRoom2()
 		return Player->GetrCloseDoor() && Player->GetLookAtState() == AFreddyPlayer::LookAt::Left && State == EBonnieState::Room0;
 	}
 	return false;
+}
+
+void AEnemyBonnie::JumpScareSound()
+{
+	UGameplayStatics::PlaySound2D(GetWorld(), JumpScareSFX);
+}
+
+void AEnemyBonnie::FootStepsSound()
+{
+	UGameplayStatics::PlaySound2D(GetWorld(), FootStepsSFX);
+}
+
+void AEnemyBonnie::BreathSound()
+{
+	UGameplayStatics::PlaySound2D(GetWorld(), BreathSFX);
 }

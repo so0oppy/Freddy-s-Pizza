@@ -4,6 +4,8 @@
 #include "JYS/EnemyFreddy.h"
 #include "HJS/FreddyPlayer.h"
 #include "Components/BoxComponent.h"
+#include "Sound/SoundBase.h"
+#include "Kismet/GameplayStatics.h"
 
 // Sets default values
 AEnemyFreddy::AEnemyFreddy()
@@ -29,6 +31,14 @@ AEnemyFreddy::AEnemyFreddy()
 	FreddyMesh2 = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("FreddyMesh2"));
 	FreddyMesh2->SetupAttachment(Freddy2);
 	FreddyMesh2->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	// JumpScare Sound
+	ConstructorHelpers::FObjectFinder<USoundBase> tempSound(TEXT("/Script/Engine.SoundWave'/Game/SFX/FNAFSFX01/Scream3.Scream3'"));
+	if (tempSound.Succeeded()) 
+	{
+		JumpScareFreddySFX = tempSound.Object;
+	}
+
 }
 
 // Called when the game starts or when spawned
@@ -137,6 +147,11 @@ bool AEnemyFreddy::IsPlayerLookingAtBedAndFlashOn()
 		return Player->GetLookAtState() == AFreddyPlayer::LookAt::Bed && Player->GetFlash();
 	}
 	return false;
+}
+
+void AEnemyFreddy::JumpScareFreddySound()
+{
+	UGameplayStatics::PlaySound2D(GetWorld(), JumpScareFreddySFX);
 }
 
 void AEnemyFreddy::JumpScareFreddy()

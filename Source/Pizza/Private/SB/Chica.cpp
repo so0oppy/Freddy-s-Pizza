@@ -175,6 +175,7 @@ void AChica::Idle(float DeltaTime)
 							int32 RandomIndex = FMath::RandRange(0, RoomTags.Num() - 1);
 
 							SetActorLocation(TagArr[RoomTags[RandomIndex]]);
+							RoomNum = RoomTags[RandomIndex];
 
 							StopBreathSound();
 
@@ -209,19 +210,20 @@ void AChica::Move() // 손전등 켜고 있으면 1,3,4로만 이동
 	UE_LOG(LogTemp, Warning, TEXT("Chica Move()"));
 	FVector CurrentLocation = this->GetActorLocation();
 	// 치카 위치가 room number 몇 인지
-	for(int32 i=1; i<TagArr.Num(); ++i)
-	{
-		if(CurrentLocation.Equals(TagArr[i], 1.0f))
-		{	
-			RoomNum = i;
-			break;
-		}
-	}
+	//for(int32 i=1; i<TagArr.Num(); ++i)
+	//{
+	//	if(CurrentLocation.Equals(TagArr[i], 1.0f))
+	//	{	
+	//		RoomNum = i;
+	//		break;
+	//	}
+	//}
 
 	// room1 || room4 -> room3 가능
 	if (RoomNum == 1 || RoomNum == 4)
 	{
 		SetActorLocation(TagArr[3]);
+		RoomNum = 3;
 	}
 	// room3 -> room1 || room4 || room6 가능
 	else if (RoomNum == 3)
@@ -230,7 +232,9 @@ void AChica::Move() // 손전등 켜고 있으면 1,3,4로만 이동
 		int32 RandomIndex = FMath::RandRange(0, RoomTags.Num() - 1);
 
 		//SetActorLocation(TagArr[RoomTags[RandomIndex]] );
+		// RoomNum = RoomTags[RandomIndex];
 		SetActorLocation(TagArr[6]);
+		RoomNum = 6; // 나중에 위 랜덤값으로 수정
 	}
 	// room6 -> room3 || room8 가능
 	else if (RoomNum == 6)
@@ -240,7 +244,8 @@ void AChica::Move() // 손전등 켜고 있으면 1,3,4로만 이동
 
 		SetActorLocation(TagArr[RoomTags[RandomIndex]]);
 		// SetActorLocation(TagArr[8]);
-		RoomNum = 8;
+		// RoomNum = 8;
+		RoomNum = RoomTags[RandomIndex];
 
 		if(bFSound == false )
 		{
@@ -263,7 +268,9 @@ void AChica::Move() // 손전등 켜고 있으면 1,3,4로만 이동
 			}
 			else
 			{
-				MoveToTaggedLocation(3);
+				MoveToTaggedLocation(1);
+				RoomNum = 1;
+
 			}
 		}
 	}
@@ -377,9 +384,9 @@ void AChica::MoveToTaggedLocation(int32 room)
 		}
 	}
 
-	if (room == 3)
+	if (room == 1)
 	{
-		RoomNum = 3;
+		RoomNum = 1;
 		GetWorld()->GetTimerManager().SetTimer(Handle, this, &AChica::CanMove, MovableTime, false);
 	}
 }

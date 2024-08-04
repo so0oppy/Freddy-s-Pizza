@@ -314,15 +314,15 @@ void AFoxy::Move()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Chica Move()"));
 	FVector CurrentLocation = this->GetActorLocation();
-	// 치카 위치가 room number 몇 인지
-	for (int32 i = 1; i < TagArr.Num(); ++i)
-	{
-		if (CurrentLocation.Equals(TagArr[i], 1.0f))
-		{
-			RoomNum = i;
-			break;
-		}
-	}
+	// 폭시 위치가 room number 몇 인지
+	//for (int32 i = 1; i < TagArr.Num(); ++i)
+	//{
+	//	if (CurrentLocation.Equals(TagArr[i], 1.0f))
+	//	{
+	//		RoomNum = i;
+	//		break;
+	//	}
+	//}
 
 	// room1 -> room2, room3, room4, room5, room6 가능
 	if (RoomNum == 1)
@@ -332,6 +332,7 @@ void AFoxy::Move()
 
 		//SetActorLocation(TagArr[RoomTags[RandomIndex]] );
 		SetActorLocation(TagArr[5]); // 테스트용
+		RoomNum = 5;
 	}
 	// room2 -> room1, room3, room5 가능
 	else if (RoomNum == 2)
@@ -341,6 +342,7 @@ void AFoxy::Move()
 
 		//SetActorLocation(TagArr[RoomTags[RandomIndex]] );
 		SetActorLocation(TagArr[5]); // 테스트용
+		RoomNum = 5;
 	}
 	// room3 -> room1, room2, room4, room6 가능
 	else if (RoomNum == 3)
@@ -350,6 +352,7 @@ void AFoxy::Move()
 
 		//SetActorLocation(TagArr[RoomTags[RandomIndex]] );
 		SetActorLocation(TagArr[6]); // 테스트용
+		RoomNum = 6;
 	}
 	// room4 -> room1, room3, room6 가능
 	else if (RoomNum == 4)
@@ -359,6 +362,7 @@ void AFoxy::Move()
 
 		//SetActorLocation(TagArr[RoomTags[RandomIndex]] );
 		SetActorLocation(TagArr[6]); // 테스트용
+		RoomNum = 6;
 	}
 	
 	CurrentState = ELocationState::IDLE;
@@ -372,6 +376,9 @@ void AFoxy::Attack()
 	AFreddyPlayer* FreddyPlayer = Cast<AFreddyPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
 	FTransform JmpScare = FreddyPlayer->GetCameraTransform();
 	JmpScare.SetLocation(JmpScare.GetLocation() - FVector(0 , 100 , 60)); // 위치 조정
+	FRotator rot = JmpScare.GetRotation().Rotator();
+	rot.Yaw += 90.0;
+	JmpScare.SetRotation(rot.Quaternion());
 	SetActorTransform(JmpScare); // 카메라 위치로 이동 (점프스케어)
 
 	if ( bJSound == false )

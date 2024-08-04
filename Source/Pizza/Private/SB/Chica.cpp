@@ -273,7 +273,6 @@ void AChica::Move() // 손전등 켜고 있으면 1,3,4로만 이동
 
 void AChica::Attack()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Attack !"));
 	// 점프스퀘어 anim 재생
 
 	// 테스트용 -> 카메라 앞으로 SetActorLocation
@@ -287,6 +286,8 @@ void AChica::Attack()
 		// 점프스케어 소리 재생
 		UGameplayStatics::PlaySound2D(this , JumpScareSFX);
 		bJSound = true;
+
+		UE_LOG(LogTemp , Warning , TEXT("Chica Attack !"));
 	}
 	// 게임 오버
 	
@@ -294,7 +295,6 @@ void AChica::Attack()
 
 void AChica::Cupcake()
 {
-	UE_LOG(LogTemp, Warning, TEXT("CupCake Attack !"));
 	// 컵케이크 점프스퀘어 anim 재생
 
 	// 테스트용 -> 카메라 앞으로 SetActorLocation
@@ -315,6 +315,8 @@ void AChica::Cupcake()
 			// 점프스케어 소리 재생
 			UGameplayStatics::PlaySound2D(this , JumpScareSFX);
 			bJSound = true;
+
+			UE_LOG(LogTemp , Warning , TEXT("CupCake Attack !"));
 		}
 	}
 

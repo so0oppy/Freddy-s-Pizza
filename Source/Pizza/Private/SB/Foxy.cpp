@@ -366,7 +366,6 @@ void AFoxy::Move()
 
 void AFoxy::Attack()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Attack !"));
 	// 점프스퀘어 anim 재생
 
 	// 테스트용 -> 카메라 앞으로 SetActorLocation
@@ -380,6 +379,8 @@ void AFoxy::Attack()
 		// 점프스케어 소리 재생
 		UGameplayStatics::PlaySound2D(this , JumpScareSFX);
 		bJSound = true;
+
+		UE_LOG(LogTemp , Warning , TEXT("Foxy Attack !"));
 	}
 
 	// 게임 오버

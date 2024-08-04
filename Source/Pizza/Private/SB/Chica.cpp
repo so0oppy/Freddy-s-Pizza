@@ -1,4 +1,4 @@
-#include "SB/Chica.h"
+ï»¿#include "SB/Chica.h"
 #include "SB/LocationState.h"
 #include "SB/AILevel.h"
 #include "Kismet/GameplayStatics.h"
@@ -13,14 +13,23 @@
 #include "Components/StaticMeshComponent.h"
 #include "Sound/SoundBase.h"
 #include "SB/CupCake.h"
+#include "Components/AudioComponent.h"
 
 // Sets default values
 AChica::AChica()
 {
- 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+
 	PrimaryActorTick.bCanEverTick = true;
 
 	AILevelComp = CreateDefaultSubobject<UAILevel>(TEXT("AILevelComp"));
+
+	FootStepsAudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("FootStepsAudioComponent"));
+	FootStepsAudioComponent->SetupAttachment(RootComponent);
+	FootStepsAudioComponent->bAutoActivate = false; // soundê°€ ë°”ë¡œ ì¬ìƒë˜ì§€ ì•Šê²Œ
+
+	BreathAudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("BreathAudioComponent"));
+	BreathAudioComponent->SetupAttachment(RootComponent);
+	BreathAudioComponent->bAutoActivate = false; // soundê°€ ë°”ë¡œ ì¬ìƒë˜ì§€ ì•Šê²Œ
 }
 
 // Called when the game starts or when spawned
@@ -56,12 +65,12 @@ void AChica::EndPlay(const EEndPlayReason::Type EndPlayReason)
 void AChica::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	// °è¼Ó ·¹º§ È®ÀÎ (AlLevel ¿¡ ÀÖ´Â SetLevel())
+	// ê³„ì† ë ˆë²¨ í™•ì¸ (AlLevel ì— ìˆëŠ” SetLevel())
 	AILevelComp->SetLevel(this);
-	// °è¼Ó State È®ÀÎ
+	// ê³„ì† State í™•ì¸
 	UpdateState(DeltaTime);
 
-	// °è¼Ó ¼ÕÀüµîOn/Off, ¹® Open/Close È®ÀÎ
+	// ê³„ì† ì†ì „ë“±On/Off, ë¬¸ Open/Close í™•ì¸
 	FlashOn();
 	DoorOpen();
 }
@@ -115,48 +124,50 @@ void AChica::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 void AChica::Idle(float DeltaTime)
 {
-	// ÇöÀç À§Ä¡ == room1 || room3 || room4 || room6 || room8 °¡´É
+	// í˜„ì¬ ìœ„ì¹˜ == room1 || room3 || room4 || room6 || room8 ê°€ëŠ¥
 	
-	// 4.98ÃÊ¸¶´Ù AILevel¿¡ ÀÖ´Â RandomMove() È£Ãâ && Move·Î »óÅÂÀüÀÌ
+	// 4.98ì´ˆë§ˆë‹¤ AILevelì— ìˆëŠ” RandomMove() í˜¸ì¶œ && Moveë¡œ ìƒíƒœì „ì´
 	CurrentTime += DeltaTime;
 
-	if (CurrentTime > MovableTime) // ÀÌµ¿ °¡´ÉÇÑ ½Ã°£ÀÌ µÇ¸é
+	if (CurrentTime > MovableTime) // ì´ë™ ê°€ëŠ¥í•œ ì‹œê°„ì´ ë˜ë©´
 	{
-		// RandomMove°¡ trueÀÏ ¶§¸¸ move
+		// RandomMoveê°€ trueì¼ ë•Œë§Œ move
 		if(AILevelComp->RandomMove(this, DeltaTime) == true)
 		{
 
-			if(RoomNum != 8) // room8ÀÌ ¾Æ´Ò ¶§´Â Move()
+			if(RoomNum != 8) // room8ì´ ì•„ë‹ ë•ŒëŠ” Move()
 			{
 				CurrentState = ELocationState::MOVE;
 			}
 
-			else if (RoomNum == 8)  //room8ÀÏ ¶§ 'attack, cupcake, ÀÌµ¿' ¼¼°¡Áö Á¶°ÇÀÌ¹Ç·Î µû·Î ºĞ·ù
+			else if (RoomNum == 8)  //room8ì¼ ë•Œ 'attack, cupcake, ì´ë™' ì„¸ê°€ì§€ ì¡°ê±´ì´ë¯€ë¡œ ë”°ë¡œ ë¶„ë¥˜
 			{
-				// ¼û¼Ò¸®
-				UGameplayStatics::PlaySound2D(this, BreathSFX);
 
 				AFreddyPlayer* FreddyPlayer = Cast<AFreddyPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
 				AFreddyPlayer::LookAt LookState;
 
-				if (FreddyPlayer) // ÇÃ·¹ÀÌ¾î¿Í ¿¬µ¿µÉ ºÎºĞ
+				if (FreddyPlayer) // í”Œë ˆì´ì–´ì™€ ì—°ë™ë  ë¶€ë¶„
 				{
 					LookState = FreddyPlayer->GetLookAtState();
 
-					//¡æ ÇÃ·¹ÀÌ¾î À§Ä¡ == Door && ¼ÕÀüµî ON : Á¡ÇÁ½ºÄù¾î(°ø°İ) 
+					//â†’ í”Œë ˆì´ì–´ ìœ„ì¹˜ == Door && ì†ì „ë“± ON : ì í”„ìŠ¤í€˜ì–´(ê³µê²©) 
 					if ((LookState == AFreddyPlayer::LookAt::Right && bIsDoorClose == false) && bIsFlashlightOn == true)
-					{
-						CurrentTime += DeltaTime;
-						if (CurrentTime > 0)
-						{
-							CurrentState = ELocationState::ATTACK;
-							CurrentTime = 0.f;
-						}
+					{							
+						CurrentState = ELocationState::ATTACK;
+						
 					}
 
-					//¡æ ÇÃ·¹ÀÌ¾î À§Ä¡ == Door && bCLOSE == true (ÀÏÁ¤ ½Ã°£µ¿¾È CLOSE ¢¡ È®·üÀûÀ¸·Î 1,3,4 Áß ÀÌµ¿)
+					//â†’ í”Œë ˆì´ì–´ ìœ„ì¹˜ == Door && bCLOSE == true (ì¼ì • ì‹œê°„ë™ì•ˆ CLOSE â‡’ í™•ë¥ ì ìœ¼ë¡œ 1,3,4 ì¤‘ ì´ë™)
 					else if (LookState == AFreddyPlayer::LookAt::Right || bIsDoorClose == true)
 					{
+						if ( bBSound == false )
+						{
+							// ìˆ¨ì†Œë¦¬ ì¬ìƒ
+							PlayBreathSound();
+							bBSound = true;
+						}
+						else StopBreathSound();
+
 						CurrentTime += DeltaTime;
 						if (CurrentTime > MovableTime)
 						{
@@ -165,13 +176,15 @@ void AChica::Idle(float DeltaTime)
 
 							SetActorLocation(TagArr[RoomTags[RandomIndex]]);
 
+							StopBreathSound();
+
 							CurrentTime = 0.f;
 
 							CurrentState = ELocationState::MOVE;
 						}
 					}
 				}
-				//¡æ ÇÃ·¹ÀÌ¾î À§Ä¡¡ÁDoor ÀÏ ¶§, ÀÏÁ¤ ½Ã°£ ÈÄ¿¡ ÄÅÄÉÀÌÅ© Á¡ÇÁ½ºÄù¾î(°ø°İ) ¡æ GAME OVER
+				//â†’ í”Œë ˆì´ì–´ ìœ„ì¹˜â‰ Door ì¼ ë•Œ, ì¼ì • ì‹œê°„ í›„ì— ì»µì¼€ì´í¬ ì í”„ìŠ¤í€˜ì–´(ê³µê²©) â†’ GAME OVER
 				if (LookState == AFreddyPlayer::LookAt::Main)
 				{
 					CurrentTime += DeltaTime;
@@ -191,11 +204,11 @@ void AChica::Idle(float DeltaTime)
 	}
 }
 
-void AChica::Move() // ¼ÕÀüµî ÄÑ°í ÀÖÀ¸¸é 1,3,4·Î¸¸ ÀÌµ¿
+void AChica::Move() // ì†ì „ë“± ì¼œê³  ìˆìœ¼ë©´ 1,3,4ë¡œë§Œ ì´ë™
 {
 	UE_LOG(LogTemp, Warning, TEXT("Chica Move()"));
 	FVector CurrentLocation = this->GetActorLocation();
-	// Ä¡Ä« À§Ä¡°¡ room number ¸î ÀÎÁö
+	// ì¹˜ì¹´ ìœ„ì¹˜ê°€ room number ëª‡ ì¸ì§€
 	for(int32 i=1; i<TagArr.Num(); ++i)
 	{
 		if(CurrentLocation.Equals(TagArr[i], 1.0f))
@@ -205,12 +218,12 @@ void AChica::Move() // ¼ÕÀüµî ÄÑ°í ÀÖÀ¸¸é 1,3,4·Î¸¸ ÀÌµ¿
 		}
 	}
 
-	// room1 || room4 -> room3 °¡´É
+	// room1 || room4 -> room3 ê°€ëŠ¥
 	if (RoomNum == 1 || RoomNum == 4)
 	{
 		SetActorLocation(TagArr[3]);
 	}
-	// room3 -> room1 || room4 || room6 °¡´É
+	// room3 -> room1 || room4 || room6 ê°€ëŠ¥
 	else if (RoomNum == 3)
 	{
 		TArray<int32> RoomTags = { 1, 4, 6 };
@@ -219,24 +232,29 @@ void AChica::Move() // ¼ÕÀüµî ÄÑ°í ÀÖÀ¸¸é 1,3,4·Î¸¸ ÀÌµ¿
 		//SetActorLocation(TagArr[RoomTags[RandomIndex]] );
 		SetActorLocation(TagArr[6]);
 	}
-	// room6 -> room3 || room8 °¡´É
+	// room6 -> room3 || room8 ê°€ëŠ¥
 	else if (RoomNum == 6)
 	{
 		TArray<int32> RoomTags = { 3, 8 };
 		int32 RandomIndex = FMath::RandRange(0, RoomTags.Num() - 1);
 
-		//SetActorLocation(TagArr[RoomTags[RandomIndex]]);
-		SetActorLocation(TagArr[8]);
+		SetActorLocation(TagArr[RoomTags[RandomIndex]]);
+		// SetActorLocation(TagArr[8]);
 		RoomNum = 8;
 
-		// ¹ß¼Ò¸®
-		UGameplayStatics::PlaySound2D(this, FootStepsSFX);
+		if(bFSound == false )
+		{
+			// ë°œì†Œë¦¬
+			PlayFootStepsSound();
+			bFSound = true;
+		}
+		else StopFootStepsSound();
 
-		//	¸¸¾à, ¼ÕÀüµî ON -> room1·Î ÀÌµ¿ (¼ø°£ÀÌµ¿X)
+		//	ë§Œì•½, ì†ì „ë“± ON -> room1ë¡œ ì´ë™ (ìˆœê°„ì´ë™X)
 		if(bIsFlashlightOn == true) 
 		{
-			SetActorLocation(TagArr[6]);
-			// ¼ÕÀüµî ON && Door: Close -> room8·Î ÀÌµ¿
+			StopFootStepsSound(); // ë°œì†Œë¦¬ ë©ˆì¶¤
+			// ì†ì „ë“± ON && Door: Close -> room8ë¡œ ì´ë™
 			if (bIsDoorClose == true)
 			{
 				SetActorLocation(TagArr[8]);
@@ -256,44 +274,56 @@ void AChica::Move() // ¼ÕÀüµî ÄÑ°í ÀÖÀ¸¸é 1,3,4·Î¸¸ ÀÌµ¿
 void AChica::Attack()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Attack !"));
-	// Á¡ÇÁ½ºÄù¾î anim Àç»ı
+	// ì í”„ìŠ¤í€˜ì–´ anim ì¬ìƒ
 
-	// Å×½ºÆ®¿ë -> Ä«¸Ş¶ó ¾ÕÀ¸·Î SetActorLocation
+	// í…ŒìŠ¤íŠ¸ìš© -> ì¹´ë©”ë¼ ì•ìœ¼ë¡œ SetActorLocation
 	AFreddyPlayer* FreddyPlayer = Cast<AFreddyPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
 	FTransform JmpScare = FreddyPlayer->GetCameraTransform();
-	SetActorTransform(JmpScare); // Ä«¸Ş¶ó À§Ä¡·Î ÀÌµ¿ (Á¡ÇÁ½ºÄÉ¾î)
+	JmpScare.SetLocation(JmpScare.GetLocation() - FVector(0 , 100 , 60)); // ìœ„ì¹˜ ì¡°ì •
+	SetActorTransform(JmpScare); // ì¹´ë©”ë¼ ìœ„ì¹˜ë¡œ ì´ë™ (ì í”„ìŠ¤ì¼€ì–´)
 
-	// °ÔÀÓ ¿À¹ö
+	if ( bJSound == false )
+	{
+		// ì í”„ìŠ¤ì¼€ì–´ ì†Œë¦¬ ì¬ìƒ
+		UGameplayStatics::PlaySound2D(this , JumpScareSFX);
+		bJSound = true;
+	}
+	// ê²Œì„ ì˜¤ë²„
 	
 }
 
 void AChica::Cupcake()
 {
 	UE_LOG(LogTemp, Warning, TEXT("CupCake Attack !"));
-	// ÄÅÄÉÀÌÅ© Á¡ÇÁ½ºÄù¾î anim Àç»ı
+	// ì»µì¼€ì´í¬ ì í”„ìŠ¤í€˜ì–´ anim ì¬ìƒ
 
-	// Å×½ºÆ®¿ë -> Ä«¸Ş¶ó ¾ÕÀ¸·Î SetActorLocation
+	// í…ŒìŠ¤íŠ¸ìš© -> ì¹´ë©”ë¼ ì•ìœ¼ë¡œ SetActorLocation
 	AFreddyPlayer* FreddyPlayer = Cast<AFreddyPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
 	AActor* CupCakeInstance = UGameplayStatics::GetActorOfClass(GetWorld(), ACupCake::StaticClass());
 	ACupCake* CupCake = Cast<ACupCake>(CupCakeInstance);
 	FTransform JmpScare = FreddyPlayer->GetCameraTransform();
+	JmpScare.SetLocation(JmpScare.GetLocation() - FVector(0 , 300 , 0)); // ìœ„ì¹˜ ì¡°ì •
 
 
 	if(CupCake)
 	{
-		// ÄÅÄÉÀÌÅ© ÀÓ½Ã Å¥ºê·Î
-		CupCake->SetActorTransform(JmpScare); // Ä«¸Ş¶ó À§Ä¡·Î ÀÌµ¿ (Á¡ÇÁ½ºÄÉ¾î)
+		// ì»µì¼€ì´í¬ ì„ì‹œ íë¸Œë¡œ
+		CupCake->SetActorTransform(JmpScare); // ì¹´ë©”ë¼ ìœ„ì¹˜ë¡œ ì´ë™ (ì í”„ìŠ¤ì¼€ì–´)
 
-		// Á¡ÇÁ½ºÄÉ¾î ¼Ò¸® Àç»ı
-		UGameplayStatics::PlaySound2D(this, JumpScareSFX);
+		if(bJSound == false)
+		{
+			// ì í”„ìŠ¤ì¼€ì–´ ì†Œë¦¬ ì¬ìƒ
+			UGameplayStatics::PlaySound2D(this , JumpScareSFX);
+			bJSound = true;
+		}
 	}
 
-	// °ÔÀÓ ¿À¹ö
+	// ê²Œì„ ì˜¤ë²„
 }
 
 FVector AChica::FindActorsWithTag(FName Tag)
 {
-	// °¢ ¹æÀÇ À§Ä¡ Á¤º¸¸¦ ÅÂ±×·Î ¹Ş¾Æ¿Í¼­ ¹è¿­·Î ÀúÀå
+	// ê° ë°©ì˜ ìœ„ì¹˜ ì •ë³´ë¥¼ íƒœê·¸ë¡œ ë°›ì•„ì™€ì„œ ë°°ì—´ë¡œ ì €ì¥
 	TArray<AActor*> FoundActors;
 	UGameplayStatics::GetAllActorsWithTag(GetWorld(), Tag, FoundActors);
 
@@ -303,10 +333,10 @@ FVector AChica::FindActorsWithTag(FName Tag)
 		FVector TargetLocation = TargetActor->GetActorLocation();
 
 		return TargetLocation;
-		// ¹è¿­ ÀÎµ¦½º °ª = ¹æ ¹øÈ£
+		// ë°°ì—´ ì¸ë±ìŠ¤ ê°’ = ë°© ë²ˆí˜¸
 	}
 
-	return FVector::ZeroVector; // FoundActors°¡ ºñ¾îÀÖÀ» °æ¿ì, ±âº»°ª ¹İÈ¯
+	return FVector::ZeroVector; // FoundActorsê°€ ë¹„ì–´ìˆì„ ê²½ìš°, ê¸°ë³¸ê°’ ë°˜í™˜
 }
 
 void AChica::MoveToTaggedLocation(int32 room)
@@ -316,8 +346,8 @@ void AChica::MoveToTaggedLocation(int32 room)
 	ACharacter* Character = Cast<ACharacter>(this);
 	if (Character)
 	{ 
-		Character->bUseControllerRotationYaw = false; // Ä³¸¯ÅÍ È¸ÀüÀ» Àá±İ
-		Character->GetCharacterMovement()->bOrientRotationToMovement = false; // ÀÌµ¿ ¹æÇâÀ¸·Î È¸ÀüÇÏÁö ¾ÊÀ½
+		Character->bUseControllerRotationYaw = false; // ìºë¦­í„° íšŒì „ì„ ì ê¸ˆ
+		Character->GetCharacterMovement()->bOrientRotationToMovement = false; // ì´ë™ ë°©í–¥ìœ¼ë¡œ íšŒì „í•˜ì§€ ì•ŠìŒ
 	}
 
 	AAIController* AIController = Cast<AAIController>(GetController());
@@ -325,12 +355,12 @@ void AChica::MoveToTaggedLocation(int32 room)
 	{
 		FAIMoveRequest MoveRequest;
 		MoveRequest.SetGoalLocation(TagArr[room]);
-		MoveRequest.SetAcceptanceRadius(5.0f); // ¸ñÇ¥ À§Ä¡¿¡ µµ´ŞÇÏ´Â ¹üÀ§ ¼³Á¤
+		MoveRequest.SetAcceptanceRadius(5.0f); // ëª©í‘œ ìœ„ì¹˜ì— ë„ë‹¬í•˜ëŠ” ë²”ìœ„ ì„¤ì •
 
 		FNavPathSharedPtr NavPath;
 		EPathFollowingRequestResult::Type MoveResult = AIController->MoveTo(MoveRequest, &NavPath);
 
-		// ÀÌµ¿ ¿äÃ» °á°ú ·Î±× Ãâ·Â
+		// ì´ë™ ìš”ì²­ ê²°ê³¼ ë¡œê·¸ ì¶œë ¥
 		switch (MoveResult)
 		{
 		case EPathFollowingRequestResult::Failed:
@@ -360,7 +390,7 @@ void AChica::CanMove()
 	CurrentState = ELocationState::IDLE;
 }
 
-// ¼ÕÀüµî »óÅÂ °¡Á®¿À´Â ÇÔ¼ö
+// ì†ì „ë“± ìƒíƒœ ê°€ì ¸ì˜¤ëŠ” í•¨ìˆ˜
 void AChica::FlashOn()
 {
 	AFreddyPlayer* FreddyPlayer = Cast<AFreddyPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
@@ -370,7 +400,7 @@ void AChica::FlashOn()
 	}
 }
 
-// ¹® »óÅÂ °¡Á®¿À´Â ÇÔ¼ö
+// ë¬¸ ìƒíƒœ ê°€ì ¸ì˜¤ëŠ” í•¨ìˆ˜
 void AChica::DoorOpen()
 {
 	AFreddyPlayer* FreddyPlayer = Cast<AFreddyPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
@@ -381,3 +411,36 @@ void AChica::DoorOpen()
 	}
 }
 
+void AChica::PlayFootStepsSound()
+{
+	if ( FootStepsSFX && !FootStepsAudioComponent->IsPlaying() )
+	{
+		FootStepsAudioComponent->SetSound(FootStepsSFX);
+		FootStepsAudioComponent->Play();
+	}
+}
+
+void AChica::StopFootStepsSound()
+{
+	if ( FootStepsAudioComponent->IsPlaying() )
+	{
+		FootStepsAudioComponent->Stop();
+	}
+}
+
+void AChica::PlayBreathSound()
+{
+	if ( BreathSFX && !BreathAudioComponent->IsPlaying() )
+	{
+		BreathAudioComponent->SetSound(BreathSFX);
+		BreathAudioComponent->Play();
+	}
+}
+
+void AChica::StopBreathSound()
+{
+	if ( BreathAudioComponent->IsPlaying() )
+	{
+		BreathAudioComponent->Stop();
+	}
+}

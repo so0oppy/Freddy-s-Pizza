@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+ï»¿// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -37,7 +37,7 @@ public:
 	TArray<FVector> TagArr;
 	int32 RoomNum = 1;
 
-	// Çö À§Ä¡ ÅÂ±× È®ÀÎ
+	// í˜„ ìœ„ì¹˜ íƒœê·¸ í™•ì¸
 	// FName GetCurrentLocationTag();
 	
 	void Idle(float DeltaTime);
@@ -49,7 +49,7 @@ private:
 	UPROPERTY(EditDefaultsOnly)
 	ELocationState CurrentState;
 
-	// ¸Å 5.01ÃÊ¸¶´Ù ÀÌµ¿ °¡´É
+	// ë§¤ 5.01ì´ˆë§ˆë‹¤ ì´ë™ ê°€ëŠ¥
 	float CurrentTime = 0.f;
 	float MovableTime = 5.01f;
 
@@ -58,29 +58,43 @@ private:
 	void CanMove();
 	FTimerHandle Handle;
 
-	// ÄÁÆ®·Ñ Å° ÀÔ·Â ÇÔ¼ö -> ¼ÕÀüµî ON/OFF
+	// ì»¨íŠ¸ë¡¤ í‚¤ ì…ë ¥ í•¨ìˆ˜ -> ì†ì „ë“± ON/OFF
 	void FlashOn();
-	// Shift Å° ÀÔ·Â ÇÔ¼ö -> ¹®/¿ÊÀå Open/Close
+	// Shift í‚¤ ì…ë ¥ í•¨ìˆ˜ -> ë¬¸/ì˜·ì¥ Open/Close
 	void DoorOpen();
 	bool bIsFlashlightOn = false;
 	bool bIsDoorClose = false;
 
-	bool bClosetAnim = false; // ¿ÊÀå ¾Ö´Ï¸ŞÀÌ¼Ç ÇÑ ¹ø¸¸ ½ÇÇàµÇ°Ô ÇÏ´Â ÇÃ·¡±×
-	bool bCTtoZero = false; // currentTimeÀÌ ÇÑ ¹ø¸¸ 0ÀÌ µÇ°Ô ÇÏ´Â ÇÃ·¡±×
+	bool bClosetAnim = false; // ì˜·ì¥ ì• ë‹ˆë©”ì´ì…˜ í•œ ë²ˆë§Œ ì‹¤í–‰ë˜ê²Œ í•˜ëŠ” í”Œë˜ê·¸
+	bool bCTtoZero = false; // currentTimeì´ í•œ ë²ˆë§Œ 0ì´ ë˜ê²Œ í•˜ëŠ” í”Œë˜ê·¸
 
-	//bool bIsAtDoor = false; // Å×½ºÆ®¿ë º¯¼ö
+	//bool bIsAtDoor = false; // í…ŒìŠ¤íŠ¸ìš© ë³€ìˆ˜
+	void ShowFoxy(ACharacter* character);
 	void ShowFoxyDoll(AActor* actor, bool bShow);
+	bool bIsFoxy = true; // í­ì‹œì¼ ë•Œ(t), ì¸í˜•ì¼ ë•Œ(f) êµ¬ë¶„
 
-
-	// ¹ß¼Ò¸®
+	// ë°œì†Œë¦¬
 	UPROPERTY(EditDefaultsOnly)
 	class USoundBase* FootStepsSFX;
-	// ¼û¼Ò¸®
+	UPROPERTY()
+    UAudioComponent* FootStepsAudioComponent;
+	// ìˆ¨ì†Œë¦¬
 	UPROPERTY(EditDefaultsOnly)
 	class USoundBase* BreathSFX;
-	// Á¡ÇÁ½ºÄÉ¾î ¼Ò¸®
+	UPROPERTY()
+    UAudioComponent* BreathAudioComponent;
+	// ì í”„ìŠ¤ì¼€ì–´ ì†Œë¦¬
 	UPROPERTY(EditDefaultsOnly)
 	class USoundBase* JumpScareSFX;
+
+	bool bFSound = false; // ë°œì†Œë¦¬ í† ê¸€
+	bool bBSound = false; // ìˆ¨ì†Œë¦¬ í† ê¸€
+	bool bJSound = false; // ì í”„ìŠ¤ì¼€ì–´ ì†Œë¦¬ í† ê¸€
+
+	void PlayFootStepsSound();
+	void StopFootStepsSound();
+	void PlayBreathSound();
+	void StopBreathSound();
 
 	UPROPERTY()
 	class AFreddyPlayer* player;

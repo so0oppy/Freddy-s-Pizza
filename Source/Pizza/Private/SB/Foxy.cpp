@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+ï»¿// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "SB/Foxy.h"
@@ -15,6 +15,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "SB/FoxDoll.h"
+#include "Components/AudioComponent.h"
 
 // Sets default values
 AFoxy::AFoxy()
@@ -22,6 +23,14 @@ AFoxy::AFoxy()
 	PrimaryActorTick.bCanEverTick = true;
 
 	AILevelComp = CreateDefaultSubobject<UAILevel>(TEXT("AILevelComp"));
+
+	FootStepsAudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("FootStepsAudioComponent"));
+	FootStepsAudioComponent->SetupAttachment(RootComponent);
+	FootStepsAudioComponent->bAutoActivate = false; // soundê°€ ë°”ë¡œ ì¬ìƒë˜ì§€ ì•Šê²Œ
+
+	BreathAudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("BreathAudioComponent"));
+	BreathAudioComponent->SetupAttachment(RootComponent);
+	BreathAudioComponent->bAutoActivate = false; // soundê°€ ë°”ë¡œ ì¬ìƒë˜ì§€ ì•Šê²Œ
 }
 
 // Called when the game starts or when spawned
@@ -45,6 +54,9 @@ void AFoxy::BeginPlay()
 
 	UE_LOG(LogTemp, Warning, TEXT("Room array complete"));
 
+	AActor* FoxDollInstance = UGameplayStatics::GetActorOfClass(GetWorld() , AFoxDoll::StaticClass());
+	ShowFoxyDoll(FoxDollInstance, false);
+
 	CurrentState = ELocationState::IDLE;
 }
 
@@ -58,12 +70,12 @@ void AFoxy::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	// °è¼Ó ·¹º§ È®ÀÎ (AlLevel ¿¡ ÀÖ´Â SetLevel())
+	// ê³„ì† ë ˆë²¨ í™•ì¸ (AlLevel ì— ìˆëŠ” SetLevel())
 	AILevelComp->SetLevel(this);
-	// °è¼Ó State È®ÀÎ
+	// ê³„ì† State í™•ì¸
 	UpdateState(DeltaTime);
 
-	// °è¼Ó ¼ÕÀüµîOn/Off, ¹® Open/Close È®ÀÎ
+	// ê³„ì† ì†ì „ë“±On/Off, ë¬¸ Open/Close í™•ì¸
 	FlashOn();
 	DoorOpen();
 }
@@ -114,42 +126,47 @@ void AFoxy::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 void AFoxy::Idle(float DeltaTime)
 {
-	// ÇöÀç À§Ä¡ == room1 || room3 || room4 || room6 || room8 °¡´É
+	// í˜„ì¬ ìœ„ì¹˜ == room1 || room3 || room4 || room6 || room8 ê°€ëŠ¥
 
-	// 4.98ÃÊ¸¶´Ù AILevel¿¡ ÀÖ´Â RandomMove() È£Ãâ && Move·Î »óÅÂÀüÀÌ
+	// 4.98ì´ˆë§ˆë‹¤ AILevelì— ìˆëŠ” RandomMove() í˜¸ì¶œ && Moveë¡œ ìƒíƒœì „ì´
 	CurrentTime += DeltaTime;
 
-	if (CurrentTime > MovableTime) // ÀÌµ¿ °¡´ÉÇÑ ½Ã°£ÀÌ µÇ¸é
+	if (CurrentTime > MovableTime) // ì´ë™ ê°€ëŠ¥í•œ ì‹œê°„ì´ ë˜ë©´
 	{
-		// RandomMove°¡ trueÀÏ ¶§¸¸ move
+		// RandomMoveê°€ trueì¼ ë•Œë§Œ move
 		if (AILevelComp->RandomMove(this, DeltaTime) == true)
 		{
 
-			if (RoomNum != 5 && RoomNum != 6 && RoomNum != 9) // room5, room6ÀÌ ¾Æ´Ò ¶§´Â Move()
+			if (RoomNum != 5 && RoomNum != 6 && RoomNum != 9) // room5, room6ì´ ì•„ë‹ ë•ŒëŠ” Move()
 			{
 				CurrentState = ELocationState::MOVE;
 			}
-			// room5 -> room1 || room9 °¡´É
+			// room5 -> room1 || room9 ê°€ëŠ¥
 			else if (RoomNum == 5)
 			{
 				AFreddyPlayer* FreddyPlayer = Cast<AFreddyPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
 				AFreddyPlayer::LookAt LookState;
 				
-				// ¹ß¼Ò¸®
-				UGameplayStatics::PlaySound2D(this, FootStepsSFX);
+				if ( bBSound == false )
+				{
+					// ìˆ¨ì†Œë¦¬ ì¬ìƒ
+					PlayFootStepsSound();
+					bBSound = true;
+				}
+				else StopFootStepsSound();
 
-				//	¸¸¾à, ¼ÕÀüµî ON -> room1·Î ÀÌµ¿ (¼ø°£ÀÌµ¿X)
+				//	ë§Œì•½, ì†ì „ë“± ON -> room1ë¡œ ì´ë™ (ìˆœê°„ì´ë™X)
 				if (bIsFlashlightOn == true)
 				{
-					SetActorLocation(TagArr[1]);
+					MoveToTaggedLocation(1);
 					RoomNum = 1;
 				}
 
-				if (FreddyPlayer) // ÇÃ·¹ÀÌ¾î¿Í ¿¬µ¿µÉ ºÎºĞ
+				if (FreddyPlayer) // í”Œë ˆì´ì–´ì™€ ì—°ë™ë  ë¶€ë¶„
 				{
 					LookState = FreddyPlayer->GetLookAtState();
 					
-					// (ÇÃ·¹ÀÌ¾î À§Ä¡ == ¿À¸¥ÂÊDoor || ÇÃ·¹ÀÌ¾î À§Ä¡ == Ä§´ë) && ÀÌµ¿ ½Ã°£ÀÌ µÇ¸é, 9·Î ÀÌµ¿
+					// (í”Œë ˆì´ì–´ ìœ„ì¹˜ == ì˜¤ë¥¸ìª½Door || í”Œë ˆì´ì–´ ìœ„ì¹˜ == ì¹¨ëŒ€) && ì´ë™ ì‹œê°„ì´ ë˜ë©´, 9ë¡œ ì´ë™
 					if (LookState == AFreddyPlayer::LookAt::Right || LookState == AFreddyPlayer::LookAt::Bed)
 					{
 						CurrentTime += DeltaTime;
@@ -163,27 +180,32 @@ void AFoxy::Idle(float DeltaTime)
 
 				CurrentState = ELocationState::IDLE;
 			}
-			// room6 -> room1 || room9 °¡´É
+			// room6 -> room1 || room9 ê°€ëŠ¥
 			else if (RoomNum == 6)
 			{
 				AFreddyPlayer* FreddyPlayer = Cast<AFreddyPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
 				AFreddyPlayer::LookAt LookState;
 
-				// ¹ß¼Ò¸®
-				UGameplayStatics::PlaySound2D(this, FootStepsSFX);
+				if ( bBSound == false )
+				{
+					// ìˆ¨ì†Œë¦¬ ì¬ìƒ
+					PlayBreathSound();
+					bBSound = true;
+				}
+				else StopBreathSound();
 
-				//	¸¸¾à, ¼ÕÀüµî ON -> room1·Î ÀÌµ¿ (¼ø°£ÀÌµ¿X)
+				//	ë§Œì•½, ì†ì „ë“± ON -> room1ë¡œ ì´ë™ (ìˆœê°„ì´ë™X)
 				if (bIsFlashlightOn == true)
 				{
-					SetActorLocation(TagArr[1]);
+					MoveToTaggedLocation(1);
 					RoomNum = 1;
 				}
 
-				if (FreddyPlayer) // ÇÃ·¹ÀÌ¾î¿Í ¿¬µ¿µÉ ºÎºĞ
+				if (FreddyPlayer) // í”Œë ˆì´ì–´ì™€ ì—°ë™ë  ë¶€ë¶„
 				{
 					LookState = FreddyPlayer->GetLookAtState();
 
-					// (ÇÃ·¹ÀÌ¾î À§Ä¡ == ¿ŞÂÊDoor || ÇÃ·¹ÀÌ¾î À§Ä¡ == Ä§´ë) && ÀÌµ¿ ½Ã°£ÀÌ µÇ¸é, 9·Î ÀÌµ¿
+					// (í”Œë ˆì´ì–´ ìœ„ì¹˜ == ì™¼ìª½Door || í”Œë ˆì´ì–´ ìœ„ì¹˜ == ì¹¨ëŒ€) && ì´ë™ ì‹œê°„ì´ ë˜ë©´, 9ë¡œ ì´ë™
 					if (LookState == AFreddyPlayer::LookAt::Left || LookState == AFreddyPlayer::LookAt::Bed)
 					{
 						CurrentTime += DeltaTime;
@@ -197,7 +219,7 @@ void AFoxy::Idle(float DeltaTime)
 
 				CurrentState = ELocationState::IDLE;
 			}
-			// room9 ÀÏ ¶§
+			// room9 ì¼ ë•Œ
 			else if (RoomNum == 9)
 			{
 				AFreddyPlayer* FreddyPlayer = Cast<AFreddyPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
@@ -205,35 +227,38 @@ void AFoxy::Idle(float DeltaTime)
 
 				AActor * FoxDollInstance = UGameplayStatics::GetActorOfClass(GetWorld(), AFoxDoll::StaticClass());
 
-				ShowFoxyDoll(FoxDollInstance, false); // Æø½Ã µé¾î¿ÔÀ» ¶© ¾È º¸ÀÌ°Ô
+				if(bIsFoxy == true )
+					ShowFoxyDoll(FoxDollInstance, false); // í­ì‹œ ë“¤ì–´ì™”ì„ ë• ì•ˆ ë³´ì´ê²Œ
+				else 
+					ShowFoxyDoll(FoxDollInstance, true);
 
 				if (FreddyPlayer)
 				{
 					LookState = FreddyPlayer->GetLookAtState();
 
-					// ÇÃ·¹ÀÌ¾î À§Ä¡ == °¡¿îµ¥, ¿ÊÀåÀÌ »ìÂ¦ ¿òÁ÷ÀÓ
+					// í”Œë ˆì´ì–´ ìœ„ì¹˜ == ê°€ìš´ë°, ì˜·ì¥ì´ ì‚´ì§ ì›€ì§ì„
 					if (LookState == AFreddyPlayer::LookAt::Main && bClosetAnim == false)
 					{  
 						bClosetAnim = true;
-						// ¿ÊÀå ¿òÁ÷ÀÌ´Â anim(Loop¾È ÇÔ)
+						// ì˜·ì¥ ì›€ì§ì´ëŠ” anim(Loopì•ˆ í•¨)
 						UE_LOG(LogTemp, Log, TEXT("Closet door Move !!"));
 						
-						CurrentState = ELocationState::IDLE; // ¾Æ·¡ if¸¦ ½ÇÇàÇÏ±â À§ÇÔ
+						CurrentState = ELocationState::IDLE; // ì•„ë˜ ifë¥¼ ì‹¤í–‰í•˜ê¸° ìœ„í•¨
 					}
 
-					// ÇÃ·¹ÀÌ¾î À§Ä¡ == CLOSET, ³î·¡Å°´Â anim ½ÇÇà
+					// í”Œë ˆì´ì–´ ìœ„ì¹˜ == CLOSET, ë†€ë˜í‚¤ëŠ” anim ì‹¤í–‰
 					else if (LookState == AFreddyPlayer::LookAt::Center)
 					{
-						if (bCTtoZero == true) // ¹İº¹ÀûÀ¸·Î currentTimeÀÌ 0ÀÌ µÇÁö ¾Êµµ·Ï
+						if (bCTtoZero == true) // ë°˜ë³µì ìœ¼ë¡œ currentTimeì´ 0ì´ ë˜ì§€ ì•Šë„ë¡
 						{
 							CurrentTime = 0.f;
 							bCTtoZero = false;
 						}
 
-						// ³î·¡Å°±â¸¸ ÇÏ´Â anim ½ÇÇà
+						// ë†€ë˜í‚¤ê¸°ë§Œ í•˜ëŠ” anim ì‹¤í–‰
 						UE_LOG(LogTemp, Log, TEXT("Foxy anim"));
 
-						// Door: bISCLOSED == false, 2ÃÊ ÈÄ Á¡ÇÁ½ºÄù¾î (°ø°İ) ¡æ GAME OVER
+						// Door: bISCLOSED == false, 2ì´ˆ í›„ ì í”„ìŠ¤í€˜ì–´ (ê³µê²©) â†’ GAME OVER
 						if (bIsDoorClose == false)
 						{
 							CurrentTime += DeltaTime;
@@ -243,19 +268,18 @@ void AFoxy::Idle(float DeltaTime)
 							}
 							CurrentTime = 0.f;
 						}
-						// Door: bISCLOSED == true (Æø½Ã »ç¶óÁú ½Ã°£µ¿¾È), ±× ÀÚ¸®¿¡ ÀÎÇü ½ºÆù (ÇÁ·¹µğÃ³·³ ÀÌÁ¦ µ¿ÀÛ), Æø½Ã´Â 1·Î µ¹¾Æ°¨
+						// Door: bISCLOSED == true (í­ì‹œ ì‚¬ë¼ì§ˆ ì‹œê°„ë™ì•ˆ), ê·¸ ìë¦¬ì— ì¸í˜• ìŠ¤í° (í”„ë ˆë””ì²˜ëŸ¼ ì´ì œ ë™ì‘), í­ì‹œëŠ” ë‹¤ë¥¸ ë°ë¡œ ì•ˆ ê°€ê³  ìƒíƒœë³€í™”ë§Œ í•¨
 						if (bIsDoorClose == true)
 						{
 							CurrentTime += DeltaTime;
 							if (CurrentTime > MovableTime)
 							{
-								// ÀÎÇü ½ºÆù
-								// Å×½ºÆ®¿ë ¿ÀºêÁ§Æ® ¹èÄ¡
+								// ì¸í˜• ìŠ¤í°
+								// í…ŒìŠ¤íŠ¸ìš© ì˜¤ë¸Œì íŠ¸ ë°°ì¹˜
 								ShowFoxyDoll(FoxDollInstance, true);
+								this->Destroy();
 
-								SetActorLocation(TagArr[1]);
-								RoomNum = 1;
-								CurrentState = ELocationState::IDLE;
+								bIsFoxy = false;
 
 								UE_LOG(LogTemp, Log, TEXT("Spawn Foxy Doll"));
 							}
@@ -263,10 +287,10 @@ void AFoxy::Idle(float DeltaTime)
 						}
 					}
 
-					// ÇÃ·¹ÀÌ¾î À§Ä¡ ¡Á CLOSET (Æø½Ã »óÅÂ ¹Ù²ğ ½Ã°£µ¿¾È), Á¡ÇÁ½ºÄÉ¾î (°ø°İ) ¡æ GAME OVER
+					// í”Œë ˆì´ì–´ ìœ„ì¹˜ â‰  CLOSET (í­ì‹œ ìƒíƒœ ë°”ë€” ì‹œê°„ë™ì•ˆ), ì í”„ìŠ¤ì¼€ì–´ (ê³µê²©) â†’ GAME OVER
 					else if (LookState != AFreddyPlayer::LookAt::Center)
 					{
-						if (bCTtoZero == false) // ¹İº¹ÀûÀ¸·Î currentTimeÀÌ 0ÀÌ µÇÁö ¾Êµµ·Ï
+						if (bCTtoZero == false) // ë°˜ë³µì ìœ¼ë¡œ currentTimeì´ 0ì´ ë˜ì§€ ì•Šë„ë¡
 						{
 							CurrentTime = 0.f;
 							bCTtoZero = true;
@@ -290,7 +314,7 @@ void AFoxy::Move()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Chica Move()"));
 	FVector CurrentLocation = this->GetActorLocation();
-	// Ä¡Ä« À§Ä¡°¡ room number ¸î ÀÎÁö
+	// ì¹˜ì¹´ ìœ„ì¹˜ê°€ room number ëª‡ ì¸ì§€
 	for (int32 i = 1; i < TagArr.Num(); ++i)
 	{
 		if (CurrentLocation.Equals(TagArr[i], 1.0f))
@@ -300,41 +324,41 @@ void AFoxy::Move()
 		}
 	}
 
-	// room1 -> room2, room3, room4, room5, room6 °¡´É
+	// room1 -> room2, room3, room4, room5, room6 ê°€ëŠ¥
 	if (RoomNum == 1)
 	{
 		TArray<int32> RoomTags = { 2, 3, 4, 5, 6 };
 		int32 RandomIndex = FMath::RandRange(0, RoomTags.Num() - 1);
 
 		//SetActorLocation(TagArr[RoomTags[RandomIndex]] );
-		SetActorLocation(TagArr[5]); // Å×½ºÆ®¿ë
+		SetActorLocation(TagArr[5]); // í…ŒìŠ¤íŠ¸ìš©
 	}
-	// room2 -> room1, room3, room5 °¡´É
+	// room2 -> room1, room3, room5 ê°€ëŠ¥
 	else if (RoomNum == 2)
 	{
 		TArray<int32> RoomTags = { 1, 3, 5 };
 		int32 RandomIndex = FMath::RandRange(0, RoomTags.Num() - 1);
 
 		//SetActorLocation(TagArr[RoomTags[RandomIndex]] );
-		SetActorLocation(TagArr[5]); // Å×½ºÆ®¿ë
+		SetActorLocation(TagArr[5]); // í…ŒìŠ¤íŠ¸ìš©
 	}
-	// room3 -> room1, room2, room4, room6 °¡´É
+	// room3 -> room1, room2, room4, room6 ê°€ëŠ¥
 	else if (RoomNum == 3)
 	{
 		TArray<int32> RoomTags = { 1, 2, 4, 6 };
 		int32 RandomIndex = FMath::RandRange(0, RoomTags.Num() - 1);
 
 		//SetActorLocation(TagArr[RoomTags[RandomIndex]] );
-		SetActorLocation(TagArr[6]); // Å×½ºÆ®¿ë
+		SetActorLocation(TagArr[6]); // í…ŒìŠ¤íŠ¸ìš©
 	}
-	// room4 -> room1, room3, room6 °¡´É
+	// room4 -> room1, room3, room6 ê°€ëŠ¥
 	else if (RoomNum == 4)
 	{
 		TArray<int32> RoomTags = { 1, 3, 6 };
 		int32 RandomIndex = FMath::RandRange(0, RoomTags.Num() - 1);
 
 		//SetActorLocation(TagArr[RoomTags[RandomIndex]] );
-		SetActorLocation(TagArr[6]); // Å×½ºÆ®¿ë
+		SetActorLocation(TagArr[6]); // í…ŒìŠ¤íŠ¸ìš©
 	}
 	
 	CurrentState = ELocationState::IDLE;
@@ -343,23 +367,28 @@ void AFoxy::Move()
 void AFoxy::Attack()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Attack !"));
-	// Á¡ÇÁ½ºÄù¾î anim Àç»ı
+	// ì í”„ìŠ¤í€˜ì–´ anim ì¬ìƒ
 
-	// Å×½ºÆ®¿ë -> Ä«¸Ş¶ó ¾ÕÀ¸·Î SetActorLocation
+	// í…ŒìŠ¤íŠ¸ìš© -> ì¹´ë©”ë¼ ì•ìœ¼ë¡œ SetActorLocation
 	AFreddyPlayer* FreddyPlayer = Cast<AFreddyPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
 	FTransform JmpScare = FreddyPlayer->GetCameraTransform();
-	SetActorTransform(JmpScare); // Ä«¸Ş¶ó À§Ä¡·Î ÀÌµ¿ (Á¡ÇÁ½ºÄÉ¾î)
+	JmpScare.SetLocation(JmpScare.GetLocation() - FVector(0 , 100 , 60)); // ìœ„ì¹˜ ì¡°ì •
+	SetActorTransform(JmpScare); // ì¹´ë©”ë¼ ìœ„ì¹˜ë¡œ ì´ë™ (ì í”„ìŠ¤ì¼€ì–´)
 
-	// Á¡ÇÁ½ºÄÉ¾î ¼Ò¸®
-	UGameplayStatics::PlaySound2D(this, JumpScareSFX);
+	if ( bJSound == false )
+	{
+		// ì í”„ìŠ¤ì¼€ì–´ ì†Œë¦¬ ì¬ìƒ
+		UGameplayStatics::PlaySound2D(this , JumpScareSFX);
+		bJSound = true;
+	}
 
-	// °ÔÀÓ ¿À¹ö
+	// ê²Œì„ ì˜¤ë²„
 
 }
 
 FVector AFoxy::FindActorsWithTag(FName Tag)
 {
-	// °¢ ¹æÀÇ À§Ä¡ Á¤º¸¸¦ ÅÂ±×·Î ¹Ş¾Æ¿Í¼­ ¹è¿­·Î ÀúÀå
+	// ê° ë°©ì˜ ìœ„ì¹˜ ì •ë³´ë¥¼ íƒœê·¸ë¡œ ë°›ì•„ì™€ì„œ ë°°ì—´ë¡œ ì €ì¥
 	TArray<AActor*> FoundActors;
 	UGameplayStatics::GetAllActorsWithTag(GetWorld(), Tag, FoundActors);
 
@@ -369,10 +398,10 @@ FVector AFoxy::FindActorsWithTag(FName Tag)
 		FVector TargetLocation = TargetActor->GetActorLocation();
 
 		return TargetLocation;
-		// ¹è¿­ ÀÎµ¦½º °ª = ¹æ ¹øÈ£
+		// ë°°ì—´ ì¸ë±ìŠ¤ ê°’ = ë°© ë²ˆí˜¸
 	}
 
-	return FVector::ZeroVector; // FoundActors°¡ ºñ¾îÀÖÀ» °æ¿ì, ±âº»°ª ¹İÈ¯
+	return FVector::ZeroVector; // FoundActorsê°€ ë¹„ì–´ìˆì„ ê²½ìš°, ê¸°ë³¸ê°’ ë°˜í™˜
 }
 
 void AFoxy::MoveToTaggedLocation(int32 room)
@@ -382,8 +411,8 @@ void AFoxy::MoveToTaggedLocation(int32 room)
 	ACharacter* Character = Cast<ACharacter>(this);
 	if (Character)
 	{
-		Character->bUseControllerRotationYaw = false; // Ä³¸¯ÅÍ È¸ÀüÀ» Àá±İ
-		Character->GetCharacterMovement()->bOrientRotationToMovement = false; // ÀÌµ¿ ¹æÇâÀ¸·Î È¸ÀüÇÏÁö ¾ÊÀ½
+		Character->bUseControllerRotationYaw = false; // ìºë¦­í„° íšŒì „ì„ ì ê¸ˆ
+		Character->GetCharacterMovement()->bOrientRotationToMovement = false; // ì´ë™ ë°©í–¥ìœ¼ë¡œ íšŒì „í•˜ì§€ ì•ŠìŒ
 	}
 
 	AAIController* AIController = Cast<AAIController>(GetController());
@@ -391,12 +420,12 @@ void AFoxy::MoveToTaggedLocation(int32 room)
 	{
 		FAIMoveRequest MoveRequest;
 		MoveRequest.SetGoalLocation(TagArr[room]);
-		MoveRequest.SetAcceptanceRadius(5.0f); // ¸ñÇ¥ À§Ä¡¿¡ µµ´ŞÇÏ´Â ¹üÀ§ ¼³Á¤
+		MoveRequest.SetAcceptanceRadius(5.0f); // ëª©í‘œ ìœ„ì¹˜ì— ë„ë‹¬í•˜ëŠ” ë²”ìœ„ ì„¤ì •
 
 		FNavPathSharedPtr NavPath;
 		EPathFollowingRequestResult::Type MoveResult = AIController->MoveTo(MoveRequest, &NavPath);
 
-		// ÀÌµ¿ ¿äÃ» °á°ú ·Î±× Ãâ·Â
+		// ì´ë™ ìš”ì²­ ê²°ê³¼ ë¡œê·¸ ì¶œë ¥
 		switch (MoveResult)
 		{
 		case EPathFollowingRequestResult::Failed:
@@ -450,6 +479,14 @@ void AFoxy::DoorOpen()
 	}
 }
 
+void AFoxy::ShowFoxy(ACharacter* character)
+{
+	// mesh ì»´í¬ë„ŒíŠ¸ë¡œ ì•ˆ ë³´ì´ê²Œ (ì²˜ìŒì—” ë³´ì´ê²Œ, room9ì—ì„œ ì¸í˜•ìœ¼ë¡œ ë°”ë€Œë©´ ì•ˆ ë³´ì´ê²Œ)
+	// room9 ë¡œì§ ìì²´ë¥¼ ShowFoxy = true ì¼ ë•Œë§Œ ì ìš©í•˜ë„ë¡ ë³€ê²½
+
+	// ê·¼ë° ì–¸ì œ ë‹¤ì‹œ ìƒê¸°ëŠ”ì§€ ëª¨ë¥´ê² ì–´ì„œ ìš°ì„  destroyë¡œ..
+}
+
 void AFoxy::ShowFoxyDoll(AActor* actor, bool bShow)
 {
 	AFoxDoll* FoxyDoll = Cast<AFoxDoll>(actor);
@@ -460,5 +497,38 @@ void AFoxy::ShowFoxyDoll(AActor* actor, bool bShow)
 	}
 }
 
+void AFoxy::PlayFootStepsSound()
+{
+	if ( FootStepsSFX && !FootStepsAudioComponent->IsPlaying() )
+	{
+		FootStepsAudioComponent->SetSound(FootStepsSFX);
+		FootStepsAudioComponent->Play();
+	}
+}
+
+void AFoxy::StopFootStepsSound()
+{
+	if ( FootStepsAudioComponent->IsPlaying() )
+	{
+		FootStepsAudioComponent->Stop();
+	}
+}
+
+void AFoxy::PlayBreathSound()
+{
+	if ( BreathSFX && !BreathAudioComponent->IsPlaying() )
+	{
+		BreathAudioComponent->SetSound(BreathSFX);
+		BreathAudioComponent->Play();
+	}
+}
+
+void AFoxy::StopBreathSound()
+{
+	if ( BreathAudioComponent->IsPlaying() )
+	{
+		BreathAudioComponent->Stop();
+	}
+}
 
 

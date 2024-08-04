@@ -86,6 +86,8 @@ private:
 
 	void JumpScareSound();
 
+	bool JumpScarConditions();
+
 	UPROPERTY(EditAnywhere)
 	class USoundBase* FootStepsSFX;
 
@@ -95,4 +97,15 @@ private:
 	class USoundBase* BreathSFX;
 
 	void BreathSound();
+
+	bool BreathSoundConditions();
+
+	// 사운드 재생 완료 콜백
+    UFUNCTION()
+    void OnBreathSoundFinished();
+
+	bool bIsBreathSoundPlaying;
+
+	FTimerHandle BreathTimerHandle;
+
 };

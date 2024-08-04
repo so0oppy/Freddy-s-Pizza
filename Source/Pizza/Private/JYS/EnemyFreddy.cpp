@@ -93,6 +93,7 @@ void AEnemyFreddy::AttemptSpawnCube()
 			if (FreddyMesh2->bHiddenInGame == false && HiddenTime >= 3)
 			{
 				JumpScareFreddy();
+				JumpScareFreddySound();
 			}
 			// Freddy¸¦ Â÷·Ê´ë·Î Visible
 			if (FreddyMesh0->bHiddenInGame)
@@ -157,7 +158,8 @@ void AEnemyFreddy::JumpScareFreddySound()
 void AEnemyFreddy::JumpScareFreddy()
 {
 	FVector CameraLoc = Player->GetCameraTransform().GetLocation();
-	CameraLoc.X += 100;
+	CameraLoc.Y -= 100;
+	CameraLoc.Z -= 60;
 	SetActorLocation(CameraLoc);
 
 	GetMesh()->SetHiddenInGame(false);

@@ -38,18 +38,20 @@ AEnemyBonnie::AEnemyBonnie()
 		}
 	
 	// 발자국 소리
-	ConstructorHelpers::FObjectFinder<USoundBase> tempSound(TEXT("/Script/Engine.SoundWave'/Game/SFX/FNAFSFX02/deepfootsteps1.deepfootsteps1'"));
+	ConstructorHelpers::FObjectFinder<USoundBase> tempSound1(TEXT("/Script/Engine.SoundWave'/Game/SFX/FNAFSFX02/deepfootsteps1.deepfootsteps1'"));
 	if (tempSound.Succeeded()) 
 	{
-		FootStepsSFX = tempSound.Object;
+		FootStepsSFX = tempSound1.Object;
 	}	
 	
 	// 숨소리
-	ConstructorHelpers::FObjectFinder<USoundBase> tempSound(TEXT("/Script/Engine.SoundWave'/Game/SFX/FNAFSFX02/animatronicbreath.animatronicbreath'"));
+	ConstructorHelpers::FObjectFinder<USoundBase> tempSound2(TEXT("/Script/Engine.SoundWave'/Game/SFX/FNAFSFX02/animatronicbreath.animatronicbreath'"));
 	if (tempSound.Succeeded())
 	{
-		BreathSFX = tempSound.Object;
+		BreathSFX = tempSound2.Object;
 	}
+
+	bIsBreathSoundPlaying = false;
 }
 
 // Called when the game starts or when spawned
@@ -113,12 +115,14 @@ void AEnemyBonnie::Tick(float DeltaTime)
 
 void AEnemyBonnie::Move(EBonnieState MoveState)
 {
+	bIsMovingToRoom3 = false;
 	if (State == EBonnieState::Room1 && MoveState == EBonnieState::Room3)
 	{
 		UE_LOG(LogTemp,Warning,TEXT("1234"));
 		// 1번방에서 3번방으로 이동할 때 이동	
 		bIsMovingToRoom3 = true;
 		TargetLocation = RoomPositions[static_cast<int32>(MoveState)];
+		State = EBonnieState::Room3;
 	}
 	else
 	{
@@ -135,12 +139,15 @@ void AEnemyBonnie::Move(EBonnieState MoveState)
 
 void AEnemyBonnie::TickRoom0(const float& DeltaTime)
 {
-	if (ShouldMoveToRoom3())
+	if (JumpScarConditions())
 	{
 		JumpScareBonnie();
+		JumpScareSound();	
+	}
 
-		JumpScareSound();
-		
+	if (BreathSoundConditions())
+	{
+		BreathSound();
 	}
 }
 
@@ -170,8 +177,6 @@ void AEnemyBonnie::AttemptMove()
 		{
 			// Room0은 Room1으로만 이동할 수 있다
 			case EBonnieState::Room0:
-				// 숨소리
-				BreathSound();
 				NewState = EBonnieState::Room1;
 				break;
 			// Room1은 Room0, Room2, Room3로 이동할 수 있다
@@ -225,7 +230,8 @@ bool AEnemyBonnie::ShouldMoveToRoom3()
 void AEnemyBonnie::JumpScareBonnie()
 {
 	FVector CameraLoc = Player->GetCameraTransform().GetLocation();
-	CameraLoc.X += 100;
+	CameraLoc.Y -= 100;
+	CameraLoc.Z -= 60;
 	SetActorLocation(CameraLoc);
 }
 
@@ -250,5 +256,43 @@ void AEnemyBonnie::FootStepsSound()
 
 void AEnemyBonnie::BreathSound()
 {
-	UGameplayStatics::PlaySound2D(GetWorld(), BreathSFX);
+
+	if (!bIsBreathSoundPlaying)
+	{
+		bIsBreathSoundPlaying = true;
+
+		UGameplayStatics::PlaySound2D(GetWorld(), BreathSFX);
+
+		// 사운드 길이를 얻어서 그 시간 후에 OnBreathSoundFinished 함수 호출
+		float Duration = BreathSFX->GetDuration();
+		GetWorld()->GetTimerManager().SetTimer(BreathTimerHandle, this, &AEnemyBonnie::OnBreathSoundFinished, Duration, false);
+
+	}
+}
+
+void AEnemyBonnie::OnBreathSoundFinished()
+{
+	bIsBreathSoundPlaying = false;
+}
+
+bool AEnemyBonnie::BreathSoundConditions()
+{
+	// 플레이어가 왼쪽에 있고 Bonnie가 0번방에 있을 때 (Breath Sound 재생)
+	if (Player)
+	{
+		return Player->GetLookAtState() == AFreddyPlayer::LookAt::Left;
+	}
+	return false;
+}
+
+
+bool AEnemyBonnie::JumpScarConditions()
+{
+	// 플레이어가 왼쪽에서 Flash를 비추고 Bonnie가 0번방에 있을 때 (JumpScare)
+	if (Player)
+	{
+		return Player->GetFlash() && Player->GetLookAtState() == AFreddyPlayer::LookAt::Left;
+	}
+	return false;
+
 }

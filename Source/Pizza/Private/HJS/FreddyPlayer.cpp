@@ -196,6 +196,14 @@ void AFreddyPlayer::SetDown()
 			//bHeadDown = true;
 			HeadCurrentTime = 0.0f;
 			SetBackDoor(static_cast<int32>(LookAtState));
+			if ( RunSound )
+			{
+				UGameplayStatics::PlaySound2D(GetWorld() , RunSound);
+			}
+			if (LookAtState != LookAt::Center && MoveCloseDoorSound )
+			{
+				UGameplayStatics::PlaySound2D(GetWorld() , MoveCloseDoorSound);
+			}
 		}
 	}
 }
@@ -210,6 +218,11 @@ bool AFreddyPlayer::GetrCloseDoor()
 	return bClose;
 }
 
+UCameraComponent* AFreddyPlayer::GetCameraComp()
+{
+	return CameraComp;
+}
+
 AFreddyPlayer::LookAt AFreddyPlayer::GetLookAtState()
 {
 	return LookAtState;
@@ -220,11 +233,66 @@ FTransform AFreddyPlayer::GetCameraTransform()
 	return SpringArmComp->GetComponentTransform();
 }
 
+void AFreddyPlayer::OnDie()
+{
+	// 플레이어가 죽을 때
+	// 플레이어 위치에 따른 카메라 쉐이크
+	//if ( LookAtState == LookAt::Left || LookAtState == LookAt::Right )
+	//{
+
+	//}
+	//else
+	//{
+
+	//}
+	// 일단 통일, 쉐이크 깎기 너무 노가다 같음
+	APlayerController* PlayerController = Cast<APlayerController>(GetController());
+	if ( PlayerController )
+	{
+		PlayerController->ClientStartCameraShake(JumpScareShake1);
+		// 플레이어 조작 멈추기 -> 틱을 꺼버리자
+		SetActorTickEnabled(false);
+		// 다른 Enemy 이어서 작동 안되도록 게임 Pause 시키기
+		GetWorldTimerManager().SetTimer(PauseHandle,this,&AFreddyPlayer::OnMyPause,1.f,false);
+		FInputModeGameAndUI InputMode;
+		PlayerController->SetInputMode(InputMode);
+		PlayerController->EnableInput(PlayerController);
+		// 리스타트 모드 활성화 ( 이 상태에서 R키 누르면 리스타트 됨 )
+		bEnableRestart = true;
+	}
+
+}
+
+void AFreddyPlayer::OnRestart()
+{
+	if ( bEnableRestart)
+	{
+		UGameplayStatics::SetGamePaused(GetWorld() , false);
+		FName CurrentLevelName = FName(*UGameplayStatics::GetCurrentLevelName(GetWorld() , true));
+		UGameplayStatics::OpenLevel(GetWorld() , CurrentLevelName);
+	}
+}
+
+void AFreddyPlayer::OnMyPause()
+{
+	APlayerController* PlayerController = Cast<APlayerController>(GetController());
+	if ( PlayerController )
+	{
+		PlayerController->ClientStopCameraShake(JumpScareShake1);
+		PlayerController->SetPause(true);
+	}
+	/*UGameplayStatics::SetGamePaused(GetWorld(), true);*/
+}
+
 void AFreddyPlayer::OnFlash()
 {
 	// 불 켜기
 	HandlightComp->SetVisibility(true);
 	bFlash = true;
+	if ( LightSound )
+	{
+		UGameplayStatics::PlaySound2D(GetWorld() , LightSound);
+	}
 }
 
 void AFreddyPlayer::OffFlash()
@@ -232,6 +300,10 @@ void AFreddyPlayer::OffFlash()
 	// 불 끄기
 	HandlightComp->SetVisibility(false);
 	bFlash = false;
+	if ( LightSound )
+	{
+		UGameplayStatics::PlaySound2D(GetWorld() , LightSound);
+	}
 }
 
 void AFreddyPlayer::CloseDoor()
@@ -271,10 +343,19 @@ void AFreddyPlayer::CloseDoor()
 		case LookAt::Left:
 		CameraOffset=LeftCameraClosePoint->GetRelativeLocation();
 		DoorRotation.Yaw = LeftDoorClosePoint;
+		if ( CloseDoorSound )
+		{
+			UGameplayStatics::PlaySound2D(GetWorld() , CloseDoorSound);
+		}
+
 		break;
 		case LookAt::Right:
 		CameraOffset=RightCameraClosePoint->GetRelativeLocation();
 		DoorRotation.Yaw = RightDoorClosePoint;
+		if ( CloseDoorSound )
+		{
+			UGameplayStatics::PlaySound2D(GetWorld() , CloseDoorSound);
+		}
 		break;
 		case LookAt::Center:
 		CameraOffset=SpringArmComp->GetRelativeLocation(); 
@@ -310,10 +391,18 @@ void AFreddyPlayer::OpenDoor()
 	case LookAt::Left:
 		CameraOffset=LeftDoorMovePoint->GetRelativeLocation();
 		DoorRotation.Yaw=LeftDoorOpenPoint;
+		if ( OpenDoorSound )
+		{
+			UGameplayStatics::PlaySound2D(GetWorld() , OpenDoorSound);
+		}
 		break;
 	case LookAt::Right:
 		CameraOffset=RightDoorMovePoint->GetRelativeLocation();
 		DoorRotation.Yaw=RightDoorOpenPoint;
+		if ( OpenDoorSound )
+		{
+			UGameplayStatics::PlaySound2D(GetWorld() , OpenDoorSound);
+		}
 		break;
 	case LookAt::Center:
 		CameraOffset=SpringArmComp->GetRelativeLocation();
@@ -355,6 +444,10 @@ void AFreddyPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 			Input->BindAction(CloseDoorAction, ETriggerEvent::Started, this, &AFreddyPlayer::CloseDoor);
 			Input->BindAction(CloseDoorAction, ETriggerEvent::Completed, this, &AFreddyPlayer::OpenDoor);
 		}
+		if ( RestartAction )
+		{
+			Input->BindAction(RestartAction, ETriggerEvent::Started , this , &AFreddyPlayer::OnRestart);
+		}
 	}
 }
 
@@ -377,6 +470,10 @@ void AFreddyPlayer::SetMoveDoor(int32 DoorNum)
 	bMoving = true;
 	bHeadDown = true; // 이동 시작 시 고개를 숙이기 시작
 	HeadCurrentTime = 0.0f;
+	if ( RunSound )
+	{
+		UGameplayStatics::PlaySound2D(GetWorld() , RunSound);
+	}
 }
 
 void AFreddyPlayer::Move(float DeltaTime)
@@ -406,7 +503,6 @@ void AFreddyPlayer::Move(float DeltaTime)
 	{
 		PlayerController->ClientStartCameraShake(WalkShake);
 	}
-
 	CurrentTime += DeltaTime;
 	float SplineLength = Splines[DoorNum]->GetSplineLength();
 	float MoveAmount;
@@ -666,6 +762,10 @@ void AFreddyPlayer::SetUpdateDoor(int32 DoorNum)
 			// 왼쪽으로 카메라 기울이기
 			CameraOffset=LeftDoorMovePoint->GetRelativeLocation(); // 원하는 값으로 설정
 			CameraRotation=LeftDoorMovePoint->GetRelativeRotation();
+			if ( MoveOpenDoorSound )
+			{
+				UGameplayStatics::PlaySound2D(GetWorld() , MoveOpenDoorSound);
+			}
 		}
 	}
 	else if ( DoorNum == 2 ) // Right door
@@ -679,6 +779,10 @@ void AFreddyPlayer::SetUpdateDoor(int32 DoorNum)
 			// 오른쪽으로 카메라 기울이기
 			CameraOffset=RightDoorMovePoint->GetRelativeLocation(); // 원하는 값으로 설정
 			CameraRotation=RightDoorMovePoint->GetRelativeRotation();
+			if ( MoveOpenDoorSound )
+			{
+				UGameplayStatics::PlaySound2D(GetWorld() , MoveOpenDoorSound);
+			}
 		}
 	}
 	else

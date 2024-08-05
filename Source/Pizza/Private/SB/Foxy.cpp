@@ -323,8 +323,10 @@ void AFoxy::Move()
 		int32 RandomIndex = FMath::RandRange(0, RoomTags.Num() - 1);
 
 		//SetActorLocation(TagArr[RoomTags[RandomIndex]] );
-		SetActorLocation(TagArr[5]); // 테스트용
-		RoomNum = 5;
+		//SetActorLocation(TagArr[5]); // 테스트용
+		//RoomNum = 5;
+		SetActorLocation(TagArr[9]); // 테스트용
+		RoomNum = 9;
 	}
 	// room2 -> room1, room3, room5 가능
 	else if (RoomNum == 2)
@@ -333,8 +335,10 @@ void AFoxy::Move()
 		int32 RandomIndex = FMath::RandRange(0, RoomTags.Num() - 1);
 
 		//SetActorLocation(TagArr[RoomTags[RandomIndex]] );
-		SetActorLocation(TagArr[5]); // 테스트용
-		RoomNum = 5;
+		//SetActorLocation(TagArr[5]); // 테스트용
+		//RoomNum = 5;
+		SetActorLocation(TagArr[9]); // 테스트용
+		RoomNum = 9;
 	}
 	// room3 -> room1, room2, room4, room6 가능
 	else if (RoomNum == 3)
@@ -343,8 +347,10 @@ void AFoxy::Move()
 		int32 RandomIndex = FMath::RandRange(0, RoomTags.Num() - 1);
 
 		//SetActorLocation(TagArr[RoomTags[RandomIndex]] );
-		SetActorLocation(TagArr[6]); // 테스트용
-		RoomNum = 6;
+		//SetActorLocation(TagArr[6]); // 테스트용
+		//RoomNum = 6;
+		SetActorLocation(TagArr[9]); // 테스트용
+		RoomNum = 9;
 	}
 	// room4 -> room1, room3, room6 가능
 	else if (RoomNum == 4)
@@ -353,8 +359,10 @@ void AFoxy::Move()
 		int32 RandomIndex = FMath::RandRange(0, RoomTags.Num() - 1);
 
 		//SetActorLocation(TagArr[RoomTags[RandomIndex]] );
-		SetActorLocation(TagArr[6]); // 테스트용
-		RoomNum = 6;
+		//SetActorLocation(TagArr[6]); // 테스트용
+		//RoomNum = 6;
+		SetActorLocation(TagArr[9]); // 테스트용
+		RoomNum = 9;
 	}
 	
 	CurrentState = ELocationState::IDLE;
@@ -378,6 +386,8 @@ void AFoxy::Attack()
 		// 점프스케어 소리 재생
 		UGameplayStatics::PlaySound2D(this , JumpScareSFX);
 		bJSound = true;
+
+		FreddyPlayer->OnDie();
 
 		UE_LOG(LogTemp , Warning , TEXT("Foxy Attack !"));
 	}

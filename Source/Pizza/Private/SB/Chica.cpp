@@ -125,6 +125,28 @@ void AChica::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 void AChica::Idle(float DeltaTime)
 {
 	// 현재 위치 == room1 || room3 || room4 || room6 || room8 가능
+	if ( RoomNum == 6 )
+	{
+		//	만약, 손전등 ON -> room1로 이동 (순간이동X)
+		if ( bIsFlashlightOn == true )
+		{
+			StopFootStepsSound(); // 발소리 멈춤
+			// 손전등 ON && Door: Close -> room8로 이동
+			if ( bIsDoorClose == true )
+			{
+				SetActorLocation(TagArr[8]);
+				RoomNum = 8;
+				CurrentState = ELocationState::IDLE;
+			}
+			else
+			{
+				MoveToTaggedLocation(1);
+				RoomNum = 1;
+
+			}
+		}
+	}
+
 	if ( RoomNum == 8 )
 	{
 		AFreddyPlayer* FreddyPlayer = Cast<AFreddyPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld() , 0));
@@ -264,24 +286,24 @@ void AChica::Move() // 손전등 켜고 있으면 1,3,4로만 이동
 		}
 		else StopFootStepsSound();
 
-		//	만약, 손전등 ON -> room1로 이동 (순간이동X)
-		if(bIsFlashlightOn == true) 
-		{
-			StopFootStepsSound(); // 발소리 멈춤
-			// 손전등 ON && Door: Close -> room8로 이동
-			if (bIsDoorClose == true)
-			{
-				SetActorLocation(TagArr[8]);
-				RoomNum = 8;
-				CurrentState = ELocationState::IDLE;
-			}
-			else
-			{
-				MoveToTaggedLocation(1);
-				RoomNum = 1;
+		////	만약, 손전등 ON -> room1로 이동 (순간이동X)
+		//if(bIsFlashlightOn == true) 
+		//{
+		//	StopFootStepsSound(); // 발소리 멈춤
+		//	// 손전등 ON && Door: Close -> room8로 이동
+		//	if (bIsDoorClose == true)
+		//	{
+		//		SetActorLocation(TagArr[8]);
+		//		RoomNum = 8;
+		//		CurrentState = ELocationState::IDLE;
+		//	}
+		//	else
+		//	{
+		//		MoveToTaggedLocation(1);
+		//		RoomNum = 1;
 
-			}
-		}
+		//	}
+		//}
 	}
 
 	CurrentState = ELocationState::IDLE;
@@ -305,6 +327,8 @@ void AChica::Attack()
 		// 점프스케어 소리 재생
 		UGameplayStatics::PlaySound2D(this , JumpScareSFX);
 		bJSound = true;
+
+		FreddyPlayer->OnDie();
 
 		UE_LOG(LogTemp , Warning , TEXT("Chica Attack !"));
 	}
@@ -334,6 +358,8 @@ void AChica::Cupcake()
 			// 점프스케어 소리 재생
 			UGameplayStatics::PlaySound2D(this , JumpScareSFX);
 			bJSound = true;
+
+			FreddyPlayer->OnDie();
 
 			UE_LOG(LogTemp , Warning , TEXT("CupCake Attack !"));
 		}
@@ -376,7 +402,7 @@ void AChica::MoveToTaggedLocation(int32 room)
 	{
 		FAIMoveRequest MoveRequest;
 		MoveRequest.SetGoalLocation(TagArr[room]);
-		MoveRequest.SetAcceptanceRadius(5.0f); // 목표 위치에 도달하는 범위 설정
+		MoveRequest.SetAcceptanceRadius(50.0f); // 목표 위치에 도달하는 범위 설정
 
 		FNavPathSharedPtr NavPath;
 		EPathFollowingRequestResult::Type MoveResult = AIController->MoveTo(MoveRequest, &NavPath);

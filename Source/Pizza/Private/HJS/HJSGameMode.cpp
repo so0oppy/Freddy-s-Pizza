@@ -59,12 +59,15 @@ void AHJSGameMode::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 	if ( MinimapUI )
 	{
+		
 		// 윤선
 		MinimapUI->UpdateRoom(static_cast<int32>(Bonnie->State), 0, 0);
 
 		// 수빈
 		MinimapUI->UpdateRoom(Chica->RoomNum , 1 , 1);
-		MinimapUI->UpdateRoom(Foxy->RoomNum , 2 , 1);
+		if ( Foxy ) {
+			MinimapUI->UpdateRoom(Foxy->RoomNum , 2 , 1);
+		}
 	}
 	
 
@@ -121,11 +124,13 @@ void AHJSGameMode::SetAILevelEnemy()
 	if ( Bonnie )
 	{
 		Bonnie->SetAILevel(LV_bonnie[Day][Hour]);
+		Bonnie->SetAILevel(20);
 	}
 
 	if ( Freddy )
 	{
 		Freddy->SetAILevel(LV_freddy[Day][Hour]);
+		//Freddy->SetAILevel(20);
 	}
 
 }

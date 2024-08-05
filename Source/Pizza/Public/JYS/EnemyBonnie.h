@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+ï»¿// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -37,22 +37,23 @@ public:
 
 	void Move(EBonnieState MoveState);
 
+	// ì´ë™ êµ¬í˜„
+	EBonnieState State;
+
 	// JumpScare
 	UFUNCTION()
 	void JumpScareBonnie();
 private:
-	// ¹æÀ» ¹è¿­·Î ±¸Çö
+	// ë°©ì„ ë°°ì—´ë¡œ êµ¬í˜„
 	UPROPERTY(EditAnywhere)
 	FVector RoomPositions[4];
 
 
-	// ÀÌµ¿ ±¸Çö
-	EBonnieState State;
 
-	// 4.97ÃÊ¸¶´Ù ÀÌµ¿ Å¸ÀÌ¸Ó
+	// 4.97ì´ˆë§ˆë‹¤ ì´ë™ íƒ€ì´ë¨¸
 	FTimerHandle MoveTimerHandle;
 
-	//// ÇÃ·¹ÀÌ¾î °´Ã¼ ÂüÁ¶
+	//// í”Œë ˆì´ì–´ ê°ì²´ ì°¸ì¡°
 	//AFreddyPlayer* Player;
 	
 	void TickRoom0(const float& DeltaTime);
@@ -60,24 +61,24 @@ private:
 	void TickRoom2(const float& DeltaTime);
 	void TickRoom3(const float& DeltaTime);
 
-	// ÀÌµ¿ ¹× ·£´ı ¼ıÀÚ »Ì±â
+	// ì´ë™ ë° ëœë¤ ìˆ«ì ë½‘ê¸°
 	UFUNCTION()
 	void AttemptMove();
 	UFUNCTION()
 	int32 GetRandomNumber();
 
-	// ÇÃ·¹ÀÌ¾î »óÅÂ È®ÀÎ ÇÔ¼ö
+	// í”Œë ˆì´ì–´ ìƒíƒœ í™•ì¸ í•¨ìˆ˜
 	bool ShouldMoveToRoom3();
 
-	// 1¹ø¹æ¿¡¼­ 3¹ø¹æ ÀÌµ¿ 
-	// ¸ñÇ¥ À§Ä¡
+	// 1ë²ˆë°©ì—ì„œ 3ë²ˆë°© ì´ë™ 
+	// ëª©í‘œ ìœ„ì¹˜
 	FVector TargetLocation;
-	// ÀÌµ¿ ¼ÓµµZ
+	// ì´ë™ ì†ë„Z
 	float MoveSpeed;
-	// ÀÌµ¿ ÁßÀÎÁö ¿©ºÎ
+	// ì´ë™ ì¤‘ì¸ì§€ ì—¬ë¶€
 	bool bIsMovingToRoom3;
 
-	// ¹®À» ´İÀ¸¸é º¸´Ï°¡ ·ë1¿¡¼­ ·ë3À¸·Î ¼ø°£ÀÌµ¿
+	// ë¬¸ì„ ë‹«ìœ¼ë©´ ë³´ë‹ˆê°€ ë£¸1ì—ì„œ ë£¸3ìœ¼ë¡œ ìˆœê°„ì´ë™
 	UFUNCTION()
 	bool CloseDoorRoom0ToRoom2();
 
@@ -100,7 +101,7 @@ private:
 
 	bool BreathSoundConditions();
 
-	// »ç¿îµå Àç»ı ¿Ï·á Äİ¹é
+	// ì‚¬ìš´ë“œ ì¬ìƒ ì™„ë£Œ ì½œë°±
     UFUNCTION()
     void OnBreathSoundFinished();
 

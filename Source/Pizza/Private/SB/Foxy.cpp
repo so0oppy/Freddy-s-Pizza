@@ -169,12 +169,8 @@ void AFoxy::Idle(float DeltaTime)
 					// (플레이어 위치 == 오른쪽Door || 플레이어 위치 == 침대) && 이동 시간이 되면, 9로 이동
 					if (LookState == AFreddyPlayer::LookAt::Right || LookState == AFreddyPlayer::LookAt::Bed)
 					{
-						CurrentTime += DeltaTime;
-						if (CurrentTime > MovableTime)
-						{
-							SetActorLocation(TagArr[9]);
-							RoomNum = 9;
-						}
+						SetActorLocation(TagArr[9]);
+						RoomNum = 9;
 					}
 				}
 
@@ -208,12 +204,8 @@ void AFoxy::Idle(float DeltaTime)
 					// (플레이어 위치 == 왼쪽Door || 플레이어 위치 == 침대) && 이동 시간이 되면, 9로 이동
 					if (LookState == AFreddyPlayer::LookAt::Left || LookState == AFreddyPlayer::LookAt::Bed)
 					{
-						CurrentTime += DeltaTime;
-						if (CurrentTime > MovableTime)
-						{
-							SetActorLocation(TagArr[9]);
-							RoomNum = 9;
-						}
+						SetActorLocation(TagArr[9]);
+						RoomNum = 9;
 					}
 				}
 

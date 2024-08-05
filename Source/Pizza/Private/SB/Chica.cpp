@@ -125,7 +125,53 @@ void AChica::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 void AChica::Idle(float DeltaTime)
 {
 	// 현재 위치 == room1 || room3 || room4 || room6 || room8 가능
-	
+	if ( RoomNum == 8 )
+	{
+		AFreddyPlayer* FreddyPlayer = Cast<AFreddyPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld() , 0));
+		AFreddyPlayer::LookAt LookState;
+
+		if ( FreddyPlayer ) // 플레이어와 연동될 부분
+		{
+			LookState = FreddyPlayer->GetLookAtState();
+
+			//→ 플레이어 위치 == Door && 손전등 ON : 점프스퀘어(공격) 
+			if ( (LookState == AFreddyPlayer::LookAt::Right && bIsDoorClose == false) && bIsFlashlightOn == true )
+			{
+				CurrentState = ELocationState::ATTACK;
+
+			}
+
+			//→ 플레이어 위치 == Door && bCLOSE == true (일정 시간동안 CLOSE ⇒ 확률적으로 1,3,4 중 이동)
+			if ( LookState == AFreddyPlayer::LookAt::Right || bIsDoorClose == true )
+			{
+				if ( bBSound == false )
+				{
+					// 숨소리 재생
+					PlayBreathSound();
+					bBSound = true;
+				}
+				else StopBreathSound();
+
+				CurrentTime += DeltaTime;
+				if ( CurrentTime > MovableTime )
+				{
+					TArray<int32> RoomTags = { 1, 3, 4 };
+					int32 RandomIndex = FMath::RandRange(0 , RoomTags.Num() - 1);
+
+					SetActorLocation(TagArr[RoomTags[RandomIndex]]);
+					RoomNum = RoomTags[RandomIndex];
+
+					StopBreathSound();
+
+					CurrentTime = 0.f;
+
+					CurrentState = ELocationState::MOVE;
+				}
+			}
+		}
+	}
+
+
 	// 4.98초마다 AILevel에 있는 RandomMove() 호출 && Move로 상태전이
 	CurrentTime += DeltaTime;
 
@@ -146,45 +192,8 @@ void AChica::Idle(float DeltaTime)
 				AFreddyPlayer* FreddyPlayer = Cast<AFreddyPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
 				AFreddyPlayer::LookAt LookState;
 
-				if (FreddyPlayer) // 플레이어와 연동될 부분
-				{
-					LookState = FreddyPlayer->GetLookAtState();
+				LookState = FreddyPlayer->GetLookAtState();
 
-					//→ 플레이어 위치 == Door && 손전등 ON : 점프스퀘어(공격) 
-					if ((LookState == AFreddyPlayer::LookAt::Right && bIsDoorClose == false) && bIsFlashlightOn == true)
-					{							
-						CurrentState = ELocationState::ATTACK;
-						
-					}
-
-					//→ 플레이어 위치 == Door && bCLOSE == true (일정 시간동안 CLOSE ⇒ 확률적으로 1,3,4 중 이동)
-					else if (LookState == AFreddyPlayer::LookAt::Right || bIsDoorClose == true)
-					{
-						if ( bBSound == false )
-						{
-							// 숨소리 재생
-							PlayBreathSound();
-							bBSound = true;
-						}
-						else StopBreathSound();
-
-						CurrentTime += DeltaTime;
-						if (CurrentTime > MovableTime)
-						{
-							TArray<int32> RoomTags = { 1, 3, 4 };
-							int32 RandomIndex = FMath::RandRange(0, RoomTags.Num() - 1);
-
-							SetActorLocation(TagArr[RoomTags[RandomIndex]]);
-							RoomNum = RoomTags[RandomIndex];
-
-							StopBreathSound();
-
-							CurrentTime = 0.f;
-
-							CurrentState = ELocationState::MOVE;
-						}
-					}
-				}
 				//→ 플레이어 위치≠Door 일 때, 일정 시간 후에 컵케이크 점프스퀘어(공격) → GAME OVER
 				if (LookState == AFreddyPlayer::LookAt::Main)
 				{
@@ -286,6 +295,9 @@ void AChica::Attack()
 	AFreddyPlayer* FreddyPlayer = Cast<AFreddyPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
 	FTransform JmpScare = FreddyPlayer->GetCameraTransform();
 	JmpScare.SetLocation(JmpScare.GetLocation() - FVector(0 , 100 , 60)); // 위치 조정
+	FRotator rot = JmpScare.GetRotation().Rotator();
+	rot.Yaw += 90.0;
+	JmpScare.SetRotation(rot.Quaternion());
 	SetActorTransform(JmpScare); // 카메라 위치로 이동 (점프스케어)
 
 	if ( bJSound == false )

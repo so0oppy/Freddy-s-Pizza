@@ -379,6 +379,8 @@ void AFoxy::Attack()
 		UGameplayStatics::PlaySound2D(this , JumpScareSFX);
 		bJSound = true;
 
+		FreddyPlayer->OnDie();
+
 		UE_LOG(LogTemp , Warning , TEXT("Foxy Attack !"));
 	}
 

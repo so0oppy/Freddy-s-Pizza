@@ -127,27 +127,35 @@ void AChica::Idle(float DeltaTime)
 	// 현재 위치 == room1 || room3 || room4 || room6 || room8 가능
 	if ( RoomNum == 6 )
 	{
-		//	만약, 손전등 ON -> room1로 이동 (순간이동X)
-		if ( bIsFlashlightOn == true )
-		{
-			StopFootStepsSound(); // 발소리 멈춤
-			// 손전등 ON && Door: Close -> room8로 이동
-			if ( bIsDoorClose == true )
-			{
-				SetActorLocation(TagArr[8]);
-				RoomNum = 8;
-				CurrentState = ELocationState::IDLE;
-			}
-			else
-			{
-				MoveToTaggedLocation(1);
-				RoomNum = 1;
+		AFreddyPlayer* FreddyPlayer = Cast<AFreddyPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld() , 0));
+		AFreddyPlayer::LookAt LookState;
 
+		if ( FreddyPlayer ) // 플레이어와 연동될 부분
+		{
+			LookState = FreddyPlayer->GetLookAtState();
+
+			//	만약, 손전등 ON -> room1로 이동 (순간이동X)
+			if ( bIsFlashlightOn == true && LookState == AFreddyPlayer::LookAt::Right )
+			{
+				StopFootStepsSound(); // 발소리 멈춤
+				// 손전등 ON && Door: Close -> room8로 이동
+				if ( bIsDoorClose == true )
+				{
+					SetActorLocation(TagArr[8]);
+					RoomNum = 8;
+					CurrentState = ELocationState::IDLE;
+				}
+				else
+				{
+					MoveToTaggedLocation(1);
+					RoomNum = 1;
+					CurrentState = ELocationState::MOVE;
+				}
 			}
 		}
 	}
 
-	if ( RoomNum == 8 )
+	else if ( RoomNum == 8 )
 	{
 		AFreddyPlayer* FreddyPlayer = Cast<AFreddyPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld() , 0));
 		AFreddyPlayer::LookAt LookState;
@@ -402,7 +410,7 @@ void AChica::MoveToTaggedLocation(int32 room)
 	{
 		FAIMoveRequest MoveRequest;
 		MoveRequest.SetGoalLocation(TagArr[room]);
-		MoveRequest.SetAcceptanceRadius(50.0f); // 목표 위치에 도달하는 범위 설정
+		MoveRequest.SetAcceptanceRadius(5.0f); // 목표 위치에 도달하는 범위 설정
 
 		FNavPathSharedPtr NavPath;
 		EPathFollowingRequestResult::Type MoveResult = AIController->MoveTo(MoveRequest, &NavPath);

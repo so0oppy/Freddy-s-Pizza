@@ -2,6 +2,7 @@
 #include "SB/LocationState.h"
 #include "SB/AllEnemy.h"
 #include "SB/Chica.h"
+#include "SB/Foxy.h"
 
 
 // Sets default values for this component's properties
@@ -35,21 +36,27 @@ void UAILevel::SetLevel(ACharacter* character)
 	TArray<int32> tempLV;
 
 	Chica = Cast<AChica>(character);
+	Foxy = Cast<AFoxy>(character);
 
 	// 시간마다 레벨 다르게 설정
-	if (character == Chica) // 각 캐릭터 코드에서 이 함수 불러오기 위함
+	if (nullptr != Chica) // 각 캐릭터 코드에서 이 함수 불러오기 위함
 	{
 		tempLV = LV_chica[Day - 1]; // 각 Day 내의 정보를 저장
 	}
-	//else if(character == Foxy)
+	else if(nullptr != Foxy)
+	{
+		tempLV = LV_foxy[Day - 1]; // 각 Day 내의 정보를 저장
+	}
 	
-	Level = tempLV[Hour]; // 그 정보 내의 시간별로 레벨 할당
+	//Level = tempLV[Hour]; // 그 정보 내의 시간별로 레벨 할당
+	Level = 20;
 }
 
 bool UAILevel::RandomMove(ACharacter* character,float DeltaTime)
 {
 	UE_LOG(LogTemp, Warning, TEXT("Random Move()"));
 	Chica = Cast<AChica>(character);
+	Foxy = Cast<AFoxy>(character);
 
 	// 1~20 사이 랜덤 숫자 <= AI 레벨일 경우 이동 (확률로)
 	int32 rand = FMath::RandRange(1, 20);
@@ -61,7 +68,8 @@ bool UAILevel::RandomMove(ACharacter* character,float DeltaTime)
 			// 다른 방으로 이동
 			if(nullptr != Chica)
 				return true;
-			// else if(character == Foxy)
+			else if(nullptr != Foxy)
+				return true;
 		}
 		else
 		{

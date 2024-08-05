@@ -58,10 +58,14 @@ public:
 	// 문 닫았는 지, 열었는 지 리턴
 	bool GetrCloseDoor();
 
+	class UCameraComponent* GetCameraComp();
+
 	// 현재 보고 있는 위치 리턴
 	LookAt GetLookAtState();
 
 	FTransform GetCameraTransform();
+
+	void OnDie();
 
 private:
 
@@ -73,6 +77,17 @@ private:
 	class UInputAction* FlashAction;
 	UPROPERTY(EditDefaultsOnly, Category="Input")
 	class UInputAction* CloseDoorAction;
+
+	UPROPERTY(EditDefaultsOnly, Category="Input")
+	class UInputAction* RestartAction;
+
+	UFUNCTION()
+	void OnRestart();
+
+	FTimerHandle PauseHandle;
+
+	UFUNCTION()
+	void OnMyPause();
 
 	// 인풋 매핑 함수
 	UFUNCTION()
@@ -193,6 +208,12 @@ private:
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<class UCameraShakeBase> WalkShake;
 
+	bool bEnableRestart = false;
+
+	// 점프스케어 카메라 쉐이크
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<UCameraShakeBase> JumpScareShake1;
+
 	// 위치 도착 후 문 열면서 몸 기울이기
 	// 문 변수 3개 흠... 배열?  LookAt으로 문 배열에 접근
 	UPROPERTY(VisibleAnywhere)
@@ -252,8 +273,32 @@ private:
 	UPROPERTY(EditAnywhere)
 	USceneComponent* RightCameraClosePoint;
 
+	FVector DoorLocation;
+
 	UPROPERTY(EditAnywhere)
-	USceneComponent* CenterDoorClosePoint;
-	UPROPERTY(EditAnywhere)
-	USceneComponent* CenterDoorOpenPoint;
+	float DoorMovePoint = -180.f;
+	float DoorOriginPoint = 0.f;
+	// 문 닫고 열때 적용시키는 함수
+	void DoorOpenAndClose(float DeltaTime);
+
+
+	// 사운드 
+	// 달리기
+	UPROPERTY(EditDefaultsOnly)
+	class USoundBase* RunSound;
+	// 문 Shift로 열고 닫을 때
+	UPROPERTY(EditDefaultsOnly)
+	class USoundBase* OpenDoorSound;
+	UPROPERTY(EditDefaultsOnly)
+	class USoundBase* CloseDoorSound;
+
+	// 문 Move로 열고 닫을 때
+	UPROPERTY(EditDefaultsOnly)
+	class USoundBase* MoveOpenDoorSound;
+	UPROPERTY(EditDefaultsOnly)
+	class USoundBase* MoveCloseDoorSound;
+
+	UPROPERTY(EditDefaultsOnly)
+	class USoundBase* LightSound;
+
 };

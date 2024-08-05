@@ -108,4 +108,5 @@ private:
 
 	FTimerHandle BreathTimerHandle;
 
+	bool bJumpScare = false;
 };

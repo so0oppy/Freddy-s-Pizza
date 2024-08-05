@@ -141,8 +141,12 @@ void AEnemyBonnie::TickRoom0(const float& DeltaTime)
 {
 	if (JumpScarConditions())
 	{
-		JumpScareBonnie();
-		JumpScareSound();	
+		if (bJumpScare = false)
+		{
+			bJumpScare = true;
+			JumpScareBonnie();
+			JumpScareSound();
+		}
 	}
 
 	if (BreathSoundConditions())
@@ -233,6 +237,7 @@ void AEnemyBonnie::JumpScareBonnie()
 	CameraLoc.Y -= 100;
 	CameraLoc.Z -= 60;
 	SetActorLocation(CameraLoc);
+
 }
 
 bool AEnemyBonnie::CloseDoorRoom0ToRoom2()

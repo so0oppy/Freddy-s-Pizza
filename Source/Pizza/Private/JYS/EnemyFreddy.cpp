@@ -74,6 +74,27 @@ void AEnemyFreddy::Tick(float DeltaTime)
 	{
 		HideFreddy(DeltaTime);
 	}
+
+	if ( AddFreddyFastly() )
+	{
+		// 시간이 흐르면서
+		CurrentTime += DeltaTime;
+		if ( CurrentTime >= 15 )
+		{
+			SpawnFreddyTimerOnce = false;
+			CurrentTime = 0;
+			GetWorld()->GetTimerManager().SetTimer(FreddysVisibleFastlyTimerHandle , this , &AEnemyFreddy::AttemptSpawnCube , 1.5f , true);
+		}
+	}
+	else if (NotLookingAtTheDoor())
+	{
+		if ( SpawnFreddyTimerOnce == false )
+		{
+			SpawnFreddyTimerOnce = true;
+			GetWorld()->GetTimerManager().SetTimer(FreddysVisibleTimerHandle , this , &AEnemyFreddy::AttemptSpawnCube , 3.02f , true);
+		}
+
+	}
 }
 
 
@@ -90,6 +111,7 @@ void AEnemyFreddy::AttemptSpawnCube()
 		// 랜덤 넘버가 Freddy의 레벨보다 낮거나 같다면
 		if (RandomNumber <= Level)
 		{
+			// 프레디가 3마리이고 3초 이상이 지나면 점프스케어
 			if (FreddyMesh2->bHiddenInGame == false && HiddenTime >= 3)
 			{
 				JumpScareFreddy();
@@ -153,6 +175,24 @@ bool AEnemyFreddy::IsPlayerLookingAtBedAndFlashOn()
 void AEnemyFreddy::JumpScareFreddySound()
 {
 	UGameplayStatics::PlaySound2D(GetWorld(), JumpScareFreddySFX);
+}
+
+bool AEnemyFreddy::AddFreddyFastly()
+{
+	if ( Player )
+	{
+		return Player->GetLookAtState() == AFreddyPlayer::LookAt::Main;
+	}
+	return false;
+}
+
+bool AEnemyFreddy::NotLookingAtTheDoor()
+{
+	if ( Player )
+	{
+		return Player->GetLookAtState() == AFreddyPlayer::LookAt::Bed || Player->GetLookAtState() == AFreddyPlayer::LookAt::Left || Player->GetLookAtState() == AFreddyPlayer::LookAt::Center || Player->GetLookAtState() == AFreddyPlayer::LookAt::Right || Player->GetLookAtState() == AFreddyPlayer::LookAt::Back;
+	}
+	return false;
 }
 
 void AEnemyFreddy::JumpScareFreddy()

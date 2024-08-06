@@ -21,7 +21,7 @@ AEnemyBonnie::AEnemyBonnie()
 	// Room3
 	RoomPositions[3] = FVector(200.0f, -280.0f, 0.0f);
 
-	State = EBonnieState::Room1;
+	State = EBonnieState::Room3;
 
 	Player = nullptr; // Initialize Player to nullptr
 	TargetLocation = RoomPositions[0]; // Initialize TargetLocation
@@ -141,7 +141,7 @@ void AEnemyBonnie::TickRoom0(const float& DeltaTime)
 {
 	if (JumpScarConditions())
 	{
-		if (bJumpScare = false)
+		if (bJumpScare == false)
 		{
 			bJumpScare = true;
 			JumpScareBonnie();
@@ -234,8 +234,9 @@ bool AEnemyBonnie::ShouldMoveToRoom3()
 void AEnemyBonnie::JumpScareBonnie()
 {
 	FVector CameraLoc = Player->GetCameraTransform().GetLocation();
-	CameraLoc.Y -= 100;
-	CameraLoc.Z -= 60;
+	CameraLoc.Y -= 300;
+	CameraLoc.Z -= 450;
+	CameraLoc.X -= 150;
 	SetActorLocation(CameraLoc);
 
 	Player->OnDie();

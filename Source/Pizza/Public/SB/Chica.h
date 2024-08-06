@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include "CoreMinimal.h"
 #include "LocationState.h"
@@ -15,10 +15,11 @@ public:
 	AChica();
 
 	void SetUpLocation(ELocationState State, float DeltaTime);
+	void UpdateState(float DeltaTime);
 
 protected:
 	virtual void BeginPlay() override;
-	
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 public:	
 	virtual void Tick(float DeltaTime) override;
@@ -29,9 +30,9 @@ public:
 	class UAILevel* AILevelComp;
 
 	TArray<FVector> TagArr;
-	int32 RoomNum;
+	int32 RoomNum = 1;
 
-	// Çö À§Ä¡ ÅÂ±× È®ÀÎ
+	// í˜„ ìœ„ì¹˜ íƒœê·¸ í™•ì¸
 	// FName GetCurrentLocationTag();
 	
 	void Idle(float DeltaTime);
@@ -43,22 +44,47 @@ private:
 	UPROPERTY(EditDefaultsOnly)
 	ELocationState CurrentState;
 
-	// ¸Å 4.98ÃÊ¸¶´Ù ÀÌµ¿ °¡´É
+	// ë§¤ 4.98ì´ˆë§ˆë‹¤ ì´ë™ ê°€ëŠ¥
 	float CurrentTime = 0.f;
 	float MovableTime = 4.98f;
 
 	FVector FindActorsWithTag(FName Tag);
 	void MoveToTaggedLocation(int32 room);
+	void CanMove();
+	FTimerHandle Handle;
 
-//	void EndPlay(const EEndPlayReason::Type EndPlayReason);
-
-	//FTimerHandle Timer;
-	// ÄÁÆ®·Ñ Å° ÀÔ·Â ÇÔ¼ö -> ¼ÕÀüµî ON/OFF
+	// ì»¨íŠ¸ë¡¤ í‚¤ ì…ë ¥ í•¨ìˆ˜ -> ì†ì „ë“± ON/OFF
 	void FlashOn();
-	// Shift Å° ÀÔ·Â ÇÔ¼ö -> ¹®/¿ÊÀå Open/Close
+	// Shift í‚¤ ì…ë ¥ í•¨ìˆ˜ -> ë¬¸/ì˜·ì¥ Open/Close
 	void DoorOpen();
 	bool bIsFlashlightOn = false;
 	bool bIsDoorClose = false;
+
+	//bool bIsAtDoor = false; // í…ŒìŠ¤íŠ¸ìš© ë³€ìˆ˜
+
+
+	// ë°œì†Œë¦¬
+	UPROPERTY(EditDefaultsOnly)
+	class USoundBase* FootStepsSFX;
+	UPROPERTY()
+    UAudioComponent* FootStepsAudioComponent;
+	// ìˆ¨ì†Œë¦¬
+	UPROPERTY(EditDefaultsOnly)
+	class USoundBase* BreathSFX;
+	UPROPERTY()
+    UAudioComponent* BreathAudioComponent;
+	// ì í”„ìŠ¤ì¼€ì–´ ì†Œë¦¬
+	UPROPERTY(EditDefaultsOnly)
+	class USoundBase* JumpScareSFX;
+
+	bool bFSound = false; // ë°œì†Œë¦¬ í† ê¸€
+	bool bBSound = false; // ìˆ¨ì†Œë¦¬ í† ê¸€
+	bool bJSound = false; // ì í”„ìŠ¤ì¼€ì–´ ì†Œë¦¬ í† ê¸€
+
+	void PlayFootStepsSound();
+	void StopFootStepsSound();
+	void PlayBreathSound();
+	void StopBreathSound();
 
 	UPROPERTY()
 	class AFreddyPlayer* player;

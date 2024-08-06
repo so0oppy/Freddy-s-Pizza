@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -58,9 +58,14 @@ public:
 	// 문 닫았는 지, 열었는 지 리턴
 	bool GetrCloseDoor();
 
+	class UCameraComponent* GetCameraComp();
+
 	// 현재 보고 있는 위치 리턴
 	LookAt GetLookAtState();
 
+	FTransform GetCameraTransform();
+
+	void OnDie();
 
 private:
 
@@ -72,6 +77,17 @@ private:
 	class UInputAction* FlashAction;
 	UPROPERTY(EditDefaultsOnly, Category="Input")
 	class UInputAction* CloseDoorAction;
+
+	UPROPERTY(EditDefaultsOnly, Category="Input")
+	class UInputAction* RestartAction;
+
+	UFUNCTION()
+	void OnRestart();
+
+	FTimerHandle PauseHandle;
+
+	UFUNCTION()
+	void OnMyPause();
 
 	// 인풋 매핑 함수
 	UFUNCTION()
@@ -192,10 +208,97 @@ private:
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<class UCameraShakeBase> WalkShake;
 
+	bool bEnableRestart = false;
+
+	// 점프스케어 카메라 쉐이크
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<UCameraShakeBase> JumpScareShake1;
+
 	// 위치 도착 후 문 열면서 몸 기울이기
 	// 문 변수 3개 흠... 배열?  LookAt으로 문 배열에 접근
-	
-	// 해당 문이 왼쪽 혹은 오른쪽이라면 문의 Rotation을 -12만큼 Clamp로 돌리기
+	UPROPERTY(VisibleAnywhere)
+	TArray<class ADoor*> Doors;
+	// 문 열면서 고개 기울이는 함수
+	void DoorRotAndCameraMove(float DeltaTime);
 
-	// 해당 문이 가운데라면 양옆으로 밀기
+	// 
+	int32 CloseBoost = 5;
+	bool bCloseDoor = false;
+	// 추가할 변수들
+	bool bOpenDoor=false;
+	int32 DoorIndex=-1;
+	FRotator DoorRotation;
+	FVector CameraOffset;
+	FRotator CameraRotation;
+	void SetUpdateDoor(int32 DoorNum);
+	void SetBackDoor(int32 BackNum);
+	UPROPERTY(EditAnywhere)
+	USceneComponent* LeftDoorMovePoint;
+	UPROPERTY(EditAnywhere)
+	USceneComponent* RightDoorMovePoint;
+
+	UPROPERTY(EditAnywhere)
+	USceneComponent* RightBackMovePoint;
+
+	UPROPERTY(EditAnywhere)
+	USceneComponent* LeftBackMovePoint;
+
+	UPROPERTY(EditAnywhere)
+	USceneComponent* CenterBackMovePoint;
+
+	FVector OriginCameraVector;
+	FRotator OriginCameraRotate;
+
+
+	// 문 닫기/열기 로테이트는 기존 변수 재사용
+	// 문 닫기/열기 완료 스테이트
+	bool bCompleteOpenOrClose;
+	// 카메라 이동 위치를 저장할 MovePoint
+	UPROPERTY(EditAnywhere)
+	float LeftDoorClosePoint = 0.f;
+	UPROPERTY(EditAnywhere)
+	float LeftDoorOpenPoint = -35.f;
+	UPROPERTY(EditAnywhere)
+	float LeftDoorOriginPoint = -13.f;
+	UPROPERTY(EditAnywhere)
+	float RightDoorClosePoint = 0.f;
+	UPROPERTY(EditAnywhere)
+	float RightDoorOriginPoint = 13.f;
+
+	UPROPERTY(EditAnywhere)
+	float RightDoorOpenPoint = 40.f;
+
+	UPROPERTY(EditAnywhere)
+	USceneComponent* LeftCameraClosePoint;
+	UPROPERTY(EditAnywhere)
+	USceneComponent* RightCameraClosePoint;
+
+	FVector DoorLocation;
+
+	UPROPERTY(EditAnywhere)
+	float DoorMovePoint = -180.f;
+	float DoorOriginPoint = 0.f;
+	// 문 닫고 열때 적용시키는 함수
+	void DoorOpenAndClose(float DeltaTime);
+
+
+	// 사운드 
+	// 달리기
+	UPROPERTY(EditDefaultsOnly)
+	class USoundBase* RunSound;
+	// 문 Shift로 열고 닫을 때
+	UPROPERTY(EditDefaultsOnly)
+	class USoundBase* OpenDoorSound;
+	UPROPERTY(EditDefaultsOnly)
+	class USoundBase* CloseDoorSound;
+
+	// 문 Move로 열고 닫을 때
+	UPROPERTY(EditDefaultsOnly)
+	class USoundBase* MoveOpenDoorSound;
+	UPROPERTY(EditDefaultsOnly)
+	class USoundBase* MoveCloseDoorSound;
+
+	UPROPERTY(EditDefaultsOnly)
+	class USoundBase* LightSound;
+
 };

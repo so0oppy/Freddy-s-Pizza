@@ -23,6 +23,10 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	// JumpScare
+	UFUNCTION()
+	void JumpScareFreddy();
+
 private:
 
 	UPROPERTY(EditAnywhere)
@@ -43,24 +47,29 @@ private:
 	UPROPERTY(EditAnywhere)
 	class USkeletalMeshComponent* FreddyMesh2;
 
-	// Å¥ºê(Freddy) ½ºÆù ¹è¿­
+	// Å¥ï¿½ï¿½(Freddy) ï¿½ï¿½ï¿½ï¿½ ï¿½è¿­
 	TArray<USkeletalMeshComponent*> FreddysArr;
 
-	// Å¥ºê(Freddy)°¡ ½ºÆù µÇ´Â Å¸ÀÌ¸Ó
+	// Å¥ï¿½ï¿½(Freddy)ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ç´ï¿½ Å¸ï¿½Ì¸ï¿½
 	FTimerHandle FreddysVisibleTimerHandle;
 
-	// Å¥ºê(Freddy)°¡ ½ºÆù µÇ´Â ÇÔ¼ö
+	// Å¥ï¿½ï¿½(Freddy)ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ç´ï¿½ ï¿½Ô¼ï¿½
 	void AttemptSpawnCube();
 	
-	// Å¥ºê(Freddy) Hide
+	// Å¥ï¿½ï¿½(Freddy) Hide
 	void HideFreddy(float DeltaTime);
 
-	// +1ÃÊ 
+	// +1ï¿½ï¿½ 
 	float HiddenTime = 0;
 
-	// ·£´ý ¼ýÀÚ °í¸£´Â ÇÔ¼ö
+	// ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ô¼ï¿½
 	int32 GetRandomNumber();
 
-	// Player°¡ Bed¸¦ º¸°í ÀÖ´ÂÁö Ã¼Å©
+	// Playerï¿½ï¿½ Bedï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ö´ï¿½ï¿½ï¿½ Ã¼Å©
 	bool IsPlayerLookingAtBedAndFlashOn();
+
+	UPROPERTY(EditAnywhere)
+	class USoundBase* JumpScareFreddySFX;
+
+	void JumpScareFreddySound();
 };

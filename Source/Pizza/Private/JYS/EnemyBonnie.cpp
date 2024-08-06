@@ -115,6 +115,10 @@ void AEnemyBonnie::Tick(float DeltaTime)
 
 void AEnemyBonnie::Move(EBonnieState MoveState)
 {
+	if ( MoveState == EBonnieState::Room1 )
+	{
+		FootStepsSound();
+	}
 	bIsMovingToRoom3 = false;
 	if (State == EBonnieState::Room1 && MoveState == EBonnieState::Room3)
 	{
@@ -153,10 +157,17 @@ void AEnemyBonnie::TickRoom0(const float& DeltaTime)
 	{
 		BreathSound();
 	}
+
+	// 보니가 1번방에서 0번방으로 텔레포트했을 경우 플레이어가 문을 닫으면 이동을 하지 않음 (진성오빠 텔레포트 bool값 가져오기)
+	// 보니가 원래 Room0에 있었고 플레이어가 문을 닫으면 1~2초 뒤에 2번방으로 이동
 }
 
 void AEnemyBonnie::TickRoom1(const float& DeltaTime)
 {
+	if ( CloseDoorRoom1ToRoom0() )
+	{
+		Move(EBonnieState::Room0); 
+	}
 }
 
 void AEnemyBonnie::TickRoom2(const float& DeltaTime)
@@ -169,6 +180,10 @@ void AEnemyBonnie::TickRoom3(const float& DeltaTime)
 
 void AEnemyBonnie::AttemptMove()
 {
+	if ( Player->GetLookAtState() == AFreddyPlayer::LookAt::Left )
+	{	
+		return;
+	}
 	// 랜덤 1~20 숫자 뽑기
 	int32 RandomNumber = GetRandomNumber();
 
@@ -183,29 +198,35 @@ void AEnemyBonnie::AttemptMove()
 			case EBonnieState::Room0:
 				NewState = EBonnieState::Room1;
 				break;
-			// Room1은 Room0, Room2, Room3로 이동할 수 있다
+			// Room1은 Room0으로 이동할 수 있다
 			case EBonnieState::Room1:
 			{
-				// 발자국 소리 (1번방에 있을때)
-				FootStepsSound();
-				int32 MoveChoice = FMath::RandRange(0, 2);
-				switch (MoveChoice)
+				switch ( State )
 				{
-				case 0:
+				case EBonnieState::Room1:
 					NewState = EBonnieState::Room0;
 					break;
-				case 1:
-					NewState = EBonnieState::Room2;
-					break;
-				case 2:
-					NewState = EBonnieState::Room3;
-					break;
 				}
+				// 발자국 소리 (1번방에 있을때)
+				// int32 MoveChoice = FMath::RandRange(0, 2);
+				//switch (MoveChoice)
+				//{
+				//case 0:
+				//	NewState = EBonnieState::Room0;
+				//	break;
+				//case 1:
+				//	NewState = EBonnieState::Room2;
+				//	break;
+				//case 2:
+				//	NewState = EBonnieState::Room3;
+				//	break;
+				//}
 			}	
 				break;
 			// Room2는 Room1이랑 Room3으로 이동할 수 있다
 			case EBonnieState::Room2:
 				NewState = (FMath::RandBool()) ? EBonnieState::Room1 : EBonnieState::Room3;
+				
 				break;
 			// Room3은 Room2로만 이동할 수 있다
 			case EBonnieState::Room3:
@@ -221,9 +242,9 @@ int32 AEnemyBonnie::GetRandomNumber()
 	return FMath::RandRange(1, 20);
 }
 
+// 플레이어가 왼쪽에서 Flash를 비추고 Bonnie가 1번방에 있을 때
 bool AEnemyBonnie::ShouldMoveToRoom3()
 {
-	// 플레이어가 왼쪽에서 Flash를 비추고 Bonnie가 1번방에 있을 때
 	if (Player)
 	{
 		return Player->GetFlash() && Player ->GetLookAtState() == AFreddyPlayer::LookAt::Left && State == EBonnieState::Room1;
@@ -242,6 +263,7 @@ void AEnemyBonnie::JumpScareBonnie()
 	Player->OnDie();
 }
 
+// Bonnie가 0번방에 있고 플레이어가 문을 닫으면 2번방으로 이동
 bool AEnemyBonnie::CloseDoorRoom0ToRoom2()
 {
 	if (Player)
@@ -280,6 +302,16 @@ void AEnemyBonnie::BreathSound()
 void AEnemyBonnie::OnBreathSoundFinished()
 {
 	bIsBreathSoundPlaying = false;
+}
+
+bool AEnemyBonnie::CloseDoorRoom1ToRoom0()
+{
+	if ( Player )
+	{
+		return Player->GetrCloseDoor() && Player->GetLookAtState() == AFreddyPlayer::LookAt::Left && State == EBonnieState::Room1;
+	}
+	return false;
+
 }
 
 bool AEnemyBonnie::BreathSoundConditions()

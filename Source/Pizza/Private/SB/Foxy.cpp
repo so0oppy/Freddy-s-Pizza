@@ -79,6 +79,7 @@ void AFoxy::Tick(float DeltaTime)
 	FlashOn();
 	DoorOpen();
 }
+//--------------------------------------------------------------------------------------
 
 void AFoxy::SetUpLocation(ELocationState State, float DeltaTime)
 {
@@ -116,13 +117,14 @@ void AFoxy::UpdateState(float DeltaTime)
 		break;
 	}
 }
-
+//--------------------------------------------------------------------------------------
 // Called to bind functionality to input
 void AFoxy::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
 }
+//--------------------------------------------------------------------------------------
 
 void AFoxy::Idle(float DeltaTime)
 {
@@ -137,27 +139,42 @@ void AFoxy::Idle(float DeltaTime)
 		if (AILevelComp->RandomMove(this, DeltaTime) == true)
 		{
 
+
 			if (RoomNum != 5 && RoomNum != 6 && RoomNum != 9) // room5, room6이 아닐 때는 Move()
 			{
+				AFreddyPlayer* FreddyPlayer = Cast<AFreddyPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld() , 0));
+				AFreddyPlayer::LookAt LookState;
+
+				// 플레이어 위치 == 침대 만 계속 바라보고 있으면 카운트 증가 후 점프스케어
+				if ( LookState == AFreddyPlayer::LookAt::Bed )
+				{
+					ScareCount += DeltaTime;
+					if ( ScareCount > 5.01f )
+					{
+						CurrentState = ELocationState::ATTACK;
+					}
+				}
+				// 플레이어 위치가 침대가 아닐 때 스케어카운트 0으로 초기화
+				else
+					ScareCount = 0.f;
+				
+				// 상세 조건들은 MOVE에 있음
 				CurrentState = ELocationState::MOVE;
 			}
-			// room5 -> room1 || room9 가능
+
+
+			// room5 -> (손전등만 room1) room9 가능
 			else if (RoomNum == 5)
 			{
 				AFreddyPlayer* FreddyPlayer = Cast<AFreddyPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
 				AFreddyPlayer::LookAt LookState;
 				
-				if ( bBSound == false )
-				{
-					// 숨소리 재생
-					PlayFootStepsSound();
-					bBSound = true;
-				}
-				else StopFootStepsSound();
+				PlayFootStepsSound();
 
 				//	만약, 손전등 ON -> room1로 이동 (순간이동X)
 				if (bIsFlashlightOn == true)
 				{
+					StopFootStepsSound();
 					MoveToTaggedLocation(1);
 					RoomNum = 1;
 				}
@@ -182,17 +199,12 @@ void AFoxy::Idle(float DeltaTime)
 				AFreddyPlayer* FreddyPlayer = Cast<AFreddyPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
 				AFreddyPlayer::LookAt LookState;
 
-				if ( bBSound == false )
-				{
-					// 숨소리 재생
-					PlayBreathSound();
-					bBSound = true;
-				}
-				else StopBreathSound();
+				PlayFootStepsSound();
 
 				//	만약, 손전등 ON -> room1로 이동 (순간이동X)
-				if (bIsFlashlightOn == true)
+				if ( bIsFlashlightOn == true )
 				{
+					StopFootStepsSound();
 					MoveToTaggedLocation(1);
 					RoomNum = 1;
 				}
@@ -229,38 +241,53 @@ void AFoxy::Idle(float DeltaTime)
 					LookState = FreddyPlayer->GetLookAtState();
 
 					// 플레이어 위치 == 가운데, 옷장이 살짝 움직임
-					if (LookState == AFreddyPlayer::LookAt::Main && bClosetAnim == false)
+					// 옷장에서 점프스케어 조건이 찼으면 점프스케어
+					if (LookState == AFreddyPlayer::LookAt::Main)
 					{  
-						bClosetAnim = true;
-						// 옷장 움직이는 anim(Loop안 함)
-						UE_LOG(LogTemp, Log, TEXT("Closet door Move !!"));
-						
-						CurrentState = ELocationState::IDLE; // 아래 if를 실행하기 위함
+						ScareCount = 0.f; // 점프스케어 카운트 초기화
+
+						if ( bAttack == true )
+							CurrentState = ELocationState::ATTACK;
+
+						if(bClosetAnim == false )
+						{
+							
+							bClosetAnim = true;
+							// 옷장 움직이는 anim(Loop안 함)
+							UE_LOG(LogTemp , Log , TEXT("Closet door Move !!"));
+
+							CurrentState = ELocationState::IDLE; // 아래 if를 실행하기 위함
+						}
 					}
 
 					// 플레이어 위치 == CLOSET, 놀래키는 anim 실행
 					else if (LookState == AFreddyPlayer::LookAt::Center)
 					{
+						ScareCount = 0.f; // 점프스케어 카운트 초기화
+						
 						if (bCTtoZero == true) // 반복적으로 currentTime이 0이 되지 않도록
 						{
 							CurrentTime = 0.f;
 							bCTtoZero = false;
 						}
 
-						// 놀래키기만 하는 anim 실행
-						UE_LOG(LogTemp, Log, TEXT("Foxy anim"));
-
-						// Door: bISCLOSED == false, 2초 후 점프스퀘어 (공격) → GAME OVER
-						if (bIsDoorClose == false)
+						// 옷장 문 열렸을 때
+						if ( bIsDoorClose == false )
 						{
+							// 놀래키기만 하는 anim 실행
+							UE_LOG(LogTemp , Log , TEXT("Foxy anim"));
+							
+							// 2초 후 점프스케어 (공격) → GAME OVER
 							CurrentTime += DeltaTime;
-							if (CurrentTime > 2.f)
+							if ( CurrentTime > 2.f )
 							{
-								CurrentState = ELocationState::ATTACK;
+								bAttack = true;
 							}
-							CurrentTime = 0.f;
+							CurrentTime = 0.f; // 초기화
+							// 일정 시간 지난 상태에서 메인으로 갔을 때 점프스케어
 						}
-						// Door: bISCLOSED == true (폭시 사라질 시간동안), 그 자리에 인형 스폰 (프레디처럼 이제 동작), 폭시는 다른 데로 안 가고 상태변화만 함
+
+						// 옷장 문 닫았을 때 (폭시 사라질 시간동안), 그 자리에 인형 스폰 (프레디처럼 이제 동작), 폭시는 다른 데로 안 가고 상태변화만 함
 						if (bIsDoorClose == true)
 						{
 							CurrentTime += DeltaTime;
@@ -279,18 +306,19 @@ void AFoxy::Idle(float DeltaTime)
 						}
 					}
 
-					// 플레이어 위치 ≠ CLOSET (폭시 상태 바뀔 시간동안), 점프스케어 (공격) → GAME OVER
-					else if (LookState != AFreddyPlayer::LookAt::Center)
+					// 플레이어 위치 == 침대 만 계속 바라보고 있으면 카운트 증가 후 점프스케어
+					if ( LookState == AFreddyPlayer::LookAt::Bed )
 					{
-						if (bCTtoZero == false) // 반복적으로 currentTime이 0이 되지 않도록
-						{
-							CurrentTime = 0.f;
-							bCTtoZero = true;
-						}
-						CurrentTime += DeltaTime;
-						if (CurrentTime > MovableTime)
+						ScareCount += DeltaTime;
+						if ( ScareCount > 5.01f )
+						{	
 							CurrentState = ELocationState::ATTACK;
+						}
 					}
+
+					// 플레이어 위치가 침대 이외의 곳에 있으면 카운트 초기화 (메인, 옷장은 위에서 처리, 그 나머지)
+					else
+						ScareCount = 0.f; // 점프스케어 카운트 초기화
 				}
 			}
 		}
@@ -301,73 +329,46 @@ void AFoxy::Idle(float DeltaTime)
 		CurrentTime = 0.f;
 	}
 }
+//--------------------------------------------------------------------------------------
 
 void AFoxy::Move()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Chica Move()"));
 	FVector CurrentLocation = this->GetActorLocation();
 	// 폭시 위치가 room number 몇 인지
-	//for (int32 i = 1; i < TagArr.Num(); ++i)
-	//{
-	//	if (CurrentLocation.Equals(TagArr[i], 1.0f))
-	//	{
-	//		RoomNum = i;
-	//		break;
-	//	}
-	//}
 
-	// room1 -> room2, room3, room4, room5, room6 가능
+	// room1 -> room2, room3가능
 	if (RoomNum == 1)
 	{
-		TArray<int32> RoomTags = { 2, 3, 4, 5, 6 };
+		TArray<int32> RoomTags = { 2, 3};
 		int32 RandomIndex = FMath::RandRange(0, RoomTags.Num() - 1);
 
-		//SetActorLocation(TagArr[RoomTags[RandomIndex]] );
-		//SetActorLocation(TagArr[5]); // 테스트용
-		//RoomNum = 5;
-		SetActorLocation(TagArr[9]); // 테스트용
-		RoomNum = 9;
+		SetActorLocation(TagArr[RoomTags[RandomIndex]] );
+		RoomNum = RoomTags[RandomIndex];
 	}
-	// room2 -> room1, room3, room5 가능
+	// room2 -> room3, room5 가능
 	else if (RoomNum == 2)
 	{
-		TArray<int32> RoomTags = { 1, 3, 5 };
+		TArray<int32> RoomTags = { 3, 5 };
 		int32 RandomIndex = FMath::RandRange(0, RoomTags.Num() - 1);
 
-		//SetActorLocation(TagArr[RoomTags[RandomIndex]] );
-		//SetActorLocation(TagArr[5]); // 테스트용
-		//RoomNum = 5;
-		SetActorLocation(TagArr[9]); // 테스트용
-		RoomNum = 9;
+		SetActorLocation(TagArr[RoomTags[RandomIndex]]);
+		RoomNum = RoomTags[RandomIndex];
 	}
 	// room3 -> room1, room2, room4, room6 가능
 	else if (RoomNum == 3)
 	{
-		TArray<int32> RoomTags = { 1, 2, 4, 6 };
+		TArray<int32> RoomTags = { 2, 6 };
 		int32 RandomIndex = FMath::RandRange(0, RoomTags.Num() - 1);
 
-		//SetActorLocation(TagArr[RoomTags[RandomIndex]] );
-		//SetActorLocation(TagArr[6]); // 테스트용
-		//RoomNum = 6;
-		SetActorLocation(TagArr[9]); // 테스트용
-		RoomNum = 9;
-	}
-	// room4 -> room1, room3, room6 가능
-	else if (RoomNum == 4)
-	{
-		TArray<int32> RoomTags = { 1, 3, 6 };
-		int32 RandomIndex = FMath::RandRange(0, RoomTags.Num() - 1);
-
-		//SetActorLocation(TagArr[RoomTags[RandomIndex]] );
-		//SetActorLocation(TagArr[6]); // 테스트용
-		//RoomNum = 6;
-		SetActorLocation(TagArr[9]); // 테스트용
-		RoomNum = 9;
+		SetActorLocation(TagArr[RoomTags[RandomIndex]]);
+		RoomNum = RoomTags[RandomIndex];
 	}
 	
 	CurrentState = ELocationState::IDLE;
 }
 
+//--------------------------------------------------------------------------------------
 void AFoxy::Attack()
 {
 	// 점프스퀘어 anim 재생
@@ -395,6 +396,7 @@ void AFoxy::Attack()
 	// 게임 오버
 
 }
+//--------------------------------------------------------------------------------------
 
 FVector AFoxy::FindActorsWithTag(FName Tag)
 {
@@ -523,22 +525,3 @@ void AFoxy::StopFootStepsSound()
 		FootStepsAudioComponent->Stop();
 	}
 }
-
-void AFoxy::PlayBreathSound()
-{
-	if ( BreathSFX && !BreathAudioComponent->IsPlaying() )
-	{
-		BreathAudioComponent->SetSound(BreathSFX);
-		BreathAudioComponent->Play();
-	}
-}
-
-void AFoxy::StopBreathSound()
-{
-	if ( BreathAudioComponent->IsPlaying() )
-	{
-		BreathAudioComponent->Stop();
-	}
-}
-
-

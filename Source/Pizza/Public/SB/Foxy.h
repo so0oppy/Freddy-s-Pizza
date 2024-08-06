@@ -53,6 +53,9 @@ private:
 	float CurrentTime = 0.f;
 	float MovableTime = 5.01f;
 
+	// 침대를 바라볼 때 쌓일 점프스케어 카운트
+	float ScareCount = 0.f;
+
 	FVector FindActorsWithTag(FName Tag);
 	void MoveToTaggedLocation(int32 room);
 	void CanMove();
@@ -67,6 +70,7 @@ private:
 
 	bool bClosetAnim = false; // 옷장 애니메이션 한 번만 실행되게 하는 플래그
 	bool bCTtoZero = false; // currentTime이 한 번만 0이 되게 하는 플래그
+	bool bAttack = false; // 공격 조건
 
 	//bool bIsAtDoor = false; // 테스트용 변수
 	void ShowFoxy(ACharacter* character);
@@ -78,11 +82,7 @@ private:
 	class USoundBase* FootStepsSFX;
 	UPROPERTY()
     UAudioComponent* FootStepsAudioComponent;
-	// 숨소리
-	UPROPERTY(EditDefaultsOnly)
-	class USoundBase* BreathSFX;
-	UPROPERTY()
-    UAudioComponent* BreathAudioComponent;
+	
 	// 점프스케어 소리
 	UPROPERTY(EditDefaultsOnly)
 	class USoundBase* JumpScareSFX;
@@ -93,8 +93,6 @@ private:
 
 	void PlayFootStepsSound();
 	void StopFootStepsSound();
-	void PlayBreathSound();
-	void StopBreathSound();
 
 	UPROPERTY()
 	class AFreddyPlayer* player;

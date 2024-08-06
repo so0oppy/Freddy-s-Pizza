@@ -48,6 +48,9 @@ private:
 	float CurrentTime = 0.f;
 	float MovableTime = 4.98f;
 
+	float CupCakeTimer = 0.f; // 1, 3일 때 0 초기화 8에서 쌓이는데 6에선 초기화는 안 되고 멈춤
+	float CupCakeTime = 4.98f;
+
 	FVector FindActorsWithTag(FName Tag);
 	void MoveToTaggedLocation(int32 room);
 	void CanMove();
@@ -76,6 +79,8 @@ private:
 	// 점프스케어 소리
 	UPROPERTY(EditDefaultsOnly)
 	class USoundBase* JumpScareSFX;
+	UPROPERTY(EditDefaultsOnly)
+	class USoundBase* CupCakeScareSFX;
 
 	bool bFSound = false; // 발소리 토글
 	bool bBSound = false; // 숨소리 토글

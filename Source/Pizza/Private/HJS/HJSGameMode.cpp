@@ -140,7 +140,7 @@ void AHJSGameMode::SetAILevelEnemy()
 	if ( Freddy )
 	{
 		Freddy->SetAILevel(LV_freddy[Day][Hour]);
-		//Freddy->SetAILevel(20);
+		Freddy->SetAILevel(20);
 	}
 
 }

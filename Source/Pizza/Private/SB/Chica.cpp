@@ -201,8 +201,10 @@ void AChica::Idle(float DeltaTime)
 			{
 				StopBreathSound();
 			}
+			
+			
 			//→ 플레이어 위치= Main 일 때, 일정 시간 후에 컵케이크 점프스케어(공격) → GAME OVER
-			else if ( LookState == AFreddyPlayer::LookAt::Main )
+			if ( LookState == AFreddyPlayer::LookAt::Main )
 			{
 				if ( CupCakeTimer > CupCakeTime )
 				{

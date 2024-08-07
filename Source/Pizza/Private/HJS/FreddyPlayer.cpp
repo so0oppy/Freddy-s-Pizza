@@ -12,6 +12,9 @@
 #include "Camera/CameraShakeBase.h"
 #include "Kismet/GameplayStatics.h"
 #include "HJS/Door.h"
+#include "HJS/HJSGameMode.h"
+#include "SB/Chica.h"
+#include "JYS/EnemyBonnie.h"
 // Sets default values
 AFreddyPlayer::AFreddyPlayer()
 {
@@ -141,8 +144,9 @@ void AFreddyPlayer::BeginPlay()
 
 	}
 	//		(Pitch=6.336300,Yaw=0.000000,Roll=0.000000)
-	OriginCameraRotate = FRotator(6.336300f, 0.f, 0.f);
-	OriginCameraVector = FVector(0.f,0.f,-30.f);
+	OriginCameraRotate = FRotator(10.f, 0.f, 0.f);
+	//(X=498.913821,Y=0.000000,Z=-140.000000)
+	OriginCameraVector = FVector(499.f,0.f,-140.f);
 }
 
 void AFreddyPlayer::SetUp()
@@ -324,6 +328,36 @@ void AFreddyPlayer::CloseDoor()
 		return;
 	}
 
+	
+	AHJSGameMode* GM = Cast<AHJSGameMode>(GetWorld()->GetAuthGameMode());
+	if ( GM != nullptr ) {
+		// 오른쪽 문을 닫은 경우
+		if ( LookAtState == LookAt::Right )
+		{
+			AChica* Chica = GM->GetChica();
+			if ( Chica != nullptr )
+			{
+				if ( Chica->RoomNum == 6 )
+				{
+					bTeleport = true;
+				}
+			}
+		}
+
+		// 왼쪽 문을 닫은 경우
+
+		if ( LookAtState == LookAt::Left )
+		{
+			AEnemyBonnie* Bonnie = GM->GetBonnie();
+			if ( Bonnie != nullptr )
+			{
+				if ( Bonnie->State == EBonnieState::Room1 )
+				{
+					bTeleport = true;
+				}
+			}
+		}
+	}
 	// 문 닫기 변수 변화
 	bClose= true;
 	
@@ -382,6 +416,7 @@ void AFreddyPlayer::OpenDoor()
 	}
 	// 문 열기 변수 변화
 	bClose= false;
+	bTeleport = false;
 
 	DoorIndex=static_cast<int32>(LookAtState);
 	DoorRotation=Doors[DoorIndex]->GetActorRotation();
@@ -686,7 +721,7 @@ void AFreddyPlayer::UpdateHeadMovement(float DeltaTime)
 		}
 		HeadCurrentTime += DeltaTime;
 		float Alpha = FMath::Clamp(HeadCurrentTime / HeadMovementTime, 0.0f, 1.0f);
-		float Pitch = bHeadDown ? FMath::Lerp(0.0f, -80.0f, Alpha) : FMath::Lerp(-80.0f, 0.0f, Alpha);
+		float Pitch = bHeadDown ? FMath::Lerp(OriginCameraRotate.Pitch , -80.0f, Alpha) : FMath::Lerp(-80.0f, OriginCameraRotate.Pitch, Alpha);
 		FRotator NewRotation = SpringArmComp->GetRelativeRotation();
 		NewRotation.Pitch = Pitch;
 		SpringArmComp->SetRelativeRotation(NewRotation);

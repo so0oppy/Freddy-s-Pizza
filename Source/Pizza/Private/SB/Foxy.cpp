@@ -27,10 +27,6 @@ AFoxy::AFoxy()
 	FootStepsAudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("FootStepsAudioComponent"));
 	FootStepsAudioComponent->SetupAttachment(RootComponent);
 	FootStepsAudioComponent->bAutoActivate = false; // sound가 바로 재생되지 않게
-
-	BreathAudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("BreathAudioComponent"));
-	BreathAudioComponent->SetupAttachment(RootComponent);
-	BreathAudioComponent->bAutoActivate = false; // sound가 바로 재생되지 않게
 }
 
 // Called when the game starts or when spawned

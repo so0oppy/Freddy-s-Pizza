@@ -46,7 +46,7 @@ void AEnemyFreddy::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	SetAILevel(3);
+	SetAILevel(20);
 
 	// 큐브(Freddy) 스폰 타이머
 	GetWorld()->GetTimerManager().SetTimer(FreddysVisibleTimerHandle, this, &AEnemyFreddy::AttemptSpawnCube, 3.02f, true);
@@ -114,8 +114,11 @@ void AEnemyFreddy::AttemptSpawnCube()
 			// 프레디가 3마리이고 3초 이상이 지나면 점프스케어
 			if (FreddyMesh2->bHiddenInGame == false && HiddenTime >= 3)
 			{
-				JumpScareFreddy();
-				JumpScareFreddySound();
+				if ( IsPlayerLookingAtBed() )
+				{
+					JumpScareFreddy();
+					JumpScareFreddySound();
+				}
 			}
 			// Freddy를 차례대로 Visible
 			if (FreddyMesh0->bHiddenInGame)
@@ -195,12 +198,32 @@ bool AEnemyFreddy::NotLookingAtTheDoor()
 	return false;
 }
 
+bool AEnemyFreddy::IsPlayerLookingAtBed()
+{
+	// GetMesh()->SetHiddenInGame(false);
+	if ( Player )
+	{
+		return Player->GetLookAtState() == AFreddyPlayer::LookAt::Bed;
+	}
+	return false;
+}
+
 void AEnemyFreddy::JumpScareFreddy()
 {
-	FVector CameraLoc = Player->GetCameraTransform().GetLocation();
-	CameraLoc.Y -= 100;
-	CameraLoc.Z -= 60;
-	SetActorLocation(CameraLoc);
+	if ( IsPlayerLookingAtBed() == true )
+	{
+		FVector CameraLoc = Player->GetCameraTransform().GetLocation();
+		FVector CameraLocForwardVector = CameraLoc.RightVector * 400;
+		CameraLoc += CameraLocForwardVector;
+		SetActorLocation(CameraLoc);
+	}
+	else
+	{
+		FVector CameraLoc = Player->GetCameraTransform().GetLocation();
+		CameraLoc.Y -= 100;
+		CameraLoc.Z -= 60;
+		SetActorLocation(CameraLoc);
+	}
 
 	GetMesh()->SetHiddenInGame(false);
 

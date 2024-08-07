@@ -67,6 +67,8 @@ public:
 
 	void OnDie();
 
+	bool bTeleport;
+
 private:
 
 	// 인핸스드 인풋

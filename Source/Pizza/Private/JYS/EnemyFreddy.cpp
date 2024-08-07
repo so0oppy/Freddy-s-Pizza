@@ -1,9 +1,11 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+ï»¿// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "JYS/EnemyFreddy.h"
 #include "HJS/FreddyPlayer.h"
 #include "Components/BoxComponent.h"
+#include "Sound/SoundBase.h"
+#include "Kismet/GameplayStatics.h"
 
 // Sets default values
 AEnemyFreddy::AEnemyFreddy()
@@ -11,7 +13,7 @@ AEnemyFreddy::AEnemyFreddy()
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	// Freddy 3¸¶¸® ¸¸µé±â
+	// Freddy 3ë§ˆë¦¬ ë§Œë“¤ê¸°
 	Freddy0 = CreateDefaultSubobject<UBoxComponent>(TEXT("Freddy0"));
 	Freddy0->SetRelativeLocation(FVector(- 60.0f, 4580.0f, 530.0f));
 	FreddyMesh0 = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("FreddyMesh0"));
@@ -30,6 +32,12 @@ AEnemyFreddy::AEnemyFreddy()
 	FreddyMesh2->SetupAttachment(Freddy2);
 	FreddyMesh2->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
+	// JumpScare Sound
+	ConstructorHelpers::FObjectFinder<USoundBase> tempSound(TEXT("/Script/Engine.SoundWave'/Game/SFX/FNAFSFX01/Scream3.Scream3'"));
+	if (tempSound.Succeeded()) 
+	{
+		JumpScareFreddySFX = tempSound.Object;
+	}
 
 }
 
@@ -40,20 +48,21 @@ void AEnemyFreddy::BeginPlay()
 	
 	SetAILevel(3);
 
-	// Å¥ºê(Freddy) ½ºÆù Å¸ÀÌ¸Ó
+	// íë¸Œ(Freddy) ìŠ¤í° íƒ€ì´ë¨¸
 	GetWorld()->GetTimerManager().SetTimer(FreddysVisibleTimerHandle, this, &AEnemyFreddy::AttemptSpawnCube, 3.02f, true);
 
-	// FreddyµéÀ» ¹è¿­¿¡ ³Ö¾î ÁÜ
+	// Freddyë“¤ì„ ë°°ì—´ì— ë„£ì–´ ì¤Œ
 	FreddysArr.Add(FreddyMesh0);
 	FreddysArr.Add(FreddyMesh1);
 	FreddysArr.Add(FreddyMesh2);
 
-	// FreddyµéÀ» Ã³À½¿¡ Hide ÇØÁÜ
+	// Freddyë“¤ì„ ì²˜ìŒì— Hide í•´ì¤Œ
 	for (int32 i = 0; i < FreddysArr.Num(); ++i)
 	{
 		FreddysArr[i]->SetHiddenInGame(true);
 	}
 
+	GetMesh()->SetHiddenInGame(true);
 }
 
 // Called every frame
@@ -72,16 +81,21 @@ void AEnemyFreddy::Tick(float DeltaTime)
 
 void AEnemyFreddy::AttemptSpawnCube()
 {
-	// ¸¸¾à ÇÃ·¹ÀÌ¾î°¡ Ä§´ë¸¦ ¹Ù¶óº¸°í ÀÖÁö ¾Ê´Ù¸é
+	// ë§Œì•½ í”Œë ˆì´ì–´ê°€ ì¹¨ëŒ€ë¥¼ ë°”ë¼ë³´ê³  ìˆì§€ ì•Šë‹¤ë©´
 	if (!IsPlayerLookingAtBedAndFlashOn())
 	{
-		// ·£´ı ³Ñ¹ö¸¦ °í¸¥´Ù
+		// ëœë¤ ë„˜ë²„ë¥¼ ê³ ë¥¸ë‹¤
 		int32 RandomNumber = GetRandomNumber();
 
-		// ·£´ı ³Ñ¹ö°¡ FreddyÀÇ ·¹º§º¸´Ù ³·°Å³ª °°´Ù¸é
+		// ëœë¤ ë„˜ë²„ê°€ Freddyì˜ ë ˆë²¨ë³´ë‹¤ ë‚®ê±°ë‚˜ ê°™ë‹¤ë©´
 		if (RandomNumber <= Level)
 		{
-			// Freddy¸¦ Â÷·Ê´ë·Î Visible
+			if (FreddyMesh2->bHiddenInGame == false && HiddenTime >= 3)
+			{
+				JumpScareFreddy();
+				JumpScareFreddySound();
+			}
+			// Freddyë¥¼ ì°¨ë¡€ëŒ€ë¡œ Visible
 			if (FreddyMesh0->bHiddenInGame)
 			{
 				HiddenTime += 1;
@@ -134,5 +148,27 @@ bool AEnemyFreddy::IsPlayerLookingAtBedAndFlashOn()
 		return Player->GetLookAtState() == AFreddyPlayer::LookAt::Bed && Player->GetFlash();
 	}
 	return false;
+}
+
+void AEnemyFreddy::JumpScareFreddySound()
+{
+	UGameplayStatics::PlaySound2D(GetWorld(), JumpScareFreddySFX);
+}
+
+void AEnemyFreddy::JumpScareFreddy()
+{
+	FVector CameraLoc = Player->GetCameraTransform().GetLocation();
+	CameraLoc.Y -= 100;
+	CameraLoc.Z -= 60;
+	SetActorLocation(CameraLoc);
+
+	GetMesh()->SetHiddenInGame(false);
+
+	Player->OnDie();
+
+	for (int32 i = 0; i < FreddysArr.Num(); ++i)
+	{
+		FreddysArr[i]->SetHiddenInGame(true);
+	}
 }
 

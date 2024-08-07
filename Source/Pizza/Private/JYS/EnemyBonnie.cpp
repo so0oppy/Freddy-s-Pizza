@@ -1,9 +1,11 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+ï»¿// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "JYS/EnemyBonnie.h"
 #include "HJS/FreddyPlayer.h"
 #include "EngineUtils.h"
+#include "Sound/SoundBase.h"
+#include "Kismet/GameplayStatics.h"
 
 // Sets default values
 AEnemyBonnie::AEnemyBonnie()
@@ -19,14 +21,37 @@ AEnemyBonnie::AEnemyBonnie()
 	// Room3
 	RoomPositions[3] = FVector(200.0f, -280.0f, 0.0f);
 
-	State = EBonnieState::Room1;
+	State = EBonnieState::Room3;
 
 	Player = nullptr; // Initialize Player to nullptr
 	TargetLocation = RoomPositions[0]; // Initialize TargetLocation
-	// ÀÌµ¿ ¼Óµµ ÃÊ±âÈ­
+	// ì´ë™ ì†ë„ ì´ˆê¸°í™”
 	MoveSpeed = 500.0f;
-	// ÀÌµ¿ Áß ¿©ºÎ ÃÊ±âÈ­
+	// ì´ë™ ì¤‘ ì—¬ë¶€ ì´ˆê¸°í™”
 	bIsMovingToRoom3 = false;
+	
+	// JumpScare Sound
+	ConstructorHelpers::FObjectFinder<USoundBase> tempSound(TEXT("/Script/Engine.SoundWave'/Game/SFX/FNAFSFX01/Scream2.Scream2'"));
+		if (tempSound.Succeeded()) 
+		{
+			JumpScareSFX = tempSound.Object;
+		}
+	
+	// ë°œìêµ­ ì†Œë¦¬
+	ConstructorHelpers::FObjectFinder<USoundBase> tempSound1(TEXT("/Script/Engine.SoundWave'/Game/SFX/FNAFSFX02/deepfootsteps1.deepfootsteps1'"));
+	if (tempSound.Succeeded()) 
+	{
+		FootStepsSFX = tempSound1.Object;
+	}	
+	
+	// ìˆ¨ì†Œë¦¬
+	ConstructorHelpers::FObjectFinder<USoundBase> tempSound2(TEXT("/Script/Engine.SoundWave'/Game/SFX/FNAFSFX02/animatronicbreath.animatronicbreath'"));
+	if (tempSound.Succeeded())
+	{
+		BreathSFX = tempSound2.Object;
+	}
+
+	bIsBreathSoundPlaying = false;
 }
 
 // Called when the game starts or when spawned
@@ -34,16 +59,9 @@ void AEnemyBonnie::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	SetAILevel(20);
+	SetAILevel(7);
 
 	GetWorld()->GetTimerManager().SetTimer(MoveTimerHandle, this, &AEnemyBonnie::AttemptMove, 4.97f, true);
-
-	// ÇÃ·¹ÀÌ¾î °´Ã¼ Ã£±â
-	//for (TActorIterator<AFreddyPlayer> It(GetWorld()); It; ++It)
-	//{
-	//	Player = *It;
-	//	break;
-	//}
 }
 
 // Called every frame
@@ -51,21 +69,27 @@ void AEnemyBonnie::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	// Room1¿¡¼­ Room3·Î ÀÌµ¿ÇÏ±â
+	// Room1ì—ì„œ Room3ë¡œ ì´ë™í•˜ê¸°
 	if (ShouldMoveToRoom3())
 	{
 		Move(EBonnieState::Room3);
 	}
+	
+	// Room0ì—ì„œ Room2ë¡œ ì´ë™
+	if (CloseDoorRoom0ToRoom2())
+	{
+		Move(EBonnieState::Room2);
+	}
 
 	if (bIsMovingToRoom3)
 	{
-		// ÇöÀç À§Ä¡¸¦ ¸ñÇ¥ À§Ä¡·Î º¸°£ÇÏ¿© ÀÌµ¿
+		// í˜„ì¬ ìœ„ì¹˜ë¥¼ ëª©í‘œ ìœ„ì¹˜ë¡œ ë³´ê°„í•˜ì—¬ ì´ë™
 		FVector Dir = TargetLocation - GetActorLocation();
 		Dir.Normalize();
 		FVector P0 = GetActorLocation();
 		SetActorLocation(P0 + Dir * DeltaTime * MoveSpeed);
 
-		// ¸ñÇ¥ À§Ä¡¿¡ µµ´ŞÇÏ¸é ÀÌµ¿ Áß »óÅÂ ÇØÁ¦
+		// ëª©í‘œ ìœ„ì¹˜ì— ë„ë‹¬í•˜ë©´ ì´ë™ ì¤‘ ìƒíƒœ í•´ì œ
 		if (FVector::Dist(GetActorLocation(), TargetLocation) < 1.0f)
 		{
 			bIsMovingToRoom3 = false;
@@ -91,16 +115,18 @@ void AEnemyBonnie::Tick(float DeltaTime)
 
 void AEnemyBonnie::Move(EBonnieState MoveState)
 {
+	bIsMovingToRoom3 = false;
 	if (State == EBonnieState::Room1 && MoveState == EBonnieState::Room3)
 	{
 		UE_LOG(LogTemp,Warning,TEXT("1234"));
-		// 1¹ø¹æ¿¡¼­ 3¹ø¹æÀ¸·Î ÀÌµ¿ÇÒ ¶§ ÀÌµ¿	
+		// 1ë²ˆë°©ì—ì„œ 3ë²ˆë°©ìœ¼ë¡œ ì´ë™í•  ë•Œ ì´ë™	
 		bIsMovingToRoom3 = true;
 		TargetLocation = RoomPositions[static_cast<int32>(MoveState)];
+		State = EBonnieState::Room3;
 	}
 	else
 	{
-		// ´Ù¸¥ ¹æÀ¸·Î ÀÌµ¿ÇÒ ¶§´Â ¼ø°£ÀÌµ¿
+		// ë‹¤ë¥¸ ë°©ìœ¼ë¡œ ì´ë™í•  ë•ŒëŠ” ìˆœê°„ì´ë™
 		bIsMovingToRoom3 = false;
 		int32 Index = static_cast<int32>(MoveState);
 		if (Index >= 0 && Index < 4)
@@ -113,6 +139,20 @@ void AEnemyBonnie::Move(EBonnieState MoveState)
 
 void AEnemyBonnie::TickRoom0(const float& DeltaTime)
 {
+	if (JumpScarConditions())
+	{
+		if (bJumpScare == false)
+		{
+			bJumpScare = true;
+			JumpScareBonnie();
+			JumpScareSound();
+		}
+	}
+
+	if (BreathSoundConditions())
+	{
+		BreathSound();
+	}
 }
 
 void AEnemyBonnie::TickRoom1(const float& DeltaTime)
@@ -129,23 +169,25 @@ void AEnemyBonnie::TickRoom3(const float& DeltaTime)
 
 void AEnemyBonnie::AttemptMove()
 {
-	// ·£´ı 1~20 ¼ıÀÚ »Ì±â
+	// ëœë¤ 1~20 ìˆ«ì ë½‘ê¸°
 	int32 RandomNumber = GetRandomNumber();
 
-	// ·£´ı ³Ñ¹ö°¡ º¸´ÏÀÇ ·¹º§º¸´Ù ³·À» ¶§ ÀÌµ¿
+	// ëœë¤ ë„˜ë²„ê°€ ë³´ë‹ˆì˜ ë ˆë²¨ë³´ë‹¤ ë‚®ì„ ë•Œ ì´ë™
 	if (RandomNumber < Level)
 	{
 		EBonnieState NewState = State;
 		
 		switch (State)
 		{
-			// Room0Àº Room1À¸·Î¸¸ ÀÌµ¿ÇÒ ¼ö ÀÖ´Ù
+			// Room0ì€ Room1ìœ¼ë¡œë§Œ ì´ë™í•  ìˆ˜ ìˆë‹¤
 			case EBonnieState::Room0:
 				NewState = EBonnieState::Room1;
 				break;
-			// Room1Àº Room0, Room2, Room3·Î ÀÌµ¿ÇÒ ¼ö ÀÖ´Ù
+			// Room1ì€ Room0, Room2, Room3ë¡œ ì´ë™í•  ìˆ˜ ìˆë‹¤
 			case EBonnieState::Room1:
 			{
+				// ë°œìêµ­ ì†Œë¦¬ (1ë²ˆë°©ì— ìˆì„ë•Œ)
+				FootStepsSound();
 				int32 MoveChoice = FMath::RandRange(0, 2);
 				switch (MoveChoice)
 				{
@@ -161,11 +203,11 @@ void AEnemyBonnie::AttemptMove()
 				}
 			}	
 				break;
-			// Room2´Â Room1ÀÌ¶û Room3À¸·Î ÀÌµ¿ÇÒ ¼ö ÀÖ´Ù
+			// Room2ëŠ” Room1ì´ë‘ Room3ìœ¼ë¡œ ì´ë™í•  ìˆ˜ ìˆë‹¤
 			case EBonnieState::Room2:
 				NewState = (FMath::RandBool()) ? EBonnieState::Room1 : EBonnieState::Room3;
 				break;
-			// Room3Àº Room2·Î¸¸ ÀÌµ¿ÇÒ ¼ö ÀÖ´Ù
+			// Room3ì€ Room2ë¡œë§Œ ì´ë™í•  ìˆ˜ ìˆë‹¤
 			case EBonnieState::Room3:
 				NewState = EBonnieState::Room2;
 				break;
@@ -181,11 +223,83 @@ int32 AEnemyBonnie::GetRandomNumber()
 
 bool AEnemyBonnie::ShouldMoveToRoom3()
 {
-	// ÇÃ·¹ÀÌ¾î°¡ ¿ŞÂÊ¿¡¼­ Flash¸¦ ºñÃß°í Bonnie°¡ 1¹ø¹æ¿¡ ÀÖÀ» ¶§
+	// í”Œë ˆì´ì–´ê°€ ì™¼ìª½ì—ì„œ Flashë¥¼ ë¹„ì¶”ê³  Bonnieê°€ 1ë²ˆë°©ì— ìˆì„ ë•Œ
 	if (Player)
 	{
-		return Player->GetFlash()&& Player ->GetLookAtState() == AFreddyPlayer::LookAt::Left && State == EBonnieState::Room1;
+		return Player->GetFlash() && Player ->GetLookAtState() == AFreddyPlayer::LookAt::Left && State == EBonnieState::Room1;
 	}
 	return false;      
 }
 
+void AEnemyBonnie::JumpScareBonnie()
+{
+	FVector CameraLoc = Player->GetCameraTransform().GetLocation();
+	CameraLoc.Y -= 300;
+	CameraLoc.Z -= 450;
+	CameraLoc.X -= 150;
+	SetActorLocation(CameraLoc);
+
+	Player->OnDie();
+}
+
+bool AEnemyBonnie::CloseDoorRoom0ToRoom2()
+{
+	if (Player)
+	{
+		return Player->GetrCloseDoor() && Player->GetLookAtState() == AFreddyPlayer::LookAt::Left && State == EBonnieState::Room0;
+	}
+	return false;
+}
+
+void AEnemyBonnie::JumpScareSound()
+{
+	UGameplayStatics::PlaySound2D(GetWorld(), JumpScareSFX);
+}
+
+void AEnemyBonnie::FootStepsSound()
+{
+	UGameplayStatics::PlaySound2D(GetWorld(), FootStepsSFX);
+}
+
+void AEnemyBonnie::BreathSound()
+{
+
+	if (!bIsBreathSoundPlaying)
+	{
+		bIsBreathSoundPlaying = true;
+
+		UGameplayStatics::PlaySound2D(GetWorld(), BreathSFX);
+
+		// ì‚¬ìš´ë“œ ê¸¸ì´ë¥¼ ì–»ì–´ì„œ ê·¸ ì‹œê°„ í›„ì— OnBreathSoundFinished í•¨ìˆ˜ í˜¸ì¶œ
+		float Duration = BreathSFX->GetDuration();
+		GetWorld()->GetTimerManager().SetTimer(BreathTimerHandle, this, &AEnemyBonnie::OnBreathSoundFinished, Duration, false);
+
+	}
+}
+
+void AEnemyBonnie::OnBreathSoundFinished()
+{
+	bIsBreathSoundPlaying = false;
+}
+
+bool AEnemyBonnie::BreathSoundConditions()
+{
+	// í”Œë ˆì´ì–´ê°€ ì™¼ìª½ì— ìˆê³  Bonnieê°€ 0ë²ˆë°©ì— ìˆì„ ë•Œ (Breath Sound ì¬ìƒ)
+	if (Player)
+	{
+		return Player->GetLookAtState() == AFreddyPlayer::LookAt::Left;
+	}
+	return false;
+}
+
+
+bool AEnemyBonnie::JumpScarConditions()
+{
+	// í”Œë ˆì´ì–´ê°€ ì™¼ìª½ì—ì„œ Flashë¥¼ ë¹„ì¶”ê³  Bonnieê°€ 0ë²ˆë°©ì— ìˆì„ ë•Œ (JumpScare)
+	if (Player)
+	{
+		return Player->GetFlash() && Player->GetLookAtState() == AFreddyPlayer::LookAt::Left;
+	}
+	return false;
+
+}

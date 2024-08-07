@@ -108,6 +108,7 @@ void AFoxy::UpdateState(float DeltaTime)
 		break;
 	case ELocationState::ATTACK:	Attack();
 		break;
+	case ELocationState::CLOSET:	Closet(DeltaTime);
 
 	default:
 		break;
@@ -129,7 +130,7 @@ void AFoxy::Idle(float DeltaTime)
 	AFreddyPlayer::LookAt LookState;
 	LookState = FreddyPlayer->GetLookAtState();
 
-	//------------------------------------------------------------------------------
+	//////////////////////////////////////////////////////////////////////////////
 	// 플레이어 위치 == 침대 만 계속 바라보고 있으면 카운트 증가 후 점프스케어
 	if ( LookState == AFreddyPlayer::LookAt::Bed )
 	{
@@ -142,7 +143,7 @@ void AFoxy::Idle(float DeltaTime)
 	// 플레이어 위치가 침대가 아닐 때 스케어카운트 0으로 초기화
 	else
 		ScareCount = 0.f;
-	//------------------------------------------------------------------------------
+	//////////////////////////////////////////////////////////////////////////////
 
 	if ( RoomNum == 5 )
 	{
@@ -158,6 +159,7 @@ void AFoxy::Idle(float DeltaTime)
 			}
 		}
 	}
+	
 	else if ( RoomNum == 6 )
 	{
 		if ( FreddyPlayer ) // 플레이어와 연동될 부분
@@ -187,7 +189,7 @@ void AFoxy::Idle(float DeltaTime)
 				// 상세 조건들은 MOVE에 있음
 				CurrentState = ELocationState::MOVE;
 			}
-
+			//////////////////////////////////////////////////////////////////////////////
 			// room5 -> (손전등만 room1)
 			else if (RoomNum == 5)
 			{
@@ -201,6 +203,7 @@ void AFoxy::Idle(float DeltaTime)
 					RoomNum = 1;
 				}
 			}
+			//////////////////////////////////////////////////////////////////////////////
 			// room6 -> (손전등만 room1)
 			else if (RoomNum == 6)
 			{
@@ -214,87 +217,11 @@ void AFoxy::Idle(float DeltaTime)
 					RoomNum = 1;
 				}
 			}
+			//////////////////////////////////////////////////////////////////////////////
 			// room9 일 때
 			else if (RoomNum == 9)
 			{
-				AActor * FoxDollInstance = UGameplayStatics::GetActorOfClass(GetWorld(), AFoxDoll::StaticClass());
-
-				if(bIsFoxy == true )
-					ShowFoxyDoll(FoxDollInstance, false); // 폭시 들어왔을 땐 안 보이게
-				else 
-					ShowFoxyDoll(FoxDollInstance, true);
-
-				if (FreddyPlayer)
-				{
-					// 플레이어 위치 == 가운데, 옷장이 살짝 움직임
-					
-
-					
-					// 옷장에서 점프스케어 조건이 찼으면 메인에 가면 점프스케어
-					if (LookState == AFreddyPlayer::LookAt::Main)
-					{  
-						ScareCount = 0.f; // 점프스케어 카운트 초기화
-
-						if ( bAttack == true )
-							CurrentState = ELocationState::ATTACK;
-
-						if(bClosetAnim == false )
-						{
-							
-							bClosetAnim = true;
-							// 옷장 움직이는 anim(Loop안 함)
-							UE_LOG(LogTemp , Log , TEXT("Closet door Move !!"));
-
-							CurrentState = ELocationState::IDLE; // 아래 if를 실행하기 위함
-						}
-					}
-
-					// 플레이어 위치 == CLOSET, 놀래키는 anim 실행
-					else if (LookState == AFreddyPlayer::LookAt::Center)
-					{
-						ScareCount = 0.f; // 점프스케어 카운트 초기화
-						
-						if (bCTtoZero == true) // 반복적으로 currentTime이 0이 되지 않도록
-						{
-							CurrentTime = 0.f;
-							bCTtoZero = false;
-						}
-
-						// 옷장 문 열렸을 때
-						if ( bIsDoorClose == false )
-						{
-							// 놀래키기만 하는 anim 실행
-							UE_LOG(LogTemp , Log , TEXT("Foxy anim"));
-							
-							// 2초 후 점프스케어 (공격) → GAME OVER
-							CurrentTime += DeltaTime;
-							if ( CurrentTime > 2.f )
-							{
-								bAttack = true;
-							}
-							CurrentTime = 0.f; // 초기화
-							// 일정 시간 지난 상태에서 메인으로 갔을 때 점프스케어
-						}
-
-						// 옷장 문 닫았을 때 (폭시 사라질 시간동안), 그 자리에 인형 스폰 (프레디처럼 이제 동작), 폭시는 다른 데로 안 가고 상태변화만 함
-						if (bIsDoorClose == true)
-						{
-							CurrentTime += DeltaTime;
-							if (CurrentTime > MovableTime)
-							{
-								// 인형 스폰
-								// 테스트용 오브젝트 배치
-								ShowFoxyDoll(FoxDollInstance, true);
-								this->Destroy();
-
-								bIsFoxy = false;
-
-								UE_LOG(LogTemp, Log, TEXT("Spawn Foxy Doll"));
-							}
-							CurrentTime = 0.f;
-						}
-					}
-				}
+				CurrentState = ELocationState::CLOSET;
 			}
 		}
 		else
@@ -466,12 +393,146 @@ void AFoxy::DoorOpen()
 	}
 }
 
-void AFoxy::ShowFoxy(ACharacter* character)
+
+void AFoxy::Closet(float DeltaTime)
+{
+	// 플레이어
+	AFreddyPlayer* FreddyPlayer = Cast<AFreddyPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld() , 0));
+	AFreddyPlayer::LookAt LookState;
+	LookState = FreddyPlayer->GetLookAtState();
+	// 폭시 인형
+	AActor* FoxDollInstance = UGameplayStatics::GetActorOfClass(GetWorld() , AFoxDoll::StaticClass());
+
+	if ( bIsFoxy == true )
+	{
+		ShowFoxy(this, true);
+		ShowFoxyDoll(FoxDollInstance , false); // 폭시 들어왔을 땐 안 보이게
+	}
+	else
+	{
+		ShowFoxy(this , false); // 인형 상태일 땐 폭시 안 보이게
+		ShowFoxyDoll(FoxDollInstance , true);
+	}
+
+	if ( FreddyPlayer )
+	{
+		// 플레이어 위치 == 가운데, 옷장이 살짝 움직임
+
+
+
+		// 옷장에서 점프스케어 조건이 찼으면 메인에 가면 점프스케어
+		if ( LookState == AFreddyPlayer::LookAt::Main )
+		{
+			ScareCount = 0.f; // 점프스케어 카운트 초기화
+
+			if ( bAttack == true )
+				CurrentState = ELocationState::ATTACK;
+
+			if ( bClosetAnim == false )
+			{
+
+				bClosetAnim = true;
+				// 옷장 움직이는 anim(Loop안 함)
+				UE_LOG(LogTemp , Log , TEXT("Closet door Move !!"));
+
+				CurrentState = ELocationState::IDLE; // 아래 if를 실행하기 위함
+			}
+		}
+
+		// 플레이어 위치 == CLOSET
+		else if ( LookState == AFreddyPlayer::LookAt::Center )
+		{
+			ScareCount = 0.f; // 점프스케어 카운트 초기화
+
+			if ( bCTtoZero == true ) // 반복적으로 currentTime이 0이 되지 않도록
+			{
+				CurrentTime = 0.f;
+				bCTtoZero = false;
+			}
+			// 옷장 문 닫았을 때 (폭시 사라질 시간동안), 그 자리에 인형 스폰 (프레디처럼 이제 동작), 폭시는 다른 데로 안 가고 상태변화만 함
+
+			// 3단계 -> 인형 구간
+			if( StateToFoxy == false ) 
+			{
+				// 3단계면 점프스케어 가능
+				if ( State == 3 && bIsDoorClose == false)
+				{
+					// 3초 후 점프스케어 (공격) → GAME OVER
+					CurrentTime += DeltaTime;
+					if ( CurrentTime > 3.f )
+					{
+						bAttack = true;
+					}
+					CurrentTime = 0.f; // 초기화
+					// 메인으로 갔을 때 점프스케어
+				}
+				// 문 닫을 때마다 StateCount 감소 (3초 감소하면 State 변하게)  
+				if ( bIsDoorClose == true )
+				{
+					StateCount -= DeltaTime;
+					if ( StateCount < -3.f )
+						State--;
+				}
+			}
+			// 인형 -> 3단계 구간
+			else if (StateToFoxy == true)
+			{	
+				// 문 열릴 때마다 StateCount 증가 
+				if ( bIsDoorClose == false )
+				{
+					StateCount += DeltaTime;
+					if ( StateCount > 3.f )	{State++;}
+
+					// 3단계면 점프스케어 가능
+					if ( State == 4 ) // 4단계를 점프스케어로
+					{
+						// 3초 후 점프스케어 (공격) → GAME OVER
+						bAttack = true;
+						// 메인으로 갔을 때 점프스케어
+					}
+				}
+			}
+			/////////////////////////////////////////////////////////////////
+			if ( State == 3 )
+			{
+				// 불 켜면 페이크 점프스케어 anim, 한 번 나온 뒤엔 정지상태 mesh
+				if ( bIsFlashlightOn == true )
+				{
+					if ( bFake == false )
+					{
+						// 페이크 점프스케어 재생
+						bFake = true;
+					}
+					else
+					{
+						// 페이크 점프스케어 멈춘 버전 mesh 적용
+					}
+				}
+			}
+			else if ( State == 2 )
+			{
+				// 허리 구부리고 얼굴 약간 보이는 mesh 적용
+			}
+			else if ( State == 1 )
+			{
+				// 오른쪽에 서 있고 갈고리 손만 보이는 mesh 적용
+			}
+			else if ( State == 0 )
+			{
+				// 인형 어셋 적용
+				bIsFoxy = false; // Tick에서 CLOSET불러와서 ShowFoxyDoll 처리해 줄 것
+				StateToFoxy = true;
+
+				UE_LOG(LogTemp , Log , TEXT("Spawn Foxy Doll"));
+			}
+		}
+	}
+}
+
+void AFoxy::ShowFoxy(ACharacter* character, bool bShow)
 {
 	// mesh 컴포넌트로 안 보이게 (처음엔 보이게, room9에서 인형으로 바뀌면 안 보이게)
-	// room9 로직 자체를 ShowFoxy = true 일 때만 적용하도록 변경
-
-	// 근데 언제 다시 생기는지 모르겠어서 우선 destroy로..
+	this->GetMesh()->SetVisibility(bShow);
 }
 
 void AFoxy::ShowFoxyDoll(AActor* actor, bool bShow)

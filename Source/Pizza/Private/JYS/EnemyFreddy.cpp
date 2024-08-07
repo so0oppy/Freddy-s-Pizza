@@ -15,19 +15,22 @@ AEnemyFreddy::AEnemyFreddy()
 
 	// Freddy 3마리 만들기
 	Freddy0 = CreateDefaultSubobject<UBoxComponent>(TEXT("Freddy0"));
-	Freddy0->SetRelativeLocation(FVector(- 60.0f, 4580.0f, 530.0f));
+	// Freddy0->SetRelativeLocation(FVector(- 60.0f, 4580.0f, 530.0f));
+	Freddy0->SetupAttachment(RootComponent);
 	FreddyMesh0 = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("FreddyMesh0"));
 	FreddyMesh0->SetupAttachment(Freddy0);
 	FreddyMesh0->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	Freddy1 = CreateDefaultSubobject<UBoxComponent>(TEXT("Freddy1"));
-	Freddy1->SetRelativeLocation(FVector(-530.0f, 4580.0f, 530.0f));
+	// Freddy1->SetRelativeLocation(FVector(-530.0f, 4580.0f, 530.0f));
+	Freddy1->SetupAttachment(RootComponent);
 	FreddyMesh1 = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("FreddyMesh1"));
 	FreddyMesh1->SetupAttachment(Freddy1);
 	FreddyMesh1->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	Freddy2 = CreateDefaultSubobject<UBoxComponent>(TEXT("Freddy2"));
-	Freddy2->SetRelativeLocation(FVector(4200.0f, 4580.0f, 530.0f));
+	// Freddy2->SetRelativeLocation(FVector(4200.0f, 4580.0f, 530.0f));
+	Freddy2->SetupAttachment(RootComponent);
 	FreddyMesh2 = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("FreddyMesh2"));
 	FreddyMesh2->SetupAttachment(Freddy2);
 	FreddyMesh2->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -213,7 +216,11 @@ void AEnemyFreddy::JumpScareFreddy()
 	if ( IsPlayerLookingAtBed() == true )
 	{
 		FVector CameraLoc = Player->GetCameraTransform().GetLocation();
-		FVector CameraLocForwardVector = CameraLoc.RightVector * 400;
+		FVector CameraLocForwardVector = CameraLoc.RightVector * 100 + CameraLoc.DownVector * 100;
+		FRotator FreddyYaw = FRotator(0, 180 ,0);
+		SetActorRotation(FreddyYaw);
+		
+
 		CameraLoc += CameraLocForwardVector;
 		SetActorLocation(CameraLoc);
 	}

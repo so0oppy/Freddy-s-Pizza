@@ -267,6 +267,18 @@ void AFreddyPlayer::OnDie()
 
 }
 
+bool AFreddyPlayer::KeepJumpScare()
+{
+	if ( bMoving == true || bHeadDown == true || bHeadUp == true || bOpenDoor == true )
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
 void AFreddyPlayer::OnRestart()
 {
 	if ( bEnableRestart)

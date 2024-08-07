@@ -56,6 +56,9 @@ private:
 	// 침대를 바라볼 때 쌓일 점프스케어 카운트
 	float ScareCount = 0.f;
 
+	// 옷장 안에서 상태변화를 정할 카운트
+	float StateCount = 0.f;
+
 	FVector FindActorsWithTag(FName Tag);
 	void MoveToTaggedLocation(int32 room);
 	void CanMove();

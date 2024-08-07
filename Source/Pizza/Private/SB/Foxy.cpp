@@ -125,6 +125,54 @@ void AFoxy::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 void AFoxy::Idle(float DeltaTime)
 {
 	// 현재 위치 == room1 || room3 || room4 || room6 || room8 가능
+	AFreddyPlayer* FreddyPlayer = Cast<AFreddyPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld() , 0));
+	AFreddyPlayer::LookAt LookState;
+	LookState = FreddyPlayer->GetLookAtState();
+
+	//------------------------------------------------------------------------------
+	// 플레이어 위치 == 침대 만 계속 바라보고 있으면 카운트 증가 후 점프스케어
+	if ( LookState == AFreddyPlayer::LookAt::Bed )
+	{
+		ScareCount += DeltaTime;
+		if ( ScareCount > 15.f )
+		{
+			CurrentState = ELocationState::ATTACK;
+		}
+	}
+	// 플레이어 위치가 침대가 아닐 때 스케어카운트 0으로 초기화
+	else
+		ScareCount = 0.f;
+	//------------------------------------------------------------------------------
+
+	if ( RoomNum == 5 )
+	{
+		if ( FreddyPlayer ) // 플레이어와 연동될 부분
+		{
+			LookState = FreddyPlayer->GetLookAtState();
+
+			// 플레이어 위치 == 오른쪽Door이면, 바로 9로 이동
+			if ( LookState == AFreddyPlayer::LookAt::Right )
+			{
+				SetActorLocation(TagArr[9]);
+				RoomNum = 9;
+			}
+		}
+	}
+	else if ( RoomNum == 6 )
+	{
+		if ( FreddyPlayer ) // 플레이어와 연동될 부분
+		{
+			LookState = FreddyPlayer->GetLookAtState();
+
+			// 플레이어 위치 == 왼쪽Door이면, 바로 9로 이동
+			if ( LookState == AFreddyPlayer::LookAt::Left )
+			{
+				SetActorLocation(TagArr[9]);
+				RoomNum = 9;
+			}
+		}
+	}
+
 
 	// 4.98초마다 AILevel에 있는 RandomMove() 호출 && Move로 상태전이
 	CurrentTime += DeltaTime;
@@ -134,37 +182,15 @@ void AFoxy::Idle(float DeltaTime)
 		// RandomMove가 true일 때만 move
 		if (AILevelComp->RandomMove(this, DeltaTime) == true)
 		{
-
-
 			if (RoomNum != 5 && RoomNum != 6 && RoomNum != 9) // room5, room6이 아닐 때는 Move()
 			{
-				AFreddyPlayer* FreddyPlayer = Cast<AFreddyPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld() , 0));
-				AFreddyPlayer::LookAt LookState;
-
-				// 플레이어 위치 == 침대 만 계속 바라보고 있으면 카운트 증가 후 점프스케어
-				if ( LookState == AFreddyPlayer::LookAt::Bed )
-				{
-					ScareCount += DeltaTime;
-					if ( ScareCount > 5.01f )
-					{
-						CurrentState = ELocationState::ATTACK;
-					}
-				}
-				// 플레이어 위치가 침대가 아닐 때 스케어카운트 0으로 초기화
-				else
-					ScareCount = 0.f;
-				
 				// 상세 조건들은 MOVE에 있음
 				CurrentState = ELocationState::MOVE;
 			}
 
-
-			// room5 -> (손전등만 room1) room9 가능
+			// room5 -> (손전등만 room1)
 			else if (RoomNum == 5)
 			{
-				AFreddyPlayer* FreddyPlayer = Cast<AFreddyPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
-				AFreddyPlayer::LookAt LookState;
-				
 				PlayFootStepsSound();
 
 				//	만약, 손전등 ON -> room1로 이동 (순간이동X)
@@ -174,27 +200,10 @@ void AFoxy::Idle(float DeltaTime)
 					MoveToTaggedLocation(1);
 					RoomNum = 1;
 				}
-
-				if (FreddyPlayer) // 플레이어와 연동될 부분
-				{
-					LookState = FreddyPlayer->GetLookAtState();
-					
-					// (플레이어 위치 == 오른쪽Door || 플레이어 위치 == 침대) && 이동 시간이 되면, 9로 이동
-					if (LookState == AFreddyPlayer::LookAt::Right || LookState == AFreddyPlayer::LookAt::Bed)
-					{
-						SetActorLocation(TagArr[9]);
-						RoomNum = 9;
-					}
-				}
-
-				CurrentState = ELocationState::IDLE;
 			}
-			// room6 -> room1 || room9 가능
+			// room6 -> (손전등만 room1)
 			else if (RoomNum == 6)
 			{
-				AFreddyPlayer* FreddyPlayer = Cast<AFreddyPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
-				AFreddyPlayer::LookAt LookState;
-
 				PlayFootStepsSound();
 
 				//	만약, 손전등 ON -> room1로 이동 (순간이동X)
@@ -204,27 +213,10 @@ void AFoxy::Idle(float DeltaTime)
 					MoveToTaggedLocation(1);
 					RoomNum = 1;
 				}
-
-				if (FreddyPlayer) // 플레이어와 연동될 부분
-				{
-					LookState = FreddyPlayer->GetLookAtState();
-
-					// (플레이어 위치 == 왼쪽Door || 플레이어 위치 == 침대) && 이동 시간이 되면, 9로 이동
-					if (LookState == AFreddyPlayer::LookAt::Left || LookState == AFreddyPlayer::LookAt::Bed)
-					{
-						SetActorLocation(TagArr[9]);
-						RoomNum = 9;
-					}
-				}
-
-				CurrentState = ELocationState::IDLE;
 			}
 			// room9 일 때
 			else if (RoomNum == 9)
 			{
-				AFreddyPlayer* FreddyPlayer = Cast<AFreddyPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
-				AFreddyPlayer::LookAt LookState;
-
 				AActor * FoxDollInstance = UGameplayStatics::GetActorOfClass(GetWorld(), AFoxDoll::StaticClass());
 
 				if(bIsFoxy == true )
@@ -234,10 +226,11 @@ void AFoxy::Idle(float DeltaTime)
 
 				if (FreddyPlayer)
 				{
-					LookState = FreddyPlayer->GetLookAtState();
-
 					// 플레이어 위치 == 가운데, 옷장이 살짝 움직임
-					// 옷장에서 점프스케어 조건이 찼으면 점프스케어
+					
+
+					
+					// 옷장에서 점프스케어 조건이 찼으면 메인에 가면 점프스케어
 					if (LookState == AFreddyPlayer::LookAt::Main)
 					{  
 						ScareCount = 0.f; // 점프스케어 카운트 초기화
@@ -301,20 +294,6 @@ void AFoxy::Idle(float DeltaTime)
 							CurrentTime = 0.f;
 						}
 					}
-
-					// 플레이어 위치 == 침대 만 계속 바라보고 있으면 카운트 증가 후 점프스케어
-					if ( LookState == AFreddyPlayer::LookAt::Bed )
-					{
-						ScareCount += DeltaTime;
-						if ( ScareCount > 5.01f )
-						{	
-							CurrentState = ELocationState::ATTACK;
-						}
-					}
-
-					// 플레이어 위치가 침대 이외의 곳에 있으면 카운트 초기화 (메인, 옷장은 위에서 처리, 그 나머지)
-					else
-						ScareCount = 0.f; // 점프스케어 카운트 초기화
 				}
 			}
 		}

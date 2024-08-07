@@ -201,6 +201,14 @@ void AChica::Idle(float DeltaTime)
 			{
 				StopBreathSound();
 			}
+			//→ 플레이어 위치= Main 일 때, 일정 시간 후에 컵케이크 점프스케어(공격) → GAME OVER
+			else if ( LookState == AFreddyPlayer::LookAt::Main )
+			{
+				if ( CupCakeTimer > CupCakeTime )
+				{
+					CurrentState = ELocationState::CUPCAKE;
+				}
+			}
 		}
 	}
 
@@ -221,16 +229,9 @@ void AChica::Idle(float DeltaTime)
 
 			else if (RoomNum == 8)  //room8일 때 'attack, cupcake, 이동' 세가지 조건이므로 따로 분류
 			{
-				//→ 플레이어 위치= Main 일 때, 일정 시간 후에 컵케이크 점프스케어(공격) → GAME OVER
-				if (LookState == AFreddyPlayer::LookAt::Main)
-				{
-					if ( CupCakeTimer > CupCakeTime )
-					{
-						CurrentState = ELocationState::CUPCAKE;
-					}
-				}
+				
 				// → 플레이어 위치= Left 일 때, 컵케이크 점프스케어 안 하고 6으로 돌아감
-				else if ( LookState == AFreddyPlayer::LookAt::Left )
+				if ( LookState == AFreddyPlayer::LookAt::Left )
 				{
 					SetActorLocation(TagArr[6]);
 					RoomNum = 6;

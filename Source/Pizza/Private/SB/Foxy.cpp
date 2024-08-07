@@ -52,6 +52,7 @@ void AFoxy::BeginPlay()
 
 	AActor* FoxDollInstance = UGameplayStatics::GetActorOfClass(GetWorld() , AFoxDoll::StaticClass());
 	ShowFoxyDoll(FoxDollInstance, false);
+	ShowFoxy(this, false);
 
 	CurrentState = ELocationState::IDLE;
 }
@@ -91,6 +92,8 @@ void AFoxy::SetUpLocation(ELocationState State, float DeltaTime)
 			break;
 		case ELocationState::ATTACK:	Attack();
 			break;
+		case ELocationState::CLOSET:	Closet(DeltaTime);
+			break;
 
 		default:
 			break;
@@ -109,6 +112,7 @@ void AFoxy::UpdateState(float DeltaTime)
 	case ELocationState::ATTACK:	Attack();
 		break;
 	case ELocationState::CLOSET:	Closet(DeltaTime);
+		break;
 
 	default:
 		break;
@@ -455,7 +459,7 @@ void AFoxy::Closet(float DeltaTime)
 			if( StateToFoxy == false ) 
 			{
 				// 3단계면 점프스케어 가능
-				if ( State == 3 && bIsDoorClose == false)
+				if ( FoxyState == 3 && bIsDoorClose == false)
 				{
 					// 3초 후 점프스케어 (공격) → GAME OVER
 					CurrentTime += DeltaTime;
@@ -471,7 +475,7 @@ void AFoxy::Closet(float DeltaTime)
 				{
 					StateCount -= DeltaTime;
 					if ( StateCount < -3.f )
-						State--;
+						FoxyState--;
 				}
 			}
 			// 인형 -> 3단계 구간
@@ -481,10 +485,10 @@ void AFoxy::Closet(float DeltaTime)
 				if ( bIsDoorClose == false )
 				{
 					StateCount += DeltaTime;
-					if ( StateCount > 3.f )	{State++;}
+					if ( StateCount > 3.f )	{ FoxyState++;}
 
 					// 3단계면 점프스케어 가능
-					if ( State == 4 ) // 4단계를 점프스케어로
+					if ( FoxyState == 4 ) // 4단계를 점프스케어로
 					{
 						// 3초 후 점프스케어 (공격) → GAME OVER
 						bAttack = true;
@@ -493,7 +497,7 @@ void AFoxy::Closet(float DeltaTime)
 				}
 			}
 			/////////////////////////////////////////////////////////////////
-			if ( State == 3 )
+			if ( FoxyState == 3 )
 			{
 				// 불 켜면 페이크 점프스케어 anim, 한 번 나온 뒤엔 정지상태 mesh
 				if ( bIsFlashlightOn == true )
@@ -509,15 +513,15 @@ void AFoxy::Closet(float DeltaTime)
 					}
 				}
 			}
-			else if ( State == 2 )
+			else if ( FoxyState == 2 )
 			{
 				// 허리 구부리고 얼굴 약간 보이는 mesh 적용
 			}
-			else if ( State == 1 )
+			else if ( FoxyState == 1 )
 			{
 				// 오른쪽에 서 있고 갈고리 손만 보이는 mesh 적용
 			}
-			else if ( State == 0 )
+			else if ( FoxyState == 0 )
 			{
 				// 인형 어셋 적용
 				bIsFoxy = false; // Tick에서 CLOSET불러와서 ShowFoxyDoll 처리해 줄 것

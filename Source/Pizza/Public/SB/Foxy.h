@@ -61,7 +61,7 @@ private:
 	// 인형->폭시 과정(true)
 	// 폭시->인형 과정(false)
 	bool StateToFoxy = false; 
-	int32 State = 3; // 폭시 상태
+	int32 FoxyState = 3; // 폭시 상태
 	// 3단계 = 폭시 얼굴 내미는 상태
 	// 2단계 = 폭시 허리 구부리고 얼굴 살짝
 	// 1단계 = 폭시 오른쪽에, 갈고리 손만 보임

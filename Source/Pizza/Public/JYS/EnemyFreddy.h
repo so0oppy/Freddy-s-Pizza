@@ -86,4 +86,7 @@ private:
 
 	bool SpawnFreddyTimerOnce = false;
 
+	// 플레이어가 침대를 바라보고 있을때 점프스케어 발동
+	bool IsPlayerLookingAtBed();
+
 };

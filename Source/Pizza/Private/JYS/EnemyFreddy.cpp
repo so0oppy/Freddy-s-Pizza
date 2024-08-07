@@ -15,19 +15,22 @@ AEnemyFreddy::AEnemyFreddy()
 
 	// Freddy 3마리 만들기
 	Freddy0 = CreateDefaultSubobject<UBoxComponent>(TEXT("Freddy0"));
-	Freddy0->SetRelativeLocation(FVector(- 60.0f, 4580.0f, 530.0f));
+	// Freddy0->SetRelativeLocation(FVector(- 60.0f, 4580.0f, 530.0f));
+	Freddy0->SetupAttachment(RootComponent);
 	FreddyMesh0 = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("FreddyMesh0"));
 	FreddyMesh0->SetupAttachment(Freddy0);
 	FreddyMesh0->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	Freddy1 = CreateDefaultSubobject<UBoxComponent>(TEXT("Freddy1"));
-	Freddy1->SetRelativeLocation(FVector(-530.0f, 4580.0f, 530.0f));
+	// Freddy1->SetRelativeLocation(FVector(-530.0f, 4580.0f, 530.0f));
+	Freddy1->SetupAttachment(RootComponent);
 	FreddyMesh1 = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("FreddyMesh1"));
 	FreddyMesh1->SetupAttachment(Freddy1);
 	FreddyMesh1->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	Freddy2 = CreateDefaultSubobject<UBoxComponent>(TEXT("Freddy2"));
-	Freddy2->SetRelativeLocation(FVector(4200.0f, 4580.0f, 530.0f));
+	// Freddy2->SetRelativeLocation(FVector(4200.0f, 4580.0f, 530.0f));
+	Freddy2->SetupAttachment(RootComponent);
 	FreddyMesh2 = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("FreddyMesh2"));
 	FreddyMesh2->SetupAttachment(Freddy2);
 	FreddyMesh2->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -46,7 +49,7 @@ void AEnemyFreddy::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	SetAILevel(3);
+	SetAILevel(20);
 
 	// 큐브(Freddy) 스폰 타이머
 	GetWorld()->GetTimerManager().SetTimer(FreddysVisibleTimerHandle, this, &AEnemyFreddy::AttemptSpawnCube, 3.02f, true);
@@ -114,8 +117,11 @@ void AEnemyFreddy::AttemptSpawnCube()
 			// 프레디가 3마리이고 3초 이상이 지나면 점프스케어
 			if (FreddyMesh2->bHiddenInGame == false && HiddenTime >= 3)
 			{
-				JumpScareFreddy();
-				JumpScareFreddySound();
+				if ( IsPlayerLookingAtBed() )
+				{
+					JumpScareFreddy();
+					JumpScareFreddySound();
+				}
 			}
 			// Freddy를 차례대로 Visible
 			if (FreddyMesh0->bHiddenInGame)
@@ -195,12 +201,36 @@ bool AEnemyFreddy::NotLookingAtTheDoor()
 	return false;
 }
 
+bool AEnemyFreddy::IsPlayerLookingAtBed()
+{
+	// GetMesh()->SetHiddenInGame(false);
+	if ( Player )
+	{
+		return Player->GetLookAtState() == AFreddyPlayer::LookAt::Bed;
+	}
+	return false;
+}
+
 void AEnemyFreddy::JumpScareFreddy()
 {
-	FVector CameraLoc = Player->GetCameraTransform().GetLocation();
-	CameraLoc.Y -= 100;
-	CameraLoc.Z -= 60;
-	SetActorLocation(CameraLoc);
+	if ( IsPlayerLookingAtBed() == true )
+	{
+		FVector CameraLoc = Player->GetCameraTransform().GetLocation();
+		FVector CameraLocForwardVector = CameraLoc.RightVector * 100 + CameraLoc.DownVector * 100;
+		FRotator FreddyYaw = FRotator(0, 180 ,0);
+		SetActorRotation(FreddyYaw);
+		
+
+		CameraLoc += CameraLocForwardVector;
+		SetActorLocation(CameraLoc);
+	}
+	else
+	{
+		FVector CameraLoc = Player->GetCameraTransform().GetLocation();
+		CameraLoc.Y -= 100;
+		CameraLoc.Z -= 60;
+		SetActorLocation(CameraLoc);
+	}
 
 	GetMesh()->SetHiddenInGame(false);
 

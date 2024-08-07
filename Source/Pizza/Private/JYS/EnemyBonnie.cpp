@@ -272,17 +272,17 @@ bool AEnemyBonnie::CloseDoorRoom0ToRoom2()
 	}
 	return false;
 }
-
+// 점프스케어 사운드
 void AEnemyBonnie::JumpScareSound()
 {
 	UGameplayStatics::PlaySound2D(GetWorld(), JumpScareSFX);
 }
-
+// 발소리
 void AEnemyBonnie::FootStepsSound()
 {
 	UGameplayStatics::PlaySound2D(GetWorld(), FootStepsSFX);
 }
-
+// 숨소리
 void AEnemyBonnie::BreathSound()
 {
 
@@ -298,12 +298,12 @@ void AEnemyBonnie::BreathSound()
 
 	}
 }
-
+// 숨소리 한번만 재생
 void AEnemyBonnie::OnBreathSoundFinished()
 {
 	bIsBreathSoundPlaying = false;
 }
-
+// 문 닫으면 Room1에서 Room0으로 이동
 bool AEnemyBonnie::CloseDoorRoom1ToRoom0()
 {
 	if ( Player )
@@ -333,5 +333,4 @@ bool AEnemyBonnie::JumpScarConditions()
 		return Player->GetFlash() && Player->GetLookAtState() == AFreddyPlayer::LookAt::Left;
 	}
 	return false;
-
 }

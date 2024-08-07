@@ -51,6 +51,8 @@ private:
 	float CupCakeTimer = 0.f; // 1, 3일 때 0 초기화 8에서 쌓이는데 6에선 초기화는 안 되고 멈춤
 	float CupCakeTime = 4.98f;
 
+
+
 	FVector FindActorsWithTag(FName Tag);
 	void MoveToTaggedLocation(int32 room);
 	void CanMove();

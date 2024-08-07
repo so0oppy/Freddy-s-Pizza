@@ -124,16 +124,20 @@ void AChica::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 void AChica::Idle(float DeltaTime)
 {
+	//---------------------------------------------------------------------------
+	// 만약, 보니가 teleport한 후면 치카는 어디에 있든 움직이지 않음
+	AFreddyPlayer* FreddyPlayer = Cast<AFreddyPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld() , 0));
+	if ( FreddyPlayer->bTeleport == true )
+		return;
+	//---------------------------------------------------------------------------
+	AFreddyPlayer::LookAt LookState;
+	LookState = FreddyPlayer->GetLookAtState();
+
 	// 현재 위치 == room1 || room3 || room4 || room6 || room8 가능
 	if ( RoomNum == 6 )
 	{
-		AFreddyPlayer* FreddyPlayer = Cast<AFreddyPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld() , 0));
-		AFreddyPlayer::LookAt LookState;
-
 		if ( FreddyPlayer ) // 플레이어와 연동될 부분
 		{
-			LookState = FreddyPlayer->GetLookAtState();
-
 			//	만약, 손전등 ON -> room1로 이동 (순간이동X)
 			if ( bIsFlashlightOn == true && LookState == AFreddyPlayer::LookAt::Right )
 			{
@@ -154,9 +158,6 @@ void AChica::Idle(float DeltaTime)
 
 	else if ( RoomNum == 8 )
 	{
-		AFreddyPlayer* FreddyPlayer = Cast<AFreddyPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld() , 0));
-		AFreddyPlayer::LookAt LookState;
-
 		// 발소리는 멈춤
 		StopFootStepsSound();
 
@@ -185,14 +186,17 @@ void AChica::Idle(float DeltaTime)
 				//→ 문 닫았을 때 
 				else if ( bIsDoorClose == true )
 				{
-					// 안 움직이다가 문을 잠깐 열고 닫으면 그 때 3으로 이동
+					// (중간에서 문 앞으로 텔레포트 시) 안 움직이다가 문을 잠깐 열고 닫으면 그 때 3으로 이동 -> bTeleport == false 일 때 움직임
 					// 이동 시, 1.5초 뒤에 돌아가도록 설정
-					// (bTeleport == true) 일 때 안 움직이게 하면 될 듯
-
-					
+					CurrentTime += DeltaTime;
+					if(CurrentTime > 1.5f )
+					{
+						SetActorLocation(TagArr[3]);
+						RoomNum = 3;
+					}
 				}
 			}
-			// 문에 안 가면 숨소리 안 들리게, 계속 확인 안 하면 점프스케어
+			// 문에 안 가면 숨소리 안 들리게, 계속 확인 안 하면 메인으로 점프스케어
 			else if( LookState != AFreddyPlayer::LookAt::Right )
 			{
 				StopBreathSound();
@@ -217,11 +221,6 @@ void AChica::Idle(float DeltaTime)
 
 			else if (RoomNum == 8)  //room8일 때 'attack, cupcake, 이동' 세가지 조건이므로 따로 분류
 			{
-				AFreddyPlayer* FreddyPlayer = Cast<AFreddyPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
-				AFreddyPlayer::LookAt LookState;
-
-				LookState = FreddyPlayer->GetLookAtState();
-
 				//→ 플레이어 위치= Main 일 때, 일정 시간 후에 컵케이크 점프스케어(공격) → GAME OVER
 				if (LookState == AFreddyPlayer::LookAt::Main)
 				{
@@ -251,6 +250,13 @@ void AChica::Move() // 손전등 켜고 있으면 1,3,4로만 이동
 	UE_LOG(LogTemp, Warning, TEXT("Chica Move()"));
 	FVector CurrentLocation = this->GetActorLocation();
 	// 치카 위치가 room number 몇 인지
+
+	//---------------------------------------------------------------------------
+	// 만약, 보니가 teleport한 후면 치카는 어디에 있든 움직이지 않음
+	AFreddyPlayer* FreddyPlayer = Cast<AFreddyPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld() , 0));
+	if ( FreddyPlayer->bTeleport == true )
+		return;
+	//---------------------------------------------------------------------------
 
 	// room1 || room4 -> room3 가능
 	if (RoomNum == 1 || RoomNum == 4)

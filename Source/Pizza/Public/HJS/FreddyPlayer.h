@@ -67,6 +67,8 @@ public:
 
 	void OnDie();
 
+	void OnDie( FString JumpScareName );
+
 	bool bTeleport;
 
 	bool KeepJumpScare();
@@ -150,6 +152,8 @@ private:
 
 	float CurrentTime = 0.0f;
 
+	bool bJumpScare = false;
+	
 	UFUNCTION()
 	void SetTurnState();
 	// 카메라 움직임 상태 Enum
@@ -199,6 +203,12 @@ private:
 	UPROPERTY()
 	class UDownMouseUI* DownMouseUI;
 
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class UCameraBlinkUI> CameraBlinkUIFactory;
+
+	UPROPERTY()
+	class UCameraBlinkUI* CameraBlinkUI;
+
 	// 이동시 머리를 숙이고 드는 기능
 	
 	bool bHeadDown = false;
@@ -218,6 +228,8 @@ private:
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<UCameraShakeBase> JumpScareShake1;
 
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<UCameraShakeBase> JumpScareShake2;
 	// 위치 도착 후 문 열면서 몸 기울이기
 	// 문 변수 3개 흠... 배열?  LookAt으로 문 배열에 접근
 	UPROPERTY(VisibleAnywhere)
@@ -305,4 +317,25 @@ private:
 	UPROPERTY(EditDefaultsOnly)
 	class USoundBase* LightSound;
 
+	// 카메라 깜박일 핸들러
+	FTimerHandle CameraBlinkHandle;
+
+	void OnCameraBlink();
+
+	void OffCameraBlink();
+
+	void CameraBlink();
+
+	bool bBlink = false;
+
+	UPROPERTY()
+	class AChica* Chica;
+	UPROPERTY()
+	class AEnemyBonnie* Bonnie;
+	UPROPERTY()
+	class AEnemyFreddy* Freddy;
+	UPROPERTY()
+	class AFoxy* Foxy;
+
+	bool WarningCondition();
 };

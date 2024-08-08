@@ -196,15 +196,15 @@ void AChica::Idle(float DeltaTime)
 					}
 				}
 			}
-			// 문에 안 가면 숨소리 안 들리게, 계속 확인 안 하면 메인으로 점프스케어
+			// 문에 안 가면 숨소리 안 들리게
 			else if( LookState != AFreddyPlayer::LookAt::Right )
 			{
 				StopBreathSound();
 			}
 			
 			
-			//→ 플레이어 위치= Main 일 때, 일정 시간 후에 컵케이크 점프스케어(공격) → GAME OVER
-			if ( LookState == AFreddyPlayer::LookAt::Main )
+			//→ 플레이어 위치= Main 혹은 Bed 일 때, 일정 시간 후에 컵케이크 점프스케어(공격) → GAME OVER
+			if ( LookState == AFreddyPlayer::LookAt::Main || LookState == AFreddyPlayer::LookAt::Bed)
 			{
 				if ( CupCakeTimer > CupCakeTime )
 				{
@@ -232,8 +232,8 @@ void AChica::Idle(float DeltaTime)
 			else if (RoomNum == 8)  //room8일 때 'attack, cupcake, 이동' 세가지 조건이므로 따로 분류
 			{
 				
-				// → 플레이어 위치= Left 일 때, 컵케이크 점프스케어 안 하고 6으로 돌아감
-				if ( LookState == AFreddyPlayer::LookAt::Left )
+				// → 이동 시간이 됐을 때 플레이어 위치 != Right 이면, 6으로 돌아감 (컵케이크 카운트는 계속)
+				if ( LookState != AFreddyPlayer::LookAt::Right )
 				{
 					SetActorLocation(TagArr[6]);
 					RoomNum = 6;

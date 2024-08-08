@@ -129,7 +129,6 @@ void AFoxy::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 void AFoxy::Idle(float DeltaTime)
 {
-	// 현재 위치 == room1 || room3 || room4 || room6 || room8 가능
 	AFreddyPlayer* FreddyPlayer = Cast<AFreddyPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld() , 0));
 	AFreddyPlayer::LookAt LookState;
 	LookState = FreddyPlayer->GetLookAtState();
@@ -255,15 +254,19 @@ void AFoxy::Move()
 	// room2 -> room3, room5 가능
 	else if (RoomNum == 2)
 	{
+		PlayFootStepsSound(); // 발소리
+
 		TArray<int32> RoomTags = { 3, 5 };
 		int32 RandomIndex = FMath::RandRange(0, RoomTags.Num() - 1);
 
 		SetActorLocation(TagArr[RoomTags[RandomIndex]]);
 		RoomNum = RoomTags[RandomIndex];
 	}
-	// room3 -> room1, room2, room4, room6 가능
+	// room3 -> room2, room6 가능
 	else if (RoomNum == 3)
 	{
+		PlayFootStepsSound(); // 발소리
+
 		TArray<int32> RoomTags = { 2, 6 };
 		int32 RandomIndex = FMath::RandRange(0, RoomTags.Num() - 1);
 

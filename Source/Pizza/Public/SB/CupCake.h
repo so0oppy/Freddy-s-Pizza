@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+О╩©// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -23,7 +23,7 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	// ев╫╨ф╝©К дедиюле╘ е╔╨Й
-	UPROPERTY(EditDefaultsOnly)
-	class UStaticMeshComponent* CupCakeComp;
+	// Л╩╣Л╪─Л²╢М│╛
+	UPROPERTY(EditAnywhere)
+	class USkeletalMeshComponent* CupcakeComp;
 };

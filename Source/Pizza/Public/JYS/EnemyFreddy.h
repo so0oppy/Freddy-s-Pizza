@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -47,29 +47,46 @@ private:
 	UPROPERTY(EditAnywhere)
 	class USkeletalMeshComponent* FreddyMesh2;
 
-	// ť��(Freddy) ���� �迭
+	// 큐브(Freddy) 3개 배열
 	TArray<USkeletalMeshComponent*> FreddysArr;
 
-	// ť��(Freddy)�� ���� �Ǵ� Ÿ�̸�
+	// 큐브(Freddy) 스폰 타이머
 	FTimerHandle FreddysVisibleTimerHandle;
 
-	// ť��(Freddy)�� ���� �Ǵ� �Լ�
+	// 큐브(Freddy) 스폰 구현부
 	void AttemptSpawnCube();
 	
-	// ť��(Freddy) Hide
+	// 큐브(Freddy) Hide
 	void HideFreddy(float DeltaTime);
 
 	// +1�� 
 	float HiddenTime = 0;
 
-	// ���� ���� ����� �Լ�
+	// 랜덤 넘버 가져오기
 	int32 GetRandomNumber();
 
 	// Player�� Bed�� ���� �ִ��� üũ
 	bool IsPlayerLookingAtBedAndFlashOn();
 
+
+	// 프레디 점프스케어 사운드
 	UPROPERTY(EditAnywhere)
 	class USoundBase* JumpScareFreddySFX;
 
 	void JumpScareFreddySound();
+
+	// 플레이어가 Main을 오래 보고 있으면 프레디의 스폰 타이머가 1.5초로 줄어들게
+	bool AddFreddyFastly();
+	
+	float CurrentTime = 0;
+
+	FTimerHandle FreddysVisibleFastlyTimerHandle;
+
+	bool NotLookingAtTheDoor();
+
+	bool SpawnFreddyTimerOnce = false;
+
+	// 플레이어가 침대를 바라보고 있을때 점프스케어 발동
+	bool IsPlayerLookingAtBed();
+
 };

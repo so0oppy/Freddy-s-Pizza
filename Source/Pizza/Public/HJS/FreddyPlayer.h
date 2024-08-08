@@ -67,6 +67,8 @@ public:
 
 	void OnDie();
 
+	void OnDie( FString JumpScareName );
+
 	bool bTeleport;
 
 	bool KeepJumpScare();

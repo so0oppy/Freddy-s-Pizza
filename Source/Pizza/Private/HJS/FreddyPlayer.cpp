@@ -73,6 +73,8 @@ void AFreddyPlayer::BeginPlay()
 {
 	Super::BeginPlay();
 	
+
+
 	APlayerController* PlayerController = Cast<APlayerController>(GetController());
 	if (PlayerController)
 	{
@@ -143,7 +145,7 @@ void AFreddyPlayer::BeginPlay()
 		}
 
 	}
-	//		(Pitch=6.336300,Yaw=0.000000,Roll=0.000000)
+	//(Pitch=6.336300,Yaw=0.000000,Roll=0.000000)
 	OriginCameraRotate = FRotator(10.f, 0.f, 0.f);
 	//(X=498.913821,Y=0.000000,Z=-140.000000)
 	OriginCameraVector = FVector(499.f,0.f,-140.f);
@@ -250,9 +252,14 @@ void AFreddyPlayer::OnDie()
 
 	//}
 	// 일단 통일, 쉐이크 깎기 너무 노가다 같음
+
+	// JumpScare 종류에 따라서 카메라 위치 및 쉐이크 다르게 적용하기
+
 	APlayerController* PlayerController = Cast<APlayerController>(GetController());
 	if ( PlayerController )
 	{
+		//UGameplayStatics::PlayWorldCameraShake(GetWorld(), JumpScareShake1,SpringArmComp->GetComponentLocation(), 0.25,0.25);
+		//UE_LOG(LogTemp,Warning,)
 		PlayerController->ClientStartCameraShake(JumpScareShake1);
 		// 플레이어 조작 멈추기 -> 틱을 꺼버리자
 		SetActorTickEnabled(false);
@@ -265,6 +272,27 @@ void AFreddyPlayer::OnDie()
 		bEnableRestart = true;
 	}
 
+}
+
+void AFreddyPlayer::OnDie(FString JumpScareName)
+{
+
+	APlayerController* PlayerController = Cast<APlayerController>(GetController());
+	if ( PlayerController )
+	{
+		//UGameplayStatics::PlayWorldCameraShake(GetWorld(), JumpScareShake1,SpringArmComp->GetComponentLocation(), 0.25,0.25);
+		//UE_LOG(LogTemp,Warning,)
+		PlayerController->ClientStartCameraShake(JumpScareShake1);
+		// 플레이어 조작 멈추기 -> 틱을 꺼버리자
+		SetActorTickEnabled(false);
+		// 다른 Enemy 이어서 작동 안되도록 게임 Pause 시키기
+		GetWorldTimerManager().SetTimer(PauseHandle , this , &AFreddyPlayer::OnMyPause , 1.f , false);
+		FInputModeGameAndUI InputMode;
+		PlayerController->SetInputMode(InputMode);
+		PlayerController->EnableInput(PlayerController);
+		// 리스타트 모드 활성화 ( 이 상태에서 R키 누르면 리스타트 됨 )
+		bEnableRestart = true;
+	}
 }
 
 bool AFreddyPlayer::KeepJumpScare()
@@ -471,6 +499,7 @@ void AFreddyPlayer::Tick(float DeltaTime)
 	DoorRotAndCameraMove(DeltaTime);
 	GetCameraTransform();
 	DoorOpenAndClose(DeltaTime);
+
 }
 
 // Called to bind functionality to input

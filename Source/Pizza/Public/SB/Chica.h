@@ -40,6 +40,9 @@ public:
 	void Attack();
 	void Cupcake();
 
+	// 애니메이션
+	void PlayJumpScare();
+
 private:
 	UPROPERTY(EditDefaultsOnly)
 	ELocationState CurrentState;
@@ -93,4 +96,8 @@ private:
 
 	UPROPERTY()
 	class AFreddyPlayer* player;
+
+	// AnimInstance 설정
+	UPROPERTY()
+	class UChicaAnimInstance* AnimInstance;
 };

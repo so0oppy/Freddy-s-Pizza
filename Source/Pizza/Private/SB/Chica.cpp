@@ -14,6 +14,7 @@
 #include "Sound/SoundBase.h"
 #include "SB/CupCake.h"
 #include "Components/AudioComponent.h"
+#include "SB/ChicaAnimInstance.h"
 
 // Sets default values
 AChica::AChica()
@@ -54,6 +55,11 @@ void AChica::BeginPlay()
 	UE_LOG(LogTemp, Warning, TEXT("Room array complete"));
 
 	CurrentState = ELocationState::IDLE;
+
+	if ( this->GetMesh() )
+	{
+		AnimInstance = Cast<UChicaAnimInstance>(GetMesh()->GetAnimInstance());
+	}
 }
 
 void AChica::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -297,9 +303,7 @@ void AChica::Move() // 손전등 켜고 있으면 1,3,4로만 이동
 
 void AChica::Attack()
 {
-	// 점프스퀘어 anim 재생
-
-	// 테스트용 -> 카메라 앞으로 SetActorLocation
+	// 카메라 앞으로 SetActorLocation
 	AFreddyPlayer* FreddyPlayer = Cast<AFreddyPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
 	FTransform JmpScare = FreddyPlayer->GetCameraTransform();
 	JmpScare.SetLocation(JmpScare.GetLocation() - FVector(0 , 100 , 60)); // 위치 조정
@@ -310,6 +314,10 @@ void AChica::Attack()
 
 	if ( bJSound == false )
 	{
+		// 점프스퀘어 anim 재생
+		AnimInstance->IsJumpScare = true;
+		PlayJumpScare();
+
 		// 점프스케어 소리 재생
 		UGameplayStatics::PlaySound2D(this , JumpScareSFX);
 		bJSound = true;
@@ -353,6 +361,15 @@ void AChica::Cupcake()
 
 	// 게임 오버
 }
+
+void AChica::PlayJumpScare()
+{
+	if ( AnimInstance )
+	{
+		AnimInstance->PlayJumpScareMontage();
+	}
+}
+
 
 FVector AChica::FindActorsWithTag(FName Tag)
 {

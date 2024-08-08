@@ -17,6 +17,11 @@ class PIZZA_API AHJSGameMode : public AGameModeBase
 public:
 	AHJSGameMode();
 	virtual void Tick(float DeltaTime) override;
+
+	class AChica* GetChica();
+
+	class AEnemyBonnie* GetBonnie();
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;

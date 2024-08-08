@@ -67,6 +67,10 @@ public:
 
 	void OnDie();
 
+	bool bTeleport;
+
+	bool KeepJumpScare();
+
 private:
 
 	// 인핸스드 인풋

@@ -110,4 +110,7 @@ private:
 	FTimerHandle BreathTimerHandle;
 
 	bool bJumpScare = false;
+
+	UFUNCTION()
+	bool CloseDoorRoom1ToRoom0();
 };

@@ -147,10 +147,9 @@ void AEnemyFreddy::AttemptSpawnCube()
 			// 프레디가 3마리이고 3초 이상이 지나면 점프스케어
 			if ( FreddyMesh2->bHiddenInGame == false && HiddenTime >= 6 )
 			{
-				
-					JumpScareFreddy();
-					JumpScareFreddySound();
-				
+				UE_LOG(LogTemp, Warning, TEXT("77777"));
+				JumpScareFreddy();
+				JumpScareFreddySound();
 			}
 			// Freddy를 차례대로 Visible
 			if ( FreddyMesh0->bHiddenInGame && !IsJumpscare )
@@ -290,15 +289,12 @@ void AEnemyFreddy::JumpScareFreddy()
 		auto* FreddyAnim = Cast<UFreddyAnimInstance>(GetMesh()->GetAnimInstance());
 		if ( FreddyAnim ) {
 			FreddyAnim->FreddyJumpscareAnimation();
-			/*if ( Freddy0HideOnce == false )
-			{
-				Freddy0HideOnce = true;
-			}*/
 		}
 
 
 		CameraLoc += CameraLocForwardVector;
 		SetActorLocation(CameraLoc);
+		Player->OnDie(TEXT("FreddyBed"));
 	}
 	else
 	{
@@ -309,16 +305,12 @@ void AEnemyFreddy::JumpScareFreddy()
 		auto* FreddyAnim = Cast<UFreddyAnimInstance>(GetMesh()->GetAnimInstance());
 		if ( FreddyAnim ) {
 			FreddyAnim->FreddyJumpscareAnimation();
-			/*if ( Freddy0HideOnce == false )
-			{
-				Freddy0HideOnce = true;
-			}*/
 		}
+		Player->OnDie(TEXT("FreddyMain"));
 	}
 
 	GetMesh()->SetHiddenInGame(false);
 
-	Player->OnDie();
 
 
 }

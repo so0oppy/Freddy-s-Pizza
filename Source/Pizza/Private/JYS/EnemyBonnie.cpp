@@ -144,14 +144,51 @@ void AEnemyBonnie::Move(EBonnieState MoveState)
 
 void AEnemyBonnie::TickRoom0(const float& DeltaTime)
 {
-	if (JumpScarConditions())
+	if ( State == EBonnieState::Room0 )
 	{
-		if (bJumpScare == false)
+		JumpscareCount += DeltaTime;
+	}
+	else if ( JumpScareConditions() || CloseDoorRoom0ToRoom2())
+	{
+		JumpscareCount = 0;
+	}
+	else if ( State == EBonnieState::Room2 || State == EBonnieState::Room3 )
+	{
+		JumpscareCount = 0;
+	}
+	
+	if ( JumpscareCount >= 2 && LookingMain() )
+	{
+
+		if ( bJumpScare == false )
 		{
 			bJumpScare = true;
 			JumpScareBonnie();
 			JumpScareSound();
 		}
+	}
+	
+	if ( JumpScareConditions() )
+	{
+
+		if ( bJumpScare == false )
+		{
+			bJumpScare = true;
+
+			FVector CameraLoc = Player->GetCameraTransform().GetLocation();
+			CameraLoc.Y -= 300;
+			CameraLoc.Z += 1000;
+			CameraLoc.X += 620;
+			SetActorLocation(CameraLoc);
+
+			auto* BonnieAnim = Cast<UBonnieAnimInstance>(GetMesh()->GetAnimInstance());
+			if ( BonnieAnim ) {
+				BonnieAnim->BonnieJumpscareAnimation();
+			}
+
+			JumpScareSound();
+		}
+		Player->OnDie(TEXT("BonnieDoor"));
 	}
 
 	if (BreathSoundConditions())
@@ -208,20 +245,6 @@ void AEnemyBonnie::AttemptMove()
 					NewState = EBonnieState::Room0;
 					break;
 				}
-				// 발자국 소리 (1번방에 있을때)
-				// int32 MoveChoice = FMath::RandRange(0, 2);
-				//switch (MoveChoice)
-				//{
-				//case 0:
-				//	NewState = EBonnieState::Room0;
-				//	break;
-				//case 1:
-				//	NewState = EBonnieState::Room2;
-				//	break;
-				//case 2:
-				//	NewState = EBonnieState::Room3;
-				//	break;
-				//}
 			}	
 				break;
 			// Room2는 Room1이랑 Room3으로 이동할 수 있다
@@ -266,7 +289,14 @@ void AEnemyBonnie::JumpScareBonnie()
 		BonnieAnim->BonnieJumpscareAnimation();
 	}
 
-	Player->OnDie();
+	if ( LookingMain() == true )
+	{
+		Player->OnDie(TEXT("BonnieMain"));
+	}
+	else 
+	{
+		Player->OnDie(TEXT("BonnieDoor"));
+	}
 }
 
 // Bonnie가 0번방에 있고 플레이어가 문을 닫으면 2번방으로 이동
@@ -320,6 +350,16 @@ bool AEnemyBonnie::CloseDoorRoom1ToRoom0()
 
 }
 
+bool AEnemyBonnie::LookingMain()
+{
+// 플레이어가 Main을 보고 있을 때
+	if ( Player )
+	{
+		return Player->GetLookAtState() == AFreddyPlayer::LookAt::Main || Player->GetLookAtState() == AFreddyPlayer::LookAt::Bed;
+	}
+	return false;
+}
+
 bool AEnemyBonnie::BreathSoundConditions()
 {
 	// 플레이어가 왼쪽에 있고 Bonnie가 0번방에 있을 때 (Breath Sound 재생)
@@ -331,9 +371,9 @@ bool AEnemyBonnie::BreathSoundConditions()
 }
 
 
-bool AEnemyBonnie::JumpScarConditions()
+bool AEnemyBonnie::JumpScareConditions()
 {
-	// 플레이어가 왼쪽에서 Flash를 비추고 Bonnie가 0번방에 있을 때 (JumpScare)
+	// 플레이어가 왼쪽에서 Flash를 비추기
 	if (Player)
 	{
 		return Player->GetFlash() && Player->GetLookAtState() == AFreddyPlayer::LookAt::Left;

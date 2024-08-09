@@ -45,6 +45,9 @@ public:
 	UPROPERTY(EditAnywhere)
 	class USkeletalMeshComponent* FreddyMesh2;
 
+	// +1�� 
+	float HiddenTime = 0;
+
 private:
 
 	// 큐브(Freddy) 3개 배열
@@ -59,8 +62,6 @@ private:
 	// 큐브(Freddy) Hide
 	void HideFreddy(float DeltaTime);
 
-	// +1�� 
-	float HiddenTime = 0;
 
 	// 랜덤 넘버 가져오기
 	int32 GetRandomNumber();
@@ -93,5 +94,6 @@ private:
 	bool Freddy1HideOnce = false;
 	bool Freddy2HideOnce = false;
 
+	bool IsJumpscare = false;
 
 };

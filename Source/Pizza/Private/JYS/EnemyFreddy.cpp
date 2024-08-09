@@ -52,7 +52,7 @@ void AEnemyFreddy::BeginPlay()
 {
 	Super::BeginPlay();
 
-	SetAILevel(20);
+	SetAILevel(3);
 
 	// 큐브(Freddy) 스폰 타이머
 	GetWorld()->GetTimerManager().SetTimer(FreddysVisibleTimerHandle , this , &AEnemyFreddy::AttemptSpawnCube , 3.02f , true);

@@ -134,13 +134,13 @@ void AHJSGameMode::SetAILevelEnemy()
 	if ( Bonnie )
 	{
 		Bonnie->SetAILevel(LV_bonnie[Day][Hour]);
-		//Bonnie->SetAILevel(20);
+		Bonnie->SetAILevel(20);
 	}
 
 	if ( Freddy )
 	{
 		Freddy->SetAILevel(LV_freddy[Day][Hour]);
-		Freddy->SetAILevel(20);
+		// Freddy->SetAILevel(20);
 	}
 
 }

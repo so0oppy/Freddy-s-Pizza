@@ -8,7 +8,6 @@ void UCupCakeAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 {
 	Super::NativeUpdateAnimation(DeltaSeconds);
 
-	
 	ACupCake* cupcake = Cast<ACupCake>(TryGetPawnOwner());
 	if ( nullptr == cupcake )
 	{

@@ -42,6 +42,7 @@ public:
 
 	// 애니메이션
 	void PlayJumpScare();
+	void PlayCupCakeJumpScare();
 
 private:
 	UPROPERTY(EditDefaultsOnly)
@@ -58,6 +59,9 @@ private:
 	void MoveToTaggedLocation(int32 room);
 	void CanMove();
 	FTimerHandle Handle;
+
+	FVector dir;
+	float Speed = 500.f;
 
 	// 컨트롤 키 입력 함수 -> 손전등 ON/OFF
 	void FlashOn();
@@ -99,5 +103,5 @@ private:
 
 	// AnimInstance 설정
 	UPROPERTY()
-	class UChicaAnimInstance* AnimInstance;
+	class UChicaAnimInstance* ChicaAnimInstance;
 };

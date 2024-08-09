@@ -26,4 +26,7 @@ public:
 	// 컵케이크
 	UPROPERTY(EditAnywhere)
 	class USkeletalMeshComponent* CupcakeComp;
+	
+	UPROPERTY()
+	class UCupCakeAnimInstance* CupcakeAnimInstance;
 };

@@ -22,4 +22,7 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void PlayJumpScareMontage();
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	bool IsJumpScare;
 };

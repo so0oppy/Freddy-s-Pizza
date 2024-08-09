@@ -19,7 +19,16 @@ public:
 
 	UPROPERTY(EditDefaultsOnly)
 	class UAnimMontage* FoxyJumpScare;
+	UPROPERTY(EditDefaultsOnly)
+	class UAnimMontage* FoxyFakeScare;
 
 	UFUNCTION(BlueprintCallable)
 	void PlayJumpScareMontage();
+	UFUNCTION(BlueprintCallable)
+	void PlayFakeScareMontage();
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	bool IsJumpScare;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	bool IsFakeScare;
 };

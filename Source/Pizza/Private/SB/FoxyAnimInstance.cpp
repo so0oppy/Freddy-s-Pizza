@@ -19,3 +19,9 @@ void UFoxyAnimInstance::PlayJumpScareMontage()
 {
 	Montage_Play(FoxyJumpScare);
 }
+
+void UFoxyAnimInstance::PlayFakeScareMontage()
+{
+	FName SectionName = "Fake";
+	Montage_JumpToSection(SectionName, FoxyFakeScare);
+}

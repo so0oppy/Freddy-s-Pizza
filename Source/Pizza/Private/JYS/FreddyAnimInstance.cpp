@@ -12,8 +12,5 @@ void UFreddyAnimInstance::NativeInitializeAnimation()
 
 void UFreddyAnimInstance::FreddyJumpscareAnimation()
 {
-	//UE_LOG(LogTemp,Warning,TEXT("1111111"));
-	//AEnemyFreddy* Me = Cast<AEnemyFreddy>(TryGetPawnOwner());
 	Montage_Play(FreddyJumpscareMontage);
-	//Me->GetMesh()->GetAnimInstance()->Montage_Play(FreddyJumpscareMontage);
 }

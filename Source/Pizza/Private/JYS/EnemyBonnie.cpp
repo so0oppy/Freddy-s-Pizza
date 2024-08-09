@@ -6,6 +6,7 @@
 #include "EngineUtils.h"
 #include "Sound/SoundBase.h"
 #include "Kismet/GameplayStatics.h"
+#include "JYS/BonnieAnimInstance.h"
 
 // Sets default values
 AEnemyBonnie::AEnemyBonnie()
@@ -59,7 +60,7 @@ void AEnemyBonnie::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	SetAILevel(7);
+	SetAILevel(20);
 
 	GetWorld()->GetTimerManager().SetTimer(MoveTimerHandle, this, &AEnemyBonnie::AttemptMove, 4.97f, true);
 }
@@ -256,9 +257,14 @@ void AEnemyBonnie::JumpScareBonnie()
 {
 	FVector CameraLoc = Player->GetCameraTransform().GetLocation();
 	CameraLoc.Y -= 300;
-	CameraLoc.Z -= 450;
-	CameraLoc.X -= 150;
+	CameraLoc.Z += 1000;
+	CameraLoc.X += 620;
 	SetActorLocation(CameraLoc);
+
+	auto* BonnieAnim = Cast<UBonnieAnimInstance>(GetMesh()->GetAnimInstance());
+	if ( BonnieAnim ) {
+		BonnieAnim->BonnieJumpscareAnimation();
+	}
 
 	Player->OnDie();
 }

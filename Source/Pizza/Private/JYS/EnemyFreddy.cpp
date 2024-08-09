@@ -6,11 +6,13 @@
 #include "Components/BoxComponent.h"
 #include "Sound/SoundBase.h"
 #include "Kismet/GameplayStatics.h"
+#include "JYS/FreddleAnimInstance.h"
+
 
 // Sets default values
 AEnemyFreddy::AEnemyFreddy()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
 	// Freddy 3마리 만들기
@@ -37,7 +39,7 @@ AEnemyFreddy::AEnemyFreddy()
 
 	// JumpScare Sound
 	ConstructorHelpers::FObjectFinder<USoundBase> tempSound(TEXT("/Script/Engine.SoundWave'/Game/SFX/FNAFSFX01/Scream3.Scream3'"));
-	if (tempSound.Succeeded()) 
+	if ( tempSound.Succeeded() )
 	{
 		JumpScareFreddySFX = tempSound.Object;
 	}
@@ -48,11 +50,11 @@ AEnemyFreddy::AEnemyFreddy()
 void AEnemyFreddy::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
 	SetAILevel(20);
 
 	// 큐브(Freddy) 스폰 타이머
-	GetWorld()->GetTimerManager().SetTimer(FreddysVisibleTimerHandle, this, &AEnemyFreddy::AttemptSpawnCube, 3.02f, true);
+	GetWorld()->GetTimerManager().SetTimer(FreddysVisibleTimerHandle , this , &AEnemyFreddy::AttemptSpawnCube , 3.02f , true);
 
 	// Freddy들을 배열에 넣어 줌
 	FreddysArr.Add(FreddyMesh0);
@@ -60,21 +62,50 @@ void AEnemyFreddy::BeginPlay()
 	FreddysArr.Add(FreddyMesh2);
 
 	// Freddy들을 처음에 Hide 해줌
-	for (int32 i = 0; i < FreddysArr.Num(); ++i)
+	for ( int32 i = 0; i < FreddysArr.Num(); ++i )
 	{
 		FreddysArr[i]->SetHiddenInGame(true);
 	}
 
 	GetMesh()->SetHiddenInGame(true);
+
+	UAnimInstance* Test = FreddyMesh0->GetAnimInstance();
+
+	auto* Anim = Cast<UFreddleAnimInstance>(Test);
+
+	if ( Anim )
+	{
+		Anim->Montage_Play(Anim->Freddle1Montage ,1);
+	}
+
+	Test = FreddyMesh1->GetAnimInstance();
+
+	Anim = Cast<UFreddleAnimInstance>(Test);
+
+	if ( Anim )
+	{
+		Anim->Montage_Play(Anim->Freddle1Montage , 1);
+	}
+
+	Test = FreddyMesh2->GetAnimInstance();
+
+	Anim = Cast<UFreddleAnimInstance>(Test);
+
+
+	if ( Anim )
+	{
+		Anim->Montage_Play(Anim->Freddle1Montage , 1);
+	}
 }
 
 // Called every frame
 void AEnemyFreddy::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
-	if (IsPlayerLookingAtBedAndFlashOn())
+	
+	if ( IsPlayerLookingAtBedAndFlashOn() )
 	{
+	
 		HideFreddy(DeltaTime);
 	}
 
@@ -89,7 +120,7 @@ void AEnemyFreddy::Tick(float DeltaTime)
 			GetWorld()->GetTimerManager().SetTimer(FreddysVisibleFastlyTimerHandle , this , &AEnemyFreddy::AttemptSpawnCube , 1.5f , true);
 		}
 	}
-	else if (NotLookingAtTheDoor())
+	else if ( NotLookingAtTheDoor() )
 	{
 		if ( SpawnFreddyTimerOnce == false )
 		{
@@ -100,22 +131,19 @@ void AEnemyFreddy::Tick(float DeltaTime)
 	}
 }
 
-
-
-
 void AEnemyFreddy::AttemptSpawnCube()
 {
 	// 만약 플레이어가 침대를 바라보고 있지 않다면
-	if (!IsPlayerLookingAtBedAndFlashOn())
+	if ( !IsPlayerLookingAtBedAndFlashOn() )
 	{
 		// 랜덤 넘버를 고른다
 		int32 RandomNumber = GetRandomNumber();
 
 		// 랜덤 넘버가 Freddy의 레벨보다 낮거나 같다면
-		if (RandomNumber <= Level)
+		if ( RandomNumber <= Level )
 		{
 			// 프레디가 3마리이고 3초 이상이 지나면 점프스케어
-			if (FreddyMesh2->bHiddenInGame == false && HiddenTime >= 3)
+			if ( FreddyMesh2->bHiddenInGame == false && HiddenTime >= 3 )
 			{
 				if ( IsPlayerLookingAtBed() )
 				{
@@ -124,22 +152,25 @@ void AEnemyFreddy::AttemptSpawnCube()
 				}
 			}
 			// Freddy를 차례대로 Visible
-			if (FreddyMesh0->bHiddenInGame)
+			if ( FreddyMesh0->bHiddenInGame )
 			{
 				HiddenTime += 1;
 				FreddyMesh0->SetHiddenInGame(false);
+				Freddy0HideOnce = false;
 			}
-			else if (!FreddyMesh0->bHiddenInGame)
+			else if ( !FreddyMesh0->bHiddenInGame )
 			{
-				if (FreddyMesh1->bHiddenInGame)
+				if ( FreddyMesh1->bHiddenInGame )
 				{
 					HiddenTime += 1;
 					FreddyMesh1->SetHiddenInGame(false);
+					Freddy1HideOnce = false;
 				}
 				else
 				{
 					HiddenTime += 1;
 					FreddyMesh2->SetHiddenInGame(false);
+					Freddy2HideOnce = false;
 				}
 			}
 		}
@@ -149,29 +180,60 @@ void AEnemyFreddy::AttemptSpawnCube()
 void AEnemyFreddy::HideFreddy(float DeltaTime)
 {
 	HiddenTime -= DeltaTime;
-	if (HiddenTime > 1 && HiddenTime < 2)
+	UE_LOG(LogTemp , Warning , TEXT("%f"), HiddenTime);
+	if ( HiddenTime > 1 && HiddenTime < 2 )
 	{
-		FreddyMesh2->SetHiddenInGame(true);
+		UAnimInstance* Test = FreddyMesh2->GetAnimInstance();
+
+		auto* Anim = Cast<UFreddleAnimInstance>(Test);
+		if ( Anim ) {
+			
+			if ( Freddy2HideOnce == false )
+			{
+				Anim->StartHideAnimation();
+				Freddy2HideOnce = true;
+			}
+		}
 	}
-	else if (HiddenTime > 0 && HiddenTime < 1)
+	else if ( HiddenTime > 0 && HiddenTime < 1 )
 	{
-		FreddyMesh1->SetHiddenInGame(true);
+		UAnimInstance* Test = FreddyMesh1->GetAnimInstance();
+
+		auto* Anim = Cast<UFreddleAnimInstance>(Test);
+		if ( Anim ) {
+			UE_LOG(LogTemp , Warning , TEXT("55"));
+			if ( Freddy1HideOnce == false )
+			{
+				Anim->StartHideAnimation();
+				Freddy1HideOnce = true;
+			}
+		}
 	}
-	else if (HiddenTime <= 0)
+	else if ( HiddenTime <= 0 )
 	{
-		FreddyMesh0->SetHiddenInGame(true);
+		UAnimInstance* Test = FreddyMesh0->GetAnimInstance();
+
+		auto* Anim = Cast<UFreddleAnimInstance>(Test);
+		if ( Anim ) {
+			if ( Freddy0HideOnce == false )
+			{
+				Anim->StartHideAnimation();
+				Freddy0HideOnce = true;
+			}
+		}
 		HiddenTime = 0;
 	}
 
 }
 int32 AEnemyFreddy::GetRandomNumber()
 {
-	return FMath::RandRange(1,20);
+	return FMath::RandRange(1 , 20);
 }
 
 bool AEnemyFreddy::IsPlayerLookingAtBedAndFlashOn()
 {
-	if (Player)
+
+	if ( Player )
 	{
 		return Player->GetLookAtState() == AFreddyPlayer::LookAt::Bed && Player->GetFlash();
 	}
@@ -180,7 +242,7 @@ bool AEnemyFreddy::IsPlayerLookingAtBedAndFlashOn()
 
 void AEnemyFreddy::JumpScareFreddySound()
 {
-	UGameplayStatics::PlaySound2D(GetWorld(), JumpScareFreddySFX);
+	UGameplayStatics::PlaySound2D(GetWorld() , JumpScareFreddySFX);
 }
 
 bool AEnemyFreddy::AddFreddyFastly()
@@ -213,13 +275,14 @@ bool AEnemyFreddy::IsPlayerLookingAtBed()
 
 void AEnemyFreddy::JumpScareFreddy()
 {
+	UE_LOG(LogTemp , Warning , TEXT("2"));
 	if ( IsPlayerLookingAtBed() == true )
 	{
 		FVector CameraLoc = Player->GetCameraTransform().GetLocation();
 		FVector CameraLocForwardVector = CameraLoc.RightVector * 100 + CameraLoc.DownVector * 100;
-		FRotator FreddyYaw = FRotator(0, 180 ,0);
+		FRotator FreddyYaw = FRotator(0 , 180 , 0);
 		SetActorRotation(FreddyYaw);
-		
+
 
 		CameraLoc += CameraLocForwardVector;
 		SetActorLocation(CameraLoc);
@@ -236,7 +299,7 @@ void AEnemyFreddy::JumpScareFreddy()
 
 	Player->OnDie();
 
-	for (int32 i = 0; i < FreddysArr.Num(); ++i)
+	for ( int32 i = 0; i < FreddysArr.Num(); ++i )
 	{
 		FreddysArr[i]->SetHiddenInGame(true);
 	}

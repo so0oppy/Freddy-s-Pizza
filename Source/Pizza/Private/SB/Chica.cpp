@@ -14,11 +14,12 @@
 #include "Sound/SoundBase.h"
 #include "SB/CupCake.h"
 #include "Components/AudioComponent.h"
+#include "SB/ChicaAnimInstance.h"
+#include "SB/CupCakeAnimInstance.h"
 
 // Sets default values
 AChica::AChica()
 {
-
 	PrimaryActorTick.bCanEverTick = true;
 
 	AILevelComp = CreateDefaultSubobject<UAILevel>(TEXT("AILevelComp"));
@@ -54,6 +55,18 @@ void AChica::BeginPlay()
 	UE_LOG(LogTemp, Warning, TEXT("Room array complete"));
 
 	CurrentState = ELocationState::IDLE;
+
+	if ( this->GetMesh() )
+	{
+		ChicaAnimInstance = Cast<UChicaAnimInstance>(GetMesh()->GetAnimInstance());
+	}
+
+	AActor* CupCakeInstance = UGameplayStatics::GetActorOfClass(GetWorld() , ACupCake::StaticClass());
+	ACupCake* CupCake = Cast<ACupCake>(CupCakeInstance);
+	if ( CupCake->CupcakeComp )
+	{
+		CupCake->CupcakeAnimInstance = Cast<UCupCakeAnimInstance>(GetMesh()->GetAnimInstance());
+	}
 }
 
 void AChica::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -143,7 +156,9 @@ void AChica::Idle(float DeltaTime)
 			{
 				StopFootStepsSound(); // 발소리 멈춤
 
-				MoveToTaggedLocation(1);
+				dir = TagArr[1] - GetActorLocation();
+				dir.Normalize();
+				SetActorLocation(GetActorLocation() + dir*Speed*DeltaTime);
 				RoomNum = 1;
 				CurrentState = ELocationState::MOVE;
 			}
@@ -180,7 +195,7 @@ void AChica::Idle(float DeltaTime)
 					//→ 플레이어가 문 안닫고 && 손전등 ON : 점프스케어(공격) 
 					if ( bIsFlashlightOn == true )
 					{
-						CurrentState = ELocationState::ATTACK;
+						if ( FreddyPlayer->KeepJumpScare() == false ) {CurrentState = ELocationState::ATTACK;}
 					}
 				}
 				//→ 문 닫았을 때 
@@ -208,7 +223,7 @@ void AChica::Idle(float DeltaTime)
 			{
 				if ( CupCakeTimer > CupCakeTime )
 				{
-					CurrentState = ELocationState::CUPCAKE;
+					if ( FreddyPlayer->KeepJumpScare() == false ) {CurrentState = ELocationState::CUPCAKE;}
 				}
 			}
 		}
@@ -297,9 +312,7 @@ void AChica::Move() // 손전등 켜고 있으면 1,3,4로만 이동
 
 void AChica::Attack()
 {
-	// 점프스퀘어 anim 재생
-
-	// 테스트용 -> 카메라 앞으로 SetActorLocation
+	// 카메라 앞으로 SetActorLocation
 	AFreddyPlayer* FreddyPlayer = Cast<AFreddyPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
 	FTransform JmpScare = FreddyPlayer->GetCameraTransform();
 	JmpScare.SetLocation(JmpScare.GetLocation() - FVector(0 , 100 , 60)); // 위치 조정
@@ -310,11 +323,15 @@ void AChica::Attack()
 
 	if ( bJSound == false )
 	{
+		// 점프스퀘어 anim 재생
+		ChicaAnimInstance->IsJumpScare = true;
+		PlayJumpScare();
+
 		// 점프스케어 소리 재생
 		UGameplayStatics::PlaySound2D(this , JumpScareSFX);
 		bJSound = true;
 
-		FreddyPlayer->OnDie();
+		FreddyPlayer->OnDie(TEXT("Chica"));
 
 		UE_LOG(LogTemp , Warning , TEXT("Chica Attack !"));
 	}
@@ -324,9 +341,7 @@ void AChica::Attack()
 
 void AChica::Cupcake()
 {
-	// 컵케이크 점프스퀘어 anim 재생
-
-	// 테스트용 -> 카메라 앞으로 SetActorLocation
+	// 카메라 앞으로 SetActorLocation
 	AFreddyPlayer* FreddyPlayer = Cast<AFreddyPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
 	AActor* CupCakeInstance = UGameplayStatics::GetActorOfClass(GetWorld(), ACupCake::StaticClass());
 	ACupCake* CupCake = Cast<ACupCake>(CupCakeInstance);
@@ -340,12 +355,16 @@ void AChica::Cupcake()
 		CupCake->SetActorTransform(JmpScare); // 카메라 위치로 이동 (점프스케어)
 
 		if(bJSound == false)
-		{
+		{	
+			// 컵케이크 점프스퀘어 anim 재생
+			CupCake->CupcakeAnimInstance->IsJumpScare = true;
+			PlayCupCakeJumpScare();
+
 			// 점프스케어 소리 재생
 			UGameplayStatics::PlaySound2D(this , CupCakeScareSFX);
 			bJSound = true;
 
-			FreddyPlayer->OnDie();
+			FreddyPlayer->OnDie(TEXT("CupCake"));
 
 			UE_LOG(LogTemp , Warning , TEXT("CupCake Attack !"));
 		}
@@ -353,6 +372,26 @@ void AChica::Cupcake()
 
 	// 게임 오버
 }
+
+void AChica::PlayJumpScare()
+{
+	if ( ChicaAnimInstance )
+	{
+		ChicaAnimInstance->PlayJumpScareMontage();
+	}
+}
+
+void AChica::PlayCupCakeJumpScare()
+{
+	AActor* CupCakeInstance = UGameplayStatics::GetActorOfClass(GetWorld() , ACupCake::StaticClass());
+	ACupCake* CupCake = Cast<ACupCake>(CupCakeInstance);
+
+	if ( CupCake->CupcakeAnimInstance )
+	{
+		CupCake->CupcakeAnimInstance->PlayJumpScareMontage();
+	}
+}
+
 
 FVector AChica::FindActorsWithTag(FName Tag)
 {
@@ -372,48 +411,48 @@ FVector AChica::FindActorsWithTag(FName Tag)
 	return FVector::ZeroVector; // FoundActors가 비어있을 경우, 기본값 반환
 }
 
-void AChica::MoveToTaggedLocation(int32 room)
-{
-	GetController()->StopMovement();
-
-	ACharacter* Character = Cast<ACharacter>(this);
-	if (Character)
-	{ 
-		Character->bUseControllerRotationYaw = false; // 캐릭터 회전을 잠금
-		Character->GetCharacterMovement()->bOrientRotationToMovement = false; // 이동 방향으로 회전하지 않음
-	}
-
-	AAIController* AIController = Cast<AAIController>(GetController());
-	if (AIController)
-	{
-		FAIMoveRequest MoveRequest;
-		MoveRequest.SetGoalLocation(TagArr[room]);
-		MoveRequest.SetAcceptanceRadius(5.0f); // 목표 위치에 도달하는 범위 설정
-
-		FNavPathSharedPtr NavPath;
-		EPathFollowingRequestResult::Type MoveResult = AIController->MoveTo(MoveRequest, &NavPath);
-
-		// 이동 요청 결과 로그 출력
-		switch (MoveResult)
-		{
-		case EPathFollowingRequestResult::Failed:
-			UE_LOG(LogTemp, Warning, TEXT("MoveTo request failed."));
-			break;
-		case EPathFollowingRequestResult::AlreadyAtGoal:
-			UE_LOG(LogTemp, Warning, TEXT("Already at goal location."));
-			break;
-		case EPathFollowingRequestResult::RequestSuccessful:
-			UE_LOG(LogTemp, Warning, TEXT("MoveTo request successful."));
-			break;
-		}
-	}
-
-	if (room == 1)
-	{
-		RoomNum = 1;
-		GetWorld()->GetTimerManager().SetTimer(Handle, this, &AChica::CanMove, MovableTime, false);
-	}
-}
+//void AChica::MoveToTaggedLocation(int32 room)
+//{
+//	GetController()->StopMovement();
+//
+//	ACharacter* Character = Cast<ACharacter>(this);
+//	if (Character)
+//	{ 
+//		Character->bUseControllerRotationYaw = false; // 캐릭터 회전을 잠금
+//		Character->GetCharacterMovement()->bOrientRotationToMovement = false; // 이동 방향으로 회전하지 않음
+//	}
+//
+//	AAIController* AIController = Cast<AAIController>(GetController());
+//	if (AIController)
+//	{
+//		FAIMoveRequest MoveRequest;
+//		MoveRequest.SetGoalLocation(TagArr[room]);
+//		MoveRequest.SetAcceptanceRadius(5.0f); // 목표 위치에 도달하는 범위 설정
+//
+//		FNavPathSharedPtr NavPath;
+//		EPathFollowingRequestResult::Type MoveResult = AIController->MoveTo(MoveRequest, &NavPath);
+//
+//		// 이동 요청 결과 로그 출력
+//		switch (MoveResult)
+//		{
+//		case EPathFollowingRequestResult::Failed:
+//			UE_LOG(LogTemp, Warning, TEXT("MoveTo request failed."));
+//			break;
+//		case EPathFollowingRequestResult::AlreadyAtGoal:
+//			UE_LOG(LogTemp, Warning, TEXT("Already at goal location."));
+//			break;
+//		case EPathFollowingRequestResult::RequestSuccessful:
+//			UE_LOG(LogTemp, Warning, TEXT("MoveTo request successful."));
+//			break;
+//		}
+//	}
+//
+//	if (room == 1)
+//	{
+//		RoomNum = 1;
+//		GetWorld()->GetTimerManager().SetTimer(Handle, this, &AChica::CanMove, MovableTime, false);
+//	}
+//}
 
 void AChica::CanMove()
 {

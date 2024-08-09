@@ -61,14 +61,34 @@ private:
 	// 인형->폭시 과정(true)
 	// 폭시->인형 과정(false)
 	bool StateToFoxy = false; 
+	
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Meshes")
+    UStaticMesh* MeshState1;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Meshes")
+    UStaticMesh* MeshState2;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Meshes")
+    UStaticMesh* MeshState3;
+
+    // Static Mesh Component to apply the mesh
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+    UStaticMeshComponent* FoxyMeshComponent;
+
 	int32 FoxyState = 3; // 폭시 상태
 	// 3단계 = 폭시 얼굴 내미는 상태
 	// 2단계 = 폭시 허리 구부리고 얼굴 살짝
 	// 1단계 = 폭시 오른쪽에, 갈고리 손만 보임
 	// 0단계 = 인형 상태
 
+	// 애니메이션
+	void PlayJumpScare();
+	void PlayFakeScare();
+
+private:
 	FVector FindActorsWithTag(FName Tag);
-	void MoveToTaggedLocation(int32 room);
+//	void MoveToTaggedLocation(int32 room);
 	void CanMove();
 	FTimerHandle Handle;
 
@@ -87,7 +107,7 @@ private:
 	bool bAttack = false; // 공격 조건
 
 	
-	void ShowFoxy(ACharacter* character, bool bShow);
+	void ShowFoxy(UStaticMesh* mesh, bool bShow);
 	void ShowFoxyDoll(AActor* actor, bool bShow);
 	bool bIsFoxy = true; // 폭시일 때(t), 인형일 때(f) 구분
 
@@ -110,4 +130,11 @@ private:
 
 	UPROPERTY()
 	class AFreddyPlayer* player;
+
+public:
+
+	UPROPERTY()
+	class UFoxyAnimInstance* FoxyAnimInstance;
+	UPROPERTY()
+	class UFoxyAnimInstance* FakeAnimInstance;
 };

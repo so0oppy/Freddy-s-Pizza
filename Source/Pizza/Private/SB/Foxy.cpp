@@ -16,6 +16,8 @@
 #include "Components/StaticMeshComponent.h"
 #include "SB/FoxDoll.h"
 #include "Components/AudioComponent.h"
+#include "SB/FoxyAnimInstance.h"
+#include "Engine/StaticMesh.h"
 
 // Sets default values
 AFoxy::AFoxy()
@@ -27,6 +29,29 @@ AFoxy::AFoxy()
 	FootStepsAudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("FootStepsAudioComponent"));
 	FootStepsAudioComponent->SetupAttachment(RootComponent);
 	FootStepsAudioComponent->bAutoActivate = false; // sound가 바로 재생되지 않게
+
+	FoxyMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("FoxyMeshComponent"));
+	FoxyMeshComponent->SetupAttachment(RootComponent);
+	
+	// 폭시 상태 Mesh
+	ConstructorHelpers::FObjectFinder<UStaticMesh> StateThreeMesh(TEXT("/Script/Engine.StaticMesh'/Game/sym/animation_model/foxy/Mesh/SM_FoxyState3.SM_FoxyState3'"));
+
+	if ( StateThreeMesh.Succeeded() )
+	{
+		MeshState3 = StateThreeMesh.Object;
+	}
+
+	ConstructorHelpers::FObjectFinder<UStaticMesh> StateTwoMesh(TEXT("/Script/Engine.StaticMesh'/Game/sym/animation_model/foxy/Mesh/SM_FoxyState2.SM_FoxyState2'"));
+	if ( StateTwoMesh.Succeeded() )
+	{
+		MeshState2 = StateTwoMesh.Object;
+	}
+
+	ConstructorHelpers::FObjectFinder<UStaticMesh> StateOneMesh(TEXT("/Script/Engine.StaticMesh'/Game/sym/animation_model/foxy/Mesh/SM_FoxyState1.SM_FoxyState1'"));
+	if ( StateOneMesh.Succeeded() )
+	{
+		MeshState1 = StateOneMesh.Object;
+	}
 }
 
 // Called when the game starts or when spawned
@@ -52,9 +77,17 @@ void AFoxy::BeginPlay()
 
 	AActor* FoxDollInstance = UGameplayStatics::GetActorOfClass(GetWorld() , AFoxDoll::StaticClass());
 	ShowFoxyDoll(FoxDollInstance, false);
-	ShowFoxy(this, false);
+	//멈춘 버전 mesh 적용
+	this->GetMesh()->SetVisibility(false); // skeletal은 안 보이게
+	ShowFoxy(MeshState3 , true);
 
 	CurrentState = ELocationState::IDLE;
+
+	if ( this->GetMesh() )
+	{
+		FoxyAnimInstance = Cast<UFoxyAnimInstance>(GetMesh()->GetAnimInstance());
+		FakeAnimInstance = Cast<UFoxyAnimInstance>(GetMesh()->GetAnimInstance());
+	}
 }
 
 void AFoxy::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -140,7 +173,7 @@ void AFoxy::Idle(float DeltaTime)
 		ScareCount += DeltaTime;
 		if ( ScareCount > 15.f )
 		{
-			CurrentState = ELocationState::ATTACK;
+			if(FreddyPlayer->KeepJumpScare() == false){CurrentState = ELocationState::ATTACK;}
 		}
 	}
 	// 플레이어 위치가 침대가 아닐 때 스케어카운트 0으로 초기화
@@ -202,7 +235,10 @@ void AFoxy::Idle(float DeltaTime)
 				if (bIsFlashlightOn == true)
 				{
 					StopFootStepsSound();
-					MoveToTaggedLocation(1);
+					FVector dir = TagArr[1] - GetActorLocation();
+					dir.Normalize();
+					float speed = 500.f;
+					SetActorLocation(GetActorLocation() + dir*speed*DeltaTime);
 					RoomNum = 1;
 				}
 			}
@@ -216,7 +252,10 @@ void AFoxy::Idle(float DeltaTime)
 				if ( bIsFlashlightOn == true )
 				{
 					StopFootStepsSound();
-					MoveToTaggedLocation(1);
+					FVector dir = TagArr[1] - GetActorLocation();
+					dir.Normalize();
+					float speed = 500.f;
+					SetActorLocation(GetActorLocation() + dir * speed * DeltaTime);
 					RoomNum = 1;
 				}
 			}
@@ -280,8 +319,6 @@ void AFoxy::Move()
 //--------------------------------------------------------------------------------------
 void AFoxy::Attack()
 {
-	// 점프스퀘어 anim 재생
-
 	// 테스트용 -> 카메라 앞으로 SetActorLocation
 	AFreddyPlayer* FreddyPlayer = Cast<AFreddyPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
 	FTransform JmpScare = FreddyPlayer->GetCameraTransform();
@@ -293,11 +330,15 @@ void AFoxy::Attack()
 
 	if ( bJSound == false )
 	{
+		// 점프스퀘어 anim 재생
+		FoxyAnimInstance->IsJumpScare = true;
+		PlayJumpScare();
+
 		// 점프스케어 소리 재생
 		UGameplayStatics::PlaySound2D(this , JumpScareSFX);
 		bJSound = true;
 
-		FreddyPlayer->OnDie();
+		FreddyPlayer->OnDie(TEXT("Foxy"));
 
 		UE_LOG(LogTemp , Warning , TEXT("Foxy Attack !"));
 	}
@@ -306,6 +347,21 @@ void AFoxy::Attack()
 
 }
 //--------------------------------------------------------------------------------------
+void AFoxy::PlayJumpScare()
+{
+	if ( FoxyAnimInstance )
+	{
+		FoxyAnimInstance->PlayJumpScareMontage();
+	}
+}
+
+void AFoxy::PlayFakeScare()
+{
+	if ( FoxyAnimInstance )
+	{
+		FoxyAnimInstance->PlayFakeScareMontage();
+	}
+}
 
 FVector AFoxy::FindActorsWithTag(FName Tag)
 {
@@ -325,53 +381,53 @@ FVector AFoxy::FindActorsWithTag(FName Tag)
 	return FVector::ZeroVector; // FoundActors가 비어있을 경우, 기본값 반환
 }
 
-void AFoxy::MoveToTaggedLocation(int32 room)
-{
-	GetController()->StopMovement();
-
-	ACharacter* Character = Cast<ACharacter>(this);
-	if (Character)
-	{
-		Character->bUseControllerRotationYaw = false; // 캐릭터 회전을 잠금
-		Character->GetCharacterMovement()->bOrientRotationToMovement = false; // 이동 방향으로 회전하지 않음
-	}
-
-	AAIController* AIController = Cast<AAIController>(GetController());
-	if (AIController)
-	{
-		FAIMoveRequest MoveRequest;
-		MoveRequest.SetGoalLocation(TagArr[room]);
-		MoveRequest.SetAcceptanceRadius(5.0f); // 목표 위치에 도달하는 범위 설정
-
-		FNavPathSharedPtr NavPath;
-		EPathFollowingRequestResult::Type MoveResult = AIController->MoveTo(MoveRequest, &NavPath);
-
-		// 이동 요청 결과 로그 출력
-		switch (MoveResult)
-		{
-		case EPathFollowingRequestResult::Failed:
-			UE_LOG(LogTemp, Warning, TEXT("MoveTo request failed."));
-			break;
-		case EPathFollowingRequestResult::AlreadyAtGoal:
-			UE_LOG(LogTemp, Warning, TEXT("Already at goal location."));
-			break;
-		case EPathFollowingRequestResult::RequestSuccessful:
-			UE_LOG(LogTemp, Warning, TEXT("MoveTo request successful."));
-			break;
-		}
-	}
-
-	if (room == 5)
-	{
-		RoomNum = 2;
-		GetWorld()->GetTimerManager().SetTimer(Handle, this, &AFoxy::CanMove, 1.f, false);
-	}
-	else if (room == 6)
-	{
-		RoomNum = 3;
-		GetWorld()->GetTimerManager().SetTimer(Handle, this, &AFoxy::CanMove, 1.f, false);
-	}
-}
+//void AFoxy::MoveToTaggedLocation(int32 room)
+//{
+//	GetController()->StopMovement();
+//
+//	ACharacter* Character = Cast<ACharacter>(this);
+//	if (Character)
+//	{
+//		Character->bUseControllerRotationYaw = false; // 캐릭터 회전을 잠금
+//		Character->GetCharacterMovement()->bOrientRotationToMovement = false; // 이동 방향으로 회전하지 않음
+//	}
+//
+//	AAIController* AIController = Cast<AAIController>(GetController());
+//	if (AIController)
+//	{
+//		FAIMoveRequest MoveRequest;
+//		MoveRequest.SetGoalLocation(TagArr[room]);
+//		MoveRequest.SetAcceptanceRadius(5.0f); // 목표 위치에 도달하는 범위 설정
+//
+//		FNavPathSharedPtr NavPath;
+//		EPathFollowingRequestResult::Type MoveResult = AIController->MoveTo(MoveRequest, &NavPath);
+//
+//		// 이동 요청 결과 로그 출력
+//		switch (MoveResult)
+//		{
+//		case EPathFollowingRequestResult::Failed:
+//			UE_LOG(LogTemp, Warning, TEXT("MoveTo request failed."));
+//			break;
+//		case EPathFollowingRequestResult::AlreadyAtGoal:
+//			UE_LOG(LogTemp, Warning, TEXT("Already at goal location."));
+//			break;
+//		case EPathFollowingRequestResult::RequestSuccessful:
+//			UE_LOG(LogTemp, Warning, TEXT("MoveTo request successful."));
+//			break;
+//		}
+//	}
+//
+//	if (room == 5)
+//	{
+//		RoomNum = 2;
+//		GetWorld()->GetTimerManager().SetTimer(Handle, this, &AFoxy::CanMove, 1.f, false);
+//	}
+//	else if (room == 6)
+//	{
+//		RoomNum = 3;
+//		GetWorld()->GetTimerManager().SetTimer(Handle, this, &AFoxy::CanMove, 1.f, false);
+//	}
+//}
 
 void AFoxy::CanMove()
 {
@@ -407,23 +463,25 @@ void AFoxy::Closet(float DeltaTime)
 	AFreddyPlayer* FreddyPlayer = Cast<AFreddyPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld() , 0));
 	AFreddyPlayer::LookAt LookState;
 	LookState = FreddyPlayer->GetLookAtState();
+
 	// 폭시 인형
 	AActor* FoxDollInstance = UGameplayStatics::GetActorOfClass(GetWorld() , AFoxDoll::StaticClass());
 
-	if ( bIsFoxy == true )
-	{
-		ShowFoxy(this, true);
-		ShowFoxyDoll(FoxDollInstance , false); // 폭시 들어왔을 땐 안 보이게
-	}
-	else
-	{
-		ShowFoxy(this , false); // 인형 상태일 땐 폭시 안 보이게
-		ShowFoxyDoll(FoxDollInstance , true);
-	}
+	//if ( bIsFoxy == true )
+	//{
+	//	ShowFoxy(MeshState3, true);
+	//	ShowFoxyDoll(FoxDollInstance , false); // 폭시 들어왔을 땐 안 보이게
+	//}
+	//else
+	//{
+	//	this->GetMesh()->SetVisibility(false); // skeletal 안 보이게
+	//	ShowFoxy(MeshState3 , false); // 인형 상태일 땐 폭시 안 보이게
+	//	ShowFoxyDoll(FoxDollInstance , true);
+	//}
 
 	if ( FreddyPlayer )
 	{
-		// 플레이어 위치 == 가운데, 옷장이 살짝 움직임
+		// 플레이어 위치 == 가운데, 옷장이 살짝 움직임 anim
 
 
 
@@ -433,7 +491,10 @@ void AFoxy::Closet(float DeltaTime)
 			ScareCount = 0.f; // 점프스케어 카운트 초기화
 
 			if ( bAttack == true )
+			{
+				this->GetMesh()->SetVisibility(true); // skeletal 보이게
 				CurrentState = ELocationState::ATTACK;
+			}
 
 			if ( bClosetAnim == false )
 			{
@@ -508,38 +569,49 @@ void AFoxy::Closet(float DeltaTime)
 					if ( bFake == false )
 					{
 						// 페이크 점프스케어 재생
+						this->GetMesh()->SetVisibility(true); // skeletal 보이게
+						ShowFoxy(MeshState3, false); // 멈춘 버전 mesh는 안 보이게
+						FoxyAnimInstance->IsFakeScare = true;
+						PlayFakeScare();
 						bFake = true;
 					}
 					else
 					{
+						FoxyAnimInstance->IsFakeScare = false;
 						// 페이크 점프스케어 멈춘 버전 mesh 적용
+						this->GetMesh()->SetVisibility(false); // skeletal은 안 보이게
+						ShowFoxy(MeshState3, true);
 					}
 				}
 			}
 			else if ( FoxyState == 2 )
 			{
 				// 허리 구부리고 얼굴 약간 보이는 mesh 적용
+				ShowFoxy(MeshState2 , true);
 			}
 			else if ( FoxyState == 1 )
 			{
 				// 오른쪽에 서 있고 갈고리 손만 보이는 mesh 적용
+				ShowFoxy(MeshState1 , true);
 			}
 			else if ( FoxyState == 0 )
 			{
 				// 인형 어셋 적용
-				bIsFoxy = false; // Tick에서 CLOSET불러와서 ShowFoxyDoll 처리해 줄 것
-				StateToFoxy = true;
+				//bIsFoxy = false; // Tick에서 CLOSET불러와서 ShowFoxyDoll 처리해 줄 것
 
+				StateToFoxy = true;
+				ShowFoxy(MeshState1 , false);
 				UE_LOG(LogTemp , Log , TEXT("Spawn Foxy Doll"));
 			}
 		}
 	}
 }
 
-void AFoxy::ShowFoxy(ACharacter* character, bool bShow)
+void AFoxy::ShowFoxy(UStaticMesh* mesh , bool bShow)
 {
 	// mesh 컴포넌트로 안 보이게 (처음엔 보이게, room9에서 인형으로 바뀌면 안 보이게)
-	this->GetMesh()->SetVisibility(bShow);
+	FoxyMeshComponent->SetStaticMesh(mesh);
+	FoxyMeshComponent->SetHiddenInGame(!bShow);
 }
 
 void AFoxy::ShowFoxyDoll(AActor* actor, bool bShow)

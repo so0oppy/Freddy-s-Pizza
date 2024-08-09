@@ -40,6 +40,10 @@ public:
 	void Attack();
 	void Cupcake();
 
+	// 애니메이션
+	void PlayJumpScare();
+	void PlayCupCakeJumpScare();
+
 private:
 	UPROPERTY(EditDefaultsOnly)
 	ELocationState CurrentState;
@@ -55,6 +59,9 @@ private:
 	void MoveToTaggedLocation(int32 room);
 	void CanMove();
 	FTimerHandle Handle;
+
+	FVector dir;
+	float Speed = 500.f;
 
 	// 컨트롤 키 입력 함수 -> 손전등 ON/OFF
 	void FlashOn();
@@ -93,4 +100,8 @@ private:
 
 	UPROPERTY()
 	class AFreddyPlayer* player;
+
+	// AnimInstance 설정
+	UPROPERTY()
+	class UChicaAnimInstance* ChicaAnimInstance;
 };

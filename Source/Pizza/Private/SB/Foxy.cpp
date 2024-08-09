@@ -78,8 +78,8 @@ void AFoxy::BeginPlay()
 	AActor* FoxDollInstance = UGameplayStatics::GetActorOfClass(GetWorld() , AFoxDoll::StaticClass());
 	ShowFoxyDoll(FoxDollInstance, false);
 	//멈춘 버전 mesh 적용
-	this->GetMesh()->SetVisibility(false); // skeletal은 안 보이게
-	ShowFoxy(MeshState3 , true);
+	this->GetMesh()->SetVisibility(true); // skeletal 보이게
+	ShowFoxy(MeshState3 , false);
 
 	CurrentState = ELocationState::IDLE;
 
@@ -230,14 +230,16 @@ void AFoxy::Idle(float DeltaTime)
 			else if (RoomNum == 5)
 			{
 				PlayFootStepsSound();
+				this->GetMesh()->SetVisibility(true);
 
 				//	만약, 손전등 ON -> room1로 이동 (순간이동X)
 				if (bIsFlashlightOn == true)
 				{
 					StopFootStepsSound();
+					
 					FVector dir = TagArr[1] - GetActorLocation();
 					dir.Normalize();
-					float speed = 500.f;
+					float speed = 100.f;
 					SetActorLocation(GetActorLocation() + dir*speed*DeltaTime);
 					RoomNum = 1;
 				}
@@ -247,14 +249,16 @@ void AFoxy::Idle(float DeltaTime)
 			else if (RoomNum == 6)
 			{
 				PlayFootStepsSound();
+				this->GetMesh()->SetVisibility(true);
 
 				//	만약, 손전등 ON -> room1로 이동 (순간이동X)
 				if ( bIsFlashlightOn == true )
 				{
 					StopFootStepsSound();
+
 					FVector dir = TagArr[1] - GetActorLocation();
 					dir.Normalize();
-					float speed = 500.f;
+					float speed = 100.f;
 					SetActorLocation(GetActorLocation() + dir * speed * DeltaTime);
 					RoomNum = 1;
 				}
@@ -324,7 +328,7 @@ void AFoxy::Attack()
 	FTransform JmpScare = FreddyPlayer->GetCameraTransform();
 	JmpScare.SetLocation(JmpScare.GetLocation() - FVector(0 , 100 , 60)); // 위치 조정
 	FRotator rot = JmpScare.GetRotation().Rotator();
-	rot.Yaw += 90.0;
+	rot.Yaw -= 90.0;
 	JmpScare.SetRotation(rot.Quaternion());
 	SetActorTransform(JmpScare); // 카메라 위치로 이동 (점프스케어)
 
@@ -484,26 +488,33 @@ void AFoxy::Closet(float DeltaTime)
 		// 플레이어 위치 == 가운데, 옷장이 살짝 움직임 anim
 
 
-
-		// 옷장에서 점프스케어 조건이 찼으면 메인에 가면 점프스케어
-		if ( LookState == AFreddyPlayer::LookAt::Main )
+		// 플레이어 위치 != CLOSET
+		if ( LookState != AFreddyPlayer::LookAt::Center )
 		{
-			ScareCount = 0.f; // 점프스케어 카운트 초기화
-
-			if ( bAttack == true )
+			// 밖에선 둘 다 안 보이게
+			FoxyMeshComponent->SetHiddenInGame(true);
+			ShowFoxyDoll(FoxDollInstance , false);
+		
+			// 옷장에서 점프스케어 조건이 찼으면 메인에 가면 점프스케어
+			if ( LookState == AFreddyPlayer::LookAt::Main )
 			{
-				this->GetMesh()->SetVisibility(true); // skeletal 보이게
-				CurrentState = ELocationState::ATTACK;
-			}
+				ScareCount = 0.f; // 점프스케어 카운트 초기화
 
-			if ( bClosetAnim == false )
-			{
+				if ( bAttack == true )
+				{
+					this->GetMesh()->SetVisibility(true); // skeletal 보이게
+					if ( FreddyPlayer->KeepJumpScare() == false ) { CurrentState = ELocationState::ATTACK; }
+				}
 
-				bClosetAnim = true;
-				// 옷장 움직이는 anim(Loop안 함)
-				UE_LOG(LogTemp , Log , TEXT("Closet door Move !!"));
+				if ( bClosetAnim == false )
+				{
 
-				CurrentState = ELocationState::IDLE; // 아래 if를 실행하기 위함
+					bClosetAnim = true;
+					// 옷장 움직이는 anim(Loop안 함)
+					UE_LOG(LogTemp , Log , TEXT("Closet door Move !!"));
+
+					CurrentState = ELocationState::IDLE; // 아래 if를 실행하기 위함
+				}
 			}
 		}
 
@@ -561,46 +572,60 @@ void AFoxy::Closet(float DeltaTime)
 				}
 			}
 			/////////////////////////////////////////////////////////////////
-			if ( FoxyState == 3 )
+			if ( FoxyState == 3 && this->GetActorLocation().Equals(TagArr[9] , 0.1f) )
 			{
 				// 불 켜면 페이크 점프스케어 anim, 한 번 나온 뒤엔 정지상태 mesh
 				if ( bIsFlashlightOn == true )
 				{
-					if ( bFake == false )
+					if ( bFake == false && bWasFlashlightOn == false)
 					{
 						// 페이크 점프스케어 재생
 						this->GetMesh()->SetVisibility(true); // skeletal 보이게
-						ShowFoxy(MeshState3, false); // 멈춘 버전 mesh는 안 보이게
+						FoxyMeshComponent->SetHiddenInGame(true); // 멈춘 버전 mesh는 안 보이게
 						FoxyAnimInstance->IsFakeScare = true;
 						PlayFakeScare();
 						bFake = true;
 					}
-					else
+					else if ( bFake && bWasFlashlightOn )
 					{
-						FoxyAnimInstance->IsFakeScare = false;
-						// 페이크 점프스케어 멈춘 버전 mesh 적용
-						this->GetMesh()->SetVisibility(false); // skeletal은 안 보이게
-						ShowFoxy(MeshState3, true);
+						// 애니메이션이 계속 재생되도록
+						FoxyAnimInstance->IsFakeScare = true;
 					}
 				}
+				else
+				{
+					// 불이 꺼졌을 때
+					if ( bWasFlashlightOn )
+					{
+						// 애니메이션을 멈추고 멈춘 버전 Mesh 적용
+						FoxyAnimInstance->IsFakeScare = false;
+						this->GetMesh()->SetVisibility(false); // Skeletal Mesh는 안 보이게
+						ShowFoxy(MeshState3 , true);
+
+						bFake = false; // 다시 불을 켰을 때 애니메이션이 재생되도록 초기화
+					}
+				}
+				// 현재 불이 켜져 있는 상태 저장
+				bWasFlashlightOn = bIsFlashlightOn;
 			}
-			else if ( FoxyState == 2 )
+			else if ( FoxyState == 2 && this->GetActorLocation().Equals(TagArr[9] , 0.1f) )
 			{
 				// 허리 구부리고 얼굴 약간 보이는 mesh 적용
-				ShowFoxy(MeshState2 , true);
+				FoxyMeshComponent->SetStaticMesh(MeshState2);
 			}
-			else if ( FoxyState == 1 )
+			else if ( FoxyState == 1 && this->GetActorLocation().Equals(TagArr[9] , 0.1f) )
 			{
 				// 오른쪽에 서 있고 갈고리 손만 보이는 mesh 적용
-				ShowFoxy(MeshState1 , true);
+				FoxyMeshComponent->SetStaticMesh(MeshState1);
 			}
-			else if ( FoxyState == 0 )
+			else if ( FoxyState == 0 && this->GetActorLocation().Equals(TagArr[9] , 0.1f) )
 			{
 				// 인형 어셋 적용
 				//bIsFoxy = false; // Tick에서 CLOSET불러와서 ShowFoxyDoll 처리해 줄 것
 
 				StateToFoxy = true;
-				ShowFoxy(MeshState1 , false);
+				FoxyMeshComponent->SetHiddenInGame(true);
+				ShowFoxyDoll(FoxDollInstance, true);
 				UE_LOG(LogTemp , Log , TEXT("Spawn Foxy Doll"));
 			}
 		}
@@ -611,6 +636,7 @@ void AFoxy::ShowFoxy(UStaticMesh* mesh , bool bShow)
 {
 	// mesh 컴포넌트로 안 보이게 (처음엔 보이게, room9에서 인형으로 바뀌면 안 보이게)
 	FoxyMeshComponent->SetStaticMesh(mesh);
+//	FoxyMeshComponent->SetRenderInMainPass(bShow);
 	FoxyMeshComponent->SetHiddenInGame(!bShow);
 }
 
@@ -620,7 +646,8 @@ void AFoxy::ShowFoxyDoll(AActor* actor, bool bShow)
 
 	if (FoxyDoll && FoxyDoll->FoxyDollComp)
 	{
-		FoxyDoll->FoxyDollComp->SetVisibility(bShow);
+//		FoxyDoll->FoxyDollComp->SetRenderInMainPass(bShow);
+		FoxyDoll->FoxyDollComp->SetRenderInMainPass(!bShow);
 	}
 }
 

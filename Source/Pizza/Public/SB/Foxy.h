@@ -101,10 +101,15 @@ private:
 
 	void Closet(float DeltaTime);
 
-	bool bClosetAnim = false; // 옷장 애니메이션 한 번만 실행되게 하는 플래그
-	bool bFake = false; // 페이크 점프스케어가 한 번만 실행되게 하는 플래그
-	bool bCTtoZero = false; // currentTime이 한 번만 0이 되게 하는 플래그
-	bool bAttack = false; // 공격 조건
+	// 옷장 애니메이션 한 번만 실행되게 하는 플래그
+	bool bClosetAnim = false; 
+	// 페이크 점프스케어가 한 번만 실행되게 하는 플래그
+	bool bFake = false; 
+	bool bWasFlashlightOn = false;
+	// currentTime이 한 번만 0이 되게 하는 플래그
+	bool bCTtoZero = false; 
+	// 공격 조건
+	bool bAttack = false; 
 
 	
 	void ShowFoxy(UStaticMesh* mesh, bool bShow);

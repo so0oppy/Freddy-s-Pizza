@@ -56,12 +56,13 @@ private:
 	float CupCakeTime = 8.f;
 
 	FVector FindActorsWithTag(FName Tag);
-	void MoveToTaggedLocation(int32 room);
+	//void MoveToTaggedLocation(int32 room);
+	//void MoveToRoom(float DeltaTime);
 	void CanMove();
 	FTimerHandle Handle;
 
 	FVector dir;
-	float Speed = 500.f;
+	float Speed = 1000.f;
 
 	// 컨트롤 키 입력 함수 -> 손전등 ON/OFF
 	void FlashOn();

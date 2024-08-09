@@ -18,13 +18,6 @@ public:
 	// 초기화
 	virtual void NativeInitializeAnimation() override;
 
-	// 몽타주 끝났을 때 호출되는 이벤트
-	//UFUNCTION()
-	//void OnMyMontageEnded( bool bInterrupted);
-
-	// 점프스케어 애니메이션 시작
-	// void StartJumpscareAnimation(UAnimMontage* Montage);
-
 	void StartHideAnimation();
 
 	UPROPERTY()
@@ -37,10 +30,11 @@ public:
 	void AnimNotify_HideStop();
 
 	int32 LimitRepeatCount = 9999999;
+
 	UPROPERTY()
 	int32 Jumpscare1RepeatCount = 0;
-private:
 
+private:
 
 	UFUNCTION()
 	void AnimNotify_Hide1End();

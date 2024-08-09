@@ -10,7 +10,6 @@
 void UFreddleAnimInstance::NativeInitializeAnimation()
 {
 	Super::NativeInitializeAnimation();
-	//Freddle0 = Cast<AEnemyFreddy>(GetOwningComponent())->FreddyMesh0;
 	Freddle0 = GetOwningComponent();
 }
 

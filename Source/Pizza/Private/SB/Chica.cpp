@@ -65,7 +65,7 @@ void AChica::BeginPlay()
 	ACupCake* CupCake = Cast<ACupCake>(CupCakeInstance);
 	if ( CupCake->CupcakeComp )
 	{
-		CupCake->CupcakeAnimInstance = Cast<UCupCakeAnimInstance>(GetMesh()->GetAnimInstance());
+		CupCake->CupcakeAnimInstance = Cast<UCupCakeAnimInstance>(CupCake->CupcakeComp->GetAnimInstance());
 	}
 }
 
@@ -157,10 +157,20 @@ void AChica::Idle(float DeltaTime)
 				StopFootStepsSound(); // 발소리 멈춤
 
 				dir = TagArr[1] - GetActorLocation();
-				dir.Normalize();
-				SetActorLocation(GetActorLocation() + dir*Speed*DeltaTime);
-				RoomNum = 1;
-				CurrentState = ELocationState::MOVE;
+				float Distance = dir.Size();
+
+				if ( Distance < 100.f )
+				{
+					SetActorLocation(TagArr[1]); // 정확히 목표 위치에 위치시킴
+					RoomNum = 1;
+					CurrentState = ELocationState::MOVE;
+				}
+				else
+				{
+					dir.Normalize();
+					SetActorLocation(GetActorLocation() + dir * Speed * DeltaTime); // 위치 업데이트
+				}
+				
 			}
 			// 문 닫으면 -> room8로 이동
 			else if ( bIsDoorClose == true )

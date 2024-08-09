@@ -195,7 +195,7 @@ void AChica::Idle(float DeltaTime)
 					//→ 플레이어가 문 안닫고 && 손전등 ON : 점프스케어(공격) 
 					if ( bIsFlashlightOn == true )
 					{
-						CurrentState = ELocationState::ATTACK;
+						if ( FreddyPlayer->KeepJumpScare() == false ) {CurrentState = ELocationState::ATTACK;}
 					}
 				}
 				//→ 문 닫았을 때 
@@ -223,7 +223,7 @@ void AChica::Idle(float DeltaTime)
 			{
 				if ( CupCakeTimer > CupCakeTime )
 				{
-					CurrentState = ELocationState::CUPCAKE;
+					if ( FreddyPlayer->KeepJumpScare() == false ) {CurrentState = ELocationState::CUPCAKE;}
 				}
 			}
 		}
@@ -331,7 +331,7 @@ void AChica::Attack()
 		UGameplayStatics::PlaySound2D(this , JumpScareSFX);
 		bJSound = true;
 
-		FreddyPlayer->OnDie();
+		FreddyPlayer->OnDie(TEXT("Chica"));
 
 		UE_LOG(LogTemp , Warning , TEXT("Chica Attack !"));
 	}
@@ -364,7 +364,7 @@ void AChica::Cupcake()
 			UGameplayStatics::PlaySound2D(this , CupCakeScareSFX);
 			bJSound = true;
 
-			FreddyPlayer->OnDie();
+			FreddyPlayer->OnDie(TEXT("CupCake"));
 
 			UE_LOG(LogTemp , Warning , TEXT("CupCake Attack !"));
 		}

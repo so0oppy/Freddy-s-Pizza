@@ -173,7 +173,7 @@ void AFoxy::Idle(float DeltaTime)
 		ScareCount += DeltaTime;
 		if ( ScareCount > 15.f )
 		{
-			CurrentState = ELocationState::ATTACK;
+			if(FreddyPlayer->KeepJumpScare() == false){CurrentState = ELocationState::ATTACK;}
 		}
 	}
 	// 플레이어 위치가 침대가 아닐 때 스케어카운트 0으로 초기화
@@ -338,7 +338,7 @@ void AFoxy::Attack()
 		UGameplayStatics::PlaySound2D(this , JumpScareSFX);
 		bJSound = true;
 
-		FreddyPlayer->OnDie();
+		FreddyPlayer->OnDie(TEXT("Foxy"));
 
 		UE_LOG(LogTemp , Warning , TEXT("Foxy Attack !"));
 	}
@@ -463,19 +463,6 @@ void AFoxy::Closet(float DeltaTime)
 	AFreddyPlayer* FreddyPlayer = Cast<AFreddyPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld() , 0));
 	AFreddyPlayer::LookAt LookState;
 	LookState = FreddyPlayer->GetLookAtState();
-
-	//// 폭시 상태 Mesh
-	//ConstructorHelpers::FObjectFinder<UStaticMesh> StateTwoMesh(TEXT("/Script/Engine.StaticMesh'/Game/sym/animation_model/foxy/Mesh/SM_FoxyState2.SM_FoxyState2'"));
-	//if ( StateTwoMesh.Succeeded() )
-	//{
-	//	MeshState2 = StateTwoMesh.Object;
-	//}
-
-	//ConstructorHelpers::FObjectFinder<UStaticMesh> StateOneMesh(TEXT("/Script/Engine.StaticMesh'/Game/sym/animation_model/foxy/Mesh/SM_FoxyState1.SM_FoxyState1'"));
-	//if ( StateOneMesh.Succeeded() )
-	//{
-	//	MeshState1 = StateOneMesh.Object;
-	//}
 
 	// 폭시 인형
 	AActor* FoxDollInstance = UGameplayStatics::GetActorOfClass(GetWorld() , AFoxDoll::StaticClass());

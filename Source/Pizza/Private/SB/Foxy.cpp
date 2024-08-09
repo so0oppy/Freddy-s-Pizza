@@ -237,11 +237,20 @@ void AFoxy::Idle(float DeltaTime)
 				{
 					StopFootStepsSound();
 					
-					FVector dir = TagArr[1] - GetActorLocation();
-					dir.Normalize();
-					float speed = 100.f;
-					SetActorLocation(GetActorLocation() + dir*speed*DeltaTime);
-					RoomNum = 1;
+					dir = TagArr[1] - GetActorLocation();
+					float Distance = dir.Size();
+
+					if ( Distance < 100.f )
+					{
+						SetActorLocation(TagArr[1]); // 정확히 목표 위치에 위치시킴
+						RoomNum = 1;
+						CurrentState = ELocationState::MOVE;
+					}
+					else
+					{
+						dir.Normalize();
+						SetActorLocation(GetActorLocation() + dir * Speed * DeltaTime); // 위치 업데이트
+					}
 				}
 			}
 			//////////////////////////////////////////////////////////////////////////////
@@ -256,11 +265,20 @@ void AFoxy::Idle(float DeltaTime)
 				{
 					StopFootStepsSound();
 
-					FVector dir = TagArr[1] - GetActorLocation();
-					dir.Normalize();
-					float speed = 100.f;
-					SetActorLocation(GetActorLocation() + dir * speed * DeltaTime);
-					RoomNum = 1;
+					dir = TagArr[1] - GetActorLocation();
+					float Distance = dir.Size();
+
+					if ( Distance < 100.f )
+					{
+						SetActorLocation(TagArr[1]); // 정확히 목표 위치에 위치시킴
+						RoomNum = 1;
+						CurrentState = ELocationState::MOVE;
+					}
+					else
+					{
+						dir.Normalize();
+						SetActorLocation(GetActorLocation() + dir * Speed * DeltaTime); // 위치 업데이트
+					}
 				}
 			}
 			//////////////////////////////////////////////////////////////////////////////
@@ -384,54 +402,6 @@ FVector AFoxy::FindActorsWithTag(FName Tag)
 
 	return FVector::ZeroVector; // FoundActors가 비어있을 경우, 기본값 반환
 }
-
-//void AFoxy::MoveToTaggedLocation(int32 room)
-//{
-//	GetController()->StopMovement();
-//
-//	ACharacter* Character = Cast<ACharacter>(this);
-//	if (Character)
-//	{
-//		Character->bUseControllerRotationYaw = false; // 캐릭터 회전을 잠금
-//		Character->GetCharacterMovement()->bOrientRotationToMovement = false; // 이동 방향으로 회전하지 않음
-//	}
-//
-//	AAIController* AIController = Cast<AAIController>(GetController());
-//	if (AIController)
-//	{
-//		FAIMoveRequest MoveRequest;
-//		MoveRequest.SetGoalLocation(TagArr[room]);
-//		MoveRequest.SetAcceptanceRadius(5.0f); // 목표 위치에 도달하는 범위 설정
-//
-//		FNavPathSharedPtr NavPath;
-//		EPathFollowingRequestResult::Type MoveResult = AIController->MoveTo(MoveRequest, &NavPath);
-//
-//		// 이동 요청 결과 로그 출력
-//		switch (MoveResult)
-//		{
-//		case EPathFollowingRequestResult::Failed:
-//			UE_LOG(LogTemp, Warning, TEXT("MoveTo request failed."));
-//			break;
-//		case EPathFollowingRequestResult::AlreadyAtGoal:
-//			UE_LOG(LogTemp, Warning, TEXT("Already at goal location."));
-//			break;
-//		case EPathFollowingRequestResult::RequestSuccessful:
-//			UE_LOG(LogTemp, Warning, TEXT("MoveTo request successful."));
-//			break;
-//		}
-//	}
-//
-//	if (room == 5)
-//	{
-//		RoomNum = 2;
-//		GetWorld()->GetTimerManager().SetTimer(Handle, this, &AFoxy::CanMove, 1.f, false);
-//	}
-//	else if (room == 6)
-//	{
-//		RoomNum = 3;
-//		GetWorld()->GetTimerManager().SetTimer(Handle, this, &AFoxy::CanMove, 1.f, false);
-//	}
-//}
 
 void AFoxy::CanMove()
 {
@@ -574,6 +544,9 @@ void AFoxy::Closet(float DeltaTime)
 			/////////////////////////////////////////////////////////////////
 			if ( FoxyState == 3 && this->GetActorLocation().Equals(TagArr[9] , 0.1f) )
 			{
+				// 폭시 인형은 안 보이게
+				ShowFoxyDoll(FoxDollInstance, false); 
+				
 				// 불 켜면 페이크 점프스케어 anim, 한 번 나온 뒤엔 정지상태 mesh
 				if ( bIsFlashlightOn == true )
 				{
@@ -610,11 +583,15 @@ void AFoxy::Closet(float DeltaTime)
 			}
 			else if ( FoxyState == 2 && this->GetActorLocation().Equals(TagArr[9] , 0.1f) )
 			{
+				// 폭시 인형은 안 보이게
+				ShowFoxyDoll(FoxDollInstance , false);
 				// 허리 구부리고 얼굴 약간 보이는 mesh 적용
 				FoxyMeshComponent->SetStaticMesh(MeshState2);
 			}
 			else if ( FoxyState == 1 && this->GetActorLocation().Equals(TagArr[9] , 0.1f) )
 			{
+				// 폭시 인형은 안 보이게
+				ShowFoxyDoll(FoxDollInstance , false);
 				// 오른쪽에 서 있고 갈고리 손만 보이는 mesh 적용
 				FoxyMeshComponent->SetStaticMesh(MeshState1);
 			}

@@ -57,6 +57,7 @@ private:
 
 	FVector FindActorsWithTag(FName Tag);
 	//void MoveToTaggedLocation(int32 room);
+	//void MoveToRoom(float DeltaTime);
 	void CanMove();
 	FTimerHandle Handle;
 

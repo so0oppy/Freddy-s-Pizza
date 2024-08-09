@@ -92,6 +92,9 @@ private:
 	void CanMove();
 	FTimerHandle Handle;
 
+	FVector dir;
+	float Speed = 500.f;
+
 	// 컨트롤 키 입력 함수 -> 손전등 ON/OFF
 	void FlashOn();
 	// Shift 키 입력 함수 -> 문/옷장 Open/Close

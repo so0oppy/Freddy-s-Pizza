@@ -3,13 +3,13 @@
 
 #include "SB/CupCake.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "SB/CupCakeAnimInstance.h"
 
 // Sets default values
 ACupCake::ACupCake()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-
 	// 컵케이크 mesh 설정
 	CupcakeComp = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("CupCakeComp"));
 	CupcakeComp->SetupAttachment(RootComponent);

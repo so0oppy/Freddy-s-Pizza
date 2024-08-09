@@ -65,7 +65,7 @@ void AChica::BeginPlay()
 	ACupCake* CupCake = Cast<ACupCake>(CupCakeInstance);
 	if ( CupCake->CupcakeComp )
 	{
-		CupCake->CupcakeAnimInstance = Cast<UCupCakeAnimInstance>(GetMesh()->GetAnimInstance());
+		CupCake->CupcakeAnimInstance = Cast<UCupCakeAnimInstance>(CupCake->CupcakeComp->GetAnimInstance());
 	}
 }
 

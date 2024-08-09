@@ -56,7 +56,7 @@ private:
 	float CupCakeTime = 8.f;
 
 	FVector FindActorsWithTag(FName Tag);
-	void MoveToTaggedLocation(int32 room);
+	//void MoveToTaggedLocation(int32 room);
 	void CanMove();
 	FTimerHandle Handle;
 

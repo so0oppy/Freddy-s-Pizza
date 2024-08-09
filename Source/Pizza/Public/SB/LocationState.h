@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
@@ -11,5 +11,6 @@ enum class ELocationState : uint8
 	IDLE,
 	MOVE,
 	ATTACK,
-	CUPCAKE
+	CUPCAKE,
+	CLOSET
 };

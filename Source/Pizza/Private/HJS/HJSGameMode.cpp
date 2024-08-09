@@ -74,6 +74,16 @@ void AHJSGameMode::Tick(float DeltaTime)
 
 }
 
+AChica* AHJSGameMode::GetChica()
+{
+	return Chica;
+}
+
+AEnemyBonnie* AHJSGameMode::GetBonnie()
+{
+	return Bonnie;
+}
+
 void AHJSGameMode::TimePass()
 {
 	// 시간이 지나고, Enemy들을 업데이트 시켜주기.
@@ -124,13 +134,13 @@ void AHJSGameMode::SetAILevelEnemy()
 	if ( Bonnie )
 	{
 		Bonnie->SetAILevel(LV_bonnie[Day][Hour]);
-		Bonnie->SetAILevel(20);
+		//Bonnie->SetAILevel(20);
 	}
 
 	if ( Freddy )
 	{
 		Freddy->SetAILevel(LV_freddy[Day][Hour]);
-		//Freddy->SetAILevel(20);
+		Freddy->SetAILevel(20);
 	}
 
 }

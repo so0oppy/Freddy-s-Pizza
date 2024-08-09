@@ -12,6 +12,12 @@
 #include "Camera/CameraShakeBase.h"
 #include "Kismet/GameplayStatics.h"
 #include "HJS/Door.h"
+#include "HJS/HJSGameMode.h"
+#include "SB/Chica.h"
+#include "SB/Foxy.h"
+#include "JYS/EnemyBonnie.h"
+#include "JYS/EnemyFreddy.h"
+#include "HJS/CameraBlinkUI.h"
 // Sets default values
 AFreddyPlayer::AFreddyPlayer()
 {
@@ -70,6 +76,8 @@ void AFreddyPlayer::BeginPlay()
 {
 	Super::BeginPlay();
 	
+
+
 	APlayerController* PlayerController = Cast<APlayerController>(GetController());
 	if (PlayerController)
 	{
@@ -92,6 +100,15 @@ void AFreddyPlayer::BeginPlay()
 	Splines[0] = SplineComponent1;
 	Splines[1] = SplineComponent2;
 	Splines[2] = SplineComponent3;
+
+	if ( CameraBlinkUIFactory )
+	{
+		CameraBlinkUI = Cast<UCameraBlinkUI>(CreateWidget(GetWorld() , CameraBlinkUIFactory , FName("CameraBlinkUI")));
+		if ( CameraBlinkUI )
+		{
+			CameraBlinkUI->AddToViewport();
+		}
+	}
 
 	if (DownMouseUIFactory)
 	{
@@ -140,9 +157,19 @@ void AFreddyPlayer::BeginPlay()
 		}
 
 	}
-	//		(Pitch=6.336300,Yaw=0.000000,Roll=0.000000)
-	OriginCameraRotate = FRotator(6.336300f, 0.f, 0.f);
-	OriginCameraVector = FVector(0.f,0.f,-30.f);
+	//(Pitch=6.336300,Yaw=0.000000,Roll=0.000000)
+	OriginCameraRotate = FRotator(10.f, 0.f, 0.f);
+	//(X=498.913821,Y=0.000000,Z=-140.000000)
+	OriginCameraVector = FVector(499.f,0.f,-140.f);
+
+	Chica = Cast<AChica>(UGameplayStatics::GetActorOfClass(GetWorld() , AChica::StaticClass()));
+	check(Chica);
+	Bonnie = Cast<AEnemyBonnie>(UGameplayStatics::GetActorOfClass(GetWorld() , AEnemyBonnie::StaticClass()));
+	check(Bonnie);
+	Foxy = Cast<AFoxy>(UGameplayStatics::GetActorOfClass(GetWorld() , AFoxy::StaticClass()));
+	check(Foxy);
+	Freddy = Cast<AEnemyFreddy>(UGameplayStatics::GetActorOfClass(GetWorld() , AEnemyFreddy::StaticClass()));
+	check(Freddy);
 }
 
 void AFreddyPlayer::SetUp()
@@ -177,6 +204,7 @@ void AFreddyPlayer::SetDown()
 		if (LookAtState == LookAt::Main)
 		{
 			// 뒤돌기
+			APlayerController* PlayerController = Cast<APlayerController>(GetController());
 			LookAtState = LookAt::Bed;
 			bMoving = true;
 			CurrentTime = 0.f;
@@ -246,9 +274,15 @@ void AFreddyPlayer::OnDie()
 
 	//}
 	// 일단 통일, 쉐이크 깎기 너무 노가다 같음
+
+	// JumpScare 종류에 따라서 카메라 위치 및 쉐이크 다르게 적용하기
+
 	APlayerController* PlayerController = Cast<APlayerController>(GetController());
 	if ( PlayerController )
 	{
+		bJumpScare = true;
+		//UGameplayStatics::PlayWorldCameraShake(GetWorld(), JumpScareShake1,SpringArmComp->GetComponentLocation(), 0.25,0.25);
+		//UE_LOG(LogTemp,Warning,)
 		PlayerController->ClientStartCameraShake(JumpScareShake1);
 		// 플레이어 조작 멈추기 -> 틱을 꺼버리자
 		SetActorTickEnabled(false);
@@ -261,6 +295,40 @@ void AFreddyPlayer::OnDie()
 		bEnableRestart = true;
 	}
 
+}
+
+// 
+void AFreddyPlayer::OnDie(FString JumpScareName)
+{
+	bJumpScare = true;
+	APlayerController* PlayerController = Cast<APlayerController>(GetController());
+	if ( PlayerController )
+	{
+		//UGameplayStatics::PlayWorldCameraShake(GetWorld(), JumpScareShake1,SpringArmComp->GetComponentLocation(), 0.25,0.25);
+		//UE_LOG(LogTemp,Warning,)
+		PlayerController->ClientStartCameraShake(JumpScareShake1);
+		// 플레이어 조작 멈추기 -> 틱을 꺼버리자
+		SetActorTickEnabled(false);
+		// 다른 Enemy 이어서 작동 안되도록 게임 Pause 시키기
+		GetWorldTimerManager().SetTimer(PauseHandle , this , &AFreddyPlayer::OnMyPause , 1.f , false);
+		FInputModeGameAndUI InputMode;
+		PlayerController->SetInputMode(InputMode);
+		PlayerController->EnableInput(PlayerController);
+		// 리스타트 모드 활성화 ( 이 상태에서 R키 누르면 리스타트 됨 )
+		bEnableRestart = true;
+	}
+}
+
+bool AFreddyPlayer::KeepJumpScare()
+{
+	if ( bMoving == true || bHeadDown == true || bHeadUp == true || bOpenDoor == true || bJumpScare == true)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
 }
 
 void AFreddyPlayer::OnRestart()
@@ -324,6 +392,34 @@ void AFreddyPlayer::CloseDoor()
 		return;
 	}
 
+	
+	AHJSGameMode* GM = Cast<AHJSGameMode>(GetWorld()->GetAuthGameMode());
+	if ( GM != nullptr ) {
+		// 오른쪽 문을 닫은 경우
+		if ( LookAtState == LookAt::Right )
+		{
+			if ( Chica != nullptr )
+			{
+				if ( Chica->RoomNum == 6 )
+				{
+					bTeleport = true;
+				}
+			}
+		}
+
+		// 왼쪽 문을 닫은 경우
+
+		if ( LookAtState == LookAt::Left )
+		{
+			if ( Bonnie != nullptr )
+			{
+				if ( Bonnie->State == EBonnieState::Room1 )
+				{
+					bTeleport = true;
+				}
+			}
+		}
+	}
 	// 문 닫기 변수 변화
 	bClose= true;
 	
@@ -382,6 +478,7 @@ void AFreddyPlayer::OpenDoor()
 	}
 	// 문 열기 변수 변화
 	bClose= false;
+	bTeleport = false;
 
 	DoorIndex=static_cast<int32>(LookAtState);
 	DoorRotation=Doors[DoorIndex]->GetActorRotation();
@@ -424,6 +521,18 @@ void AFreddyPlayer::Tick(float DeltaTime)
 	DoorRotAndCameraMove(DeltaTime);
 	GetCameraTransform();
 	DoorOpenAndClose(DeltaTime);
+
+	if ( WarningCondition() && bBlink == false)
+	{
+		bBlink = true;
+		OnCameraBlink();
+	}
+	else if(!WarningCondition())
+	{
+		bBlink = false;
+		OffCameraBlink();
+	}
+
 }
 
 // Called to bind functionality to input
@@ -625,7 +734,7 @@ void AFreddyPlayer::LookBack(float DeltaTime)
 
 	if (LookAtState==LookAt::Bed)
 	{
-		NewRotation.Yaw = FMath::Clamp(NewRotation.Yaw + RotationSpeed * 10 *BoostSpeed * DeltaTime, 0, 178);
+		NewRotation.Yaw = FMath::Clamp(NewRotation.Yaw + RotationSpeed * 5*BoostSpeed * DeltaTime, 0, 178);
 		SpringArmComp->SetRelativeRotation(NewRotation);
 		if (NewRotation.Yaw > 177)
 		{
@@ -686,7 +795,7 @@ void AFreddyPlayer::UpdateHeadMovement(float DeltaTime)
 		}
 		HeadCurrentTime += DeltaTime;
 		float Alpha = FMath::Clamp(HeadCurrentTime / HeadMovementTime, 0.0f, 1.0f);
-		float Pitch = bHeadDown ? FMath::Lerp(0.0f, -80.0f, Alpha) : FMath::Lerp(-80.0f, 0.0f, Alpha);
+		float Pitch = bHeadDown ? FMath::Lerp(OriginCameraRotate.Pitch , -80.0f, Alpha) : FMath::Lerp(-80.0f, OriginCameraRotate.Pitch, Alpha);
 		FRotator NewRotation = SpringArmComp->GetRelativeRotation();
 		NewRotation.Pitch = Pitch;
 		SpringArmComp->SetRelativeRotation(NewRotation);
@@ -886,4 +995,32 @@ void AFreddyPlayer::DoorOpenAndClose(float DeltaTime)
 		}
 	}
 
+}
+
+void AFreddyPlayer::OnCameraBlink()
+{
+	GetWorldTimerManager().SetTimer(CameraBlinkHandle,this,&AFreddyPlayer::CameraBlink,3.f,true);
+}
+
+void AFreddyPlayer::OffCameraBlink()
+{
+	GetWorldTimerManager().ClearTimer(CameraBlinkHandle);
+}
+
+void AFreddyPlayer::CameraBlink()
+{
+	CameraBlinkUI->PlayBlinkAnim();
+}
+
+bool AFreddyPlayer::WarningCondition()
+{
+	// 보니가 0번방에 있거나, 치카가 8번 방에 있거나, 폭시가 3단계 이거나, 프래들이 3마리 이상 있거나.
+
+	if ( Bonnie->State == EBonnieState::Room0 || Chica->RoomNum == 8 || (Foxy->FoxyState >= 3 && Foxy->RoomNum == 9) || Freddy->HiddenTime >= 3 )
+	{
+		return true;
+	}
+	else {
+		return false;
+	}
 }

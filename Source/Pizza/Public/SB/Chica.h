@@ -40,6 +40,10 @@ public:
 	void Attack();
 	void Cupcake();
 
+	// 애니메이션
+	void PlayJumpScare();
+	void PlayCupCakeJumpScare();
+
 private:
 	UPROPERTY(EditDefaultsOnly)
 	ELocationState CurrentState;
@@ -48,10 +52,16 @@ private:
 	float CurrentTime = 0.f;
 	float MovableTime = 4.98f;
 
+	float CupCakeTimer = 0.f; // 1, 3일 때 0 초기화 8에서 쌓이기 시작, 6에서도 계속 쌓임
+	float CupCakeTime = 8.f;
+
 	FVector FindActorsWithTag(FName Tag);
 	void MoveToTaggedLocation(int32 room);
 	void CanMove();
 	FTimerHandle Handle;
+
+	FVector dir;
+	float Speed = 500.f;
 
 	// 컨트롤 키 입력 함수 -> 손전등 ON/OFF
 	void FlashOn();
@@ -76,6 +86,8 @@ private:
 	// 점프스케어 소리
 	UPROPERTY(EditDefaultsOnly)
 	class USoundBase* JumpScareSFX;
+	UPROPERTY(EditDefaultsOnly)
+	class USoundBase* CupCakeScareSFX;
 
 	bool bFSound = false; // 발소리 토글
 	bool bBSound = false; // 숨소리 토글
@@ -88,4 +100,8 @@ private:
 
 	UPROPERTY()
 	class AFreddyPlayer* player;
+
+	// AnimInstance 설정
+	UPROPERTY()
+	class UChicaAnimInstance* ChicaAnimInstance;
 };

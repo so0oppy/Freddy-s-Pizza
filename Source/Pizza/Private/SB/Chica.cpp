@@ -14,11 +14,12 @@
 #include "Sound/SoundBase.h"
 #include "SB/CupCake.h"
 #include "Components/AudioComponent.h"
+#include "SB/ChicaAnimInstance.h"
+#include "SB/CupCakeAnimInstance.h"
 
 // Sets default values
 AChica::AChica()
 {
-
 	PrimaryActorTick.bCanEverTick = true;
 
 	AILevelComp = CreateDefaultSubobject<UAILevel>(TEXT("AILevelComp"));
@@ -54,6 +55,18 @@ void AChica::BeginPlay()
 	UE_LOG(LogTemp, Warning, TEXT("Room array complete"));
 
 	CurrentState = ELocationState::IDLE;
+
+	if ( this->GetMesh() )
+	{
+		ChicaAnimInstance = Cast<UChicaAnimInstance>(GetMesh()->GetAnimInstance());
+	}
+
+	AActor* CupCakeInstance = UGameplayStatics::GetActorOfClass(GetWorld() , ACupCake::StaticClass());
+	ACupCake* CupCake = Cast<ACupCake>(CupCakeInstance);
+	if ( CupCake->CupcakeComp )
+	{
+		CupCake->CupcakeAnimInstance = Cast<UCupCakeAnimInstance>(GetMesh()->GetAnimInstance());
+	}
 }
 
 void AChica::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -124,78 +137,93 @@ void AChica::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 void AChica::Idle(float DeltaTime)
 {
+	//---------------------------------------------------------------------------
+	// 만약, 보니가 teleport한 후면 치카는 어디에 있든 움직이지 않음
+	AFreddyPlayer* FreddyPlayer = Cast<AFreddyPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld() , 0));
+	if ( FreddyPlayer->bTeleport == true )
+		return;
+	//---------------------------------------------------------------------------
+	AFreddyPlayer::LookAt LookState;
+	LookState = FreddyPlayer->GetLookAtState();
+
 	// 현재 위치 == room1 || room3 || room4 || room6 || room8 가능
 	if ( RoomNum == 6 )
 	{
-		AFreddyPlayer* FreddyPlayer = Cast<AFreddyPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld() , 0));
-		AFreddyPlayer::LookAt LookState;
-
 		if ( FreddyPlayer ) // 플레이어와 연동될 부분
 		{
-			LookState = FreddyPlayer->GetLookAtState();
-
 			//	만약, 손전등 ON -> room1로 이동 (순간이동X)
 			if ( bIsFlashlightOn == true && LookState == AFreddyPlayer::LookAt::Right )
 			{
 				StopFootStepsSound(); // 발소리 멈춤
-				// 손전등 ON && Door: Close -> room8로 이동
-				if ( bIsDoorClose == true )
-				{
-					SetActorLocation(TagArr[8]);
-					RoomNum = 8;
-					CurrentState = ELocationState::IDLE;
-				}
-				else
-				{
-					MoveToTaggedLocation(1);
-					RoomNum = 1;
-					CurrentState = ELocationState::MOVE;
-				}
+
+				dir = TagArr[1] - GetActorLocation();
+				dir.Normalize();
+				SetActorLocation(GetActorLocation() + dir*Speed*DeltaTime);
+				RoomNum = 1;
+				CurrentState = ELocationState::MOVE;
+			}
+			// 문 닫으면 -> room8로 이동
+			else if ( bIsDoorClose == true )
+			{
+				SetActorLocation(TagArr[8]);
+				RoomNum = 8;
 			}
 		}
 	}
 
 	else if ( RoomNum == 8 )
 	{
-		AFreddyPlayer* FreddyPlayer = Cast<AFreddyPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld() , 0));
-		AFreddyPlayer::LookAt LookState;
+		// 발소리는 멈춤
+		StopFootStepsSound();
+
+		// 컵케이크 타이머 시작 (혹은 재시작)
+		CupCakeTimer += DeltaTime;
 
 		if ( FreddyPlayer ) // 플레이어와 연동될 부분
 		{
 			LookState = FreddyPlayer->GetLookAtState();
 
-			//→ 플레이어 위치 == Door && 손전등 ON : 점프스퀘어(공격) 
-			if ( (LookState == AFreddyPlayer::LookAt::Right && bIsDoorClose == false) && bIsFlashlightOn == true )
+			// →플레이어 위치 == Door : 숨소리들림
+			if(LookState == AFreddyPlayer::LookAt::Right )
 			{
-				CurrentState = ELocationState::ATTACK;
+				// 숨소리 재생
+				PlayBreathSound();
 
-			}
-
-			//→ 플레이어 위치 == Door && bCLOSE == true (일정 시간동안 CLOSE ⇒ 확률적으로 1,3,4 중 이동)
-			if ( LookState == AFreddyPlayer::LookAt::Right || bIsDoorClose == true )
-			{
-				if ( bBSound == false )
+				// 문 안 닫고 있으면 멈춤
+				if(bIsDoorClose == false )
 				{
-					// 숨소리 재생
-					PlayBreathSound();
-					bBSound = true;
+					//→ 플레이어가 문 안닫고 && 손전등 ON : 점프스케어(공격) 
+					if ( bIsFlashlightOn == true )
+					{
+						if ( FreddyPlayer->KeepJumpScare() == false ) {CurrentState = ELocationState::ATTACK;}
+					}
 				}
-				else StopBreathSound();
-
-				CurrentTime += DeltaTime;
-				if ( CurrentTime > MovableTime )
+				//→ 문 닫았을 때 
+				else if ( bIsDoorClose == true )
 				{
-					TArray<int32> RoomTags = { 1, 3, 4 };
-					int32 RandomIndex = FMath::RandRange(0 , RoomTags.Num() - 1);
-
-					SetActorLocation(TagArr[RoomTags[RandomIndex]]);
-					RoomNum = RoomTags[RandomIndex];
-
-					StopBreathSound();
-
-					CurrentTime = 0.f;
-
-					CurrentState = ELocationState::MOVE;
+					// (중간에서 문 앞으로 텔레포트 시) 안 움직이다가 문을 잠깐 열고 닫으면 그 때 3으로 이동 -> bTeleport == false 일 때 움직임
+					// 이동 시, 1.5초 뒤에 돌아가도록 설정
+					CurrentTime += DeltaTime;
+					if(CurrentTime > 1.5f )
+					{
+						SetActorLocation(TagArr[3]);
+						RoomNum = 3;
+					}
+				}
+			}
+			// 문에 안 가면 숨소리 안 들리게
+			else if( LookState != AFreddyPlayer::LookAt::Right )
+			{
+				StopBreathSound();
+			}
+			
+			
+			//→ 플레이어 위치= Main 혹은 Bed 일 때, 일정 시간 후에 컵케이크 점프스케어(공격) → GAME OVER
+			if ( LookState == AFreddyPlayer::LookAt::Main || LookState == AFreddyPlayer::LookAt::Bed)
+			{
+				if ( CupCakeTimer > CupCakeTime )
+				{
+					if ( FreddyPlayer->KeepJumpScare() == false ) {CurrentState = ELocationState::CUPCAKE;}
 				}
 			}
 		}
@@ -218,21 +246,12 @@ void AChica::Idle(float DeltaTime)
 
 			else if (RoomNum == 8)  //room8일 때 'attack, cupcake, 이동' 세가지 조건이므로 따로 분류
 			{
-
-				AFreddyPlayer* FreddyPlayer = Cast<AFreddyPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
-				AFreddyPlayer::LookAt LookState;
-
-				LookState = FreddyPlayer->GetLookAtState();
-
-				//→ 플레이어 위치≠Door 일 때, 일정 시간 후에 컵케이크 점프스퀘어(공격) → GAME OVER
-				if (LookState == AFreddyPlayer::LookAt::Main)
+				
+				// → 이동 시간이 됐을 때 플레이어 위치 != Right 이면, 6으로 돌아감 (컵케이크 카운트는 계속)
+				if ( LookState != AFreddyPlayer::LookAt::Right )
 				{
-					CurrentTime += DeltaTime;
-					if (CurrentTime > MovableTime)
-					{
-						CurrentState = ELocationState::CUPCAKE;
-						CurrentTime = 0.f;
-					}
+					SetActorLocation(TagArr[6]);
+					RoomNum = 6;
 				}
 			}
 		}
@@ -249,69 +268,43 @@ void AChica::Move() // 손전등 켜고 있으면 1,3,4로만 이동
 	UE_LOG(LogTemp, Warning, TEXT("Chica Move()"));
 	FVector CurrentLocation = this->GetActorLocation();
 	// 치카 위치가 room number 몇 인지
-	//for(int32 i=1; i<TagArr.Num(); ++i)
-	//{
-	//	if(CurrentLocation.Equals(TagArr[i], 1.0f))
-	//	{	
-	//		RoomNum = i;
-	//		break;
-	//	}
-	//}
+
+	//---------------------------------------------------------------------------
+	// 만약, 보니가 teleport한 후면 치카는 어디에 있든 움직이지 않음
+	AFreddyPlayer* FreddyPlayer = Cast<AFreddyPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld() , 0));
+	if ( FreddyPlayer->bTeleport == true )
+		return;
+	//---------------------------------------------------------------------------
 
 	// room1 || room4 -> room3 가능
 	if (RoomNum == 1 || RoomNum == 4)
 	{
+		CupCakeTimer = 0.f;
 		SetActorLocation(TagArr[3]);
 		RoomNum = 3;
 	}
 	// room3 -> room1 || room4 || room6 가능
 	else if (RoomNum == 3)
 	{
+		CupCakeTimer = 0.f;
+		StopBreathSound(); // 숨소리 안 들리게
+		PlayFootStepsSound(); //발자국 소리 들리게
+
+
 		TArray<int32> RoomTags = { 1, 4, 6 };
 		int32 RandomIndex = FMath::RandRange(0, RoomTags.Num() - 1);
 
-		//SetActorLocation(TagArr[RoomTags[RandomIndex]] );
-		// RoomNum = RoomTags[RandomIndex];
-		SetActorLocation(TagArr[6]);
-		RoomNum = 6; // 나중에 위 랜덤값으로 수정
+		SetActorLocation(TagArr[RoomTags[RandomIndex]] );
+		 RoomNum = RoomTags[RandomIndex];
 	}
-	// room6 -> room3 || room8 가능
+	// room6 -> room8 가능
 	else if (RoomNum == 6)
 	{
-		TArray<int32> RoomTags = { 3, 8 };
-		int32 RandomIndex = FMath::RandRange(0, RoomTags.Num() - 1);
+		StopBreathSound(); // 숨소리 안 들리게
+		PlayFootStepsSound(); //발자국 소리 들리게
 
-		SetActorLocation(TagArr[RoomTags[RandomIndex]]);
-		// SetActorLocation(TagArr[8]);
-		// RoomNum = 8;
-		RoomNum = RoomTags[RandomIndex];
-
-		if(bFSound == false )
-		{
-			// 발소리
-			PlayFootStepsSound();
-			bFSound = true;
-		}
-		else StopFootStepsSound();
-
-		////	만약, 손전등 ON -> room1로 이동 (순간이동X)
-		//if(bIsFlashlightOn == true) 
-		//{
-		//	StopFootStepsSound(); // 발소리 멈춤
-		//	// 손전등 ON && Door: Close -> room8로 이동
-		//	if (bIsDoorClose == true)
-		//	{
-		//		SetActorLocation(TagArr[8]);
-		//		RoomNum = 8;
-		//		CurrentState = ELocationState::IDLE;
-		//	}
-		//	else
-		//	{
-		//		MoveToTaggedLocation(1);
-		//		RoomNum = 1;
-
-		//	}
-		//}
+		SetActorLocation(TagArr[8]);
+		RoomNum = 8;
 	}
 
 	CurrentState = ELocationState::IDLE;
@@ -319,9 +312,7 @@ void AChica::Move() // 손전등 켜고 있으면 1,3,4로만 이동
 
 void AChica::Attack()
 {
-	// 점프스퀘어 anim 재생
-
-	// 테스트용 -> 카메라 앞으로 SetActorLocation
+	// 카메라 앞으로 SetActorLocation
 	AFreddyPlayer* FreddyPlayer = Cast<AFreddyPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
 	FTransform JmpScare = FreddyPlayer->GetCameraTransform();
 	JmpScare.SetLocation(JmpScare.GetLocation() - FVector(0 , 100 , 60)); // 위치 조정
@@ -332,11 +323,15 @@ void AChica::Attack()
 
 	if ( bJSound == false )
 	{
+		// 점프스퀘어 anim 재생
+		ChicaAnimInstance->IsJumpScare = true;
+		PlayJumpScare();
+
 		// 점프스케어 소리 재생
 		UGameplayStatics::PlaySound2D(this , JumpScareSFX);
 		bJSound = true;
 
-		FreddyPlayer->OnDie();
+		FreddyPlayer->OnDie(TEXT("Chica"));
 
 		UE_LOG(LogTemp , Warning , TEXT("Chica Attack !"));
 	}
@@ -346,9 +341,7 @@ void AChica::Attack()
 
 void AChica::Cupcake()
 {
-	// 컵케이크 점프스퀘어 anim 재생
-
-	// 테스트용 -> 카메라 앞으로 SetActorLocation
+	// 카메라 앞으로 SetActorLocation
 	AFreddyPlayer* FreddyPlayer = Cast<AFreddyPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
 	AActor* CupCakeInstance = UGameplayStatics::GetActorOfClass(GetWorld(), ACupCake::StaticClass());
 	ACupCake* CupCake = Cast<ACupCake>(CupCakeInstance);
@@ -362,12 +355,16 @@ void AChica::Cupcake()
 		CupCake->SetActorTransform(JmpScare); // 카메라 위치로 이동 (점프스케어)
 
 		if(bJSound == false)
-		{
+		{	
+			// 컵케이크 점프스퀘어 anim 재생
+			CupCake->CupcakeAnimInstance->IsJumpScare = true;
+			PlayCupCakeJumpScare();
+
 			// 점프스케어 소리 재생
-			UGameplayStatics::PlaySound2D(this , JumpScareSFX);
+			UGameplayStatics::PlaySound2D(this , CupCakeScareSFX);
 			bJSound = true;
 
-			FreddyPlayer->OnDie();
+			FreddyPlayer->OnDie(TEXT("CupCake"));
 
 			UE_LOG(LogTemp , Warning , TEXT("CupCake Attack !"));
 		}
@@ -375,6 +372,26 @@ void AChica::Cupcake()
 
 	// 게임 오버
 }
+
+void AChica::PlayJumpScare()
+{
+	if ( ChicaAnimInstance )
+	{
+		ChicaAnimInstance->PlayJumpScareMontage();
+	}
+}
+
+void AChica::PlayCupCakeJumpScare()
+{
+	AActor* CupCakeInstance = UGameplayStatics::GetActorOfClass(GetWorld() , ACupCake::StaticClass());
+	ACupCake* CupCake = Cast<ACupCake>(CupCakeInstance);
+
+	if ( CupCake->CupcakeAnimInstance )
+	{
+		CupCake->CupcakeAnimInstance->PlayJumpScareMontage();
+	}
+}
+
 
 FVector AChica::FindActorsWithTag(FName Tag)
 {
@@ -394,48 +411,48 @@ FVector AChica::FindActorsWithTag(FName Tag)
 	return FVector::ZeroVector; // FoundActors가 비어있을 경우, 기본값 반환
 }
 
-void AChica::MoveToTaggedLocation(int32 room)
-{
-	GetController()->StopMovement();
-
-	ACharacter* Character = Cast<ACharacter>(this);
-	if (Character)
-	{ 
-		Character->bUseControllerRotationYaw = false; // 캐릭터 회전을 잠금
-		Character->GetCharacterMovement()->bOrientRotationToMovement = false; // 이동 방향으로 회전하지 않음
-	}
-
-	AAIController* AIController = Cast<AAIController>(GetController());
-	if (AIController)
-	{
-		FAIMoveRequest MoveRequest;
-		MoveRequest.SetGoalLocation(TagArr[room]);
-		MoveRequest.SetAcceptanceRadius(5.0f); // 목표 위치에 도달하는 범위 설정
-
-		FNavPathSharedPtr NavPath;
-		EPathFollowingRequestResult::Type MoveResult = AIController->MoveTo(MoveRequest, &NavPath);
-
-		// 이동 요청 결과 로그 출력
-		switch (MoveResult)
-		{
-		case EPathFollowingRequestResult::Failed:
-			UE_LOG(LogTemp, Warning, TEXT("MoveTo request failed."));
-			break;
-		case EPathFollowingRequestResult::AlreadyAtGoal:
-			UE_LOG(LogTemp, Warning, TEXT("Already at goal location."));
-			break;
-		case EPathFollowingRequestResult::RequestSuccessful:
-			UE_LOG(LogTemp, Warning, TEXT("MoveTo request successful."));
-			break;
-		}
-	}
-
-	if (room == 1)
-	{
-		RoomNum = 1;
-		GetWorld()->GetTimerManager().SetTimer(Handle, this, &AChica::CanMove, MovableTime, false);
-	}
-}
+//void AChica::MoveToTaggedLocation(int32 room)
+//{
+//	GetController()->StopMovement();
+//
+//	ACharacter* Character = Cast<ACharacter>(this);
+//	if (Character)
+//	{ 
+//		Character->bUseControllerRotationYaw = false; // 캐릭터 회전을 잠금
+//		Character->GetCharacterMovement()->bOrientRotationToMovement = false; // 이동 방향으로 회전하지 않음
+//	}
+//
+//	AAIController* AIController = Cast<AAIController>(GetController());
+//	if (AIController)
+//	{
+//		FAIMoveRequest MoveRequest;
+//		MoveRequest.SetGoalLocation(TagArr[room]);
+//		MoveRequest.SetAcceptanceRadius(5.0f); // 목표 위치에 도달하는 범위 설정
+//
+//		FNavPathSharedPtr NavPath;
+//		EPathFollowingRequestResult::Type MoveResult = AIController->MoveTo(MoveRequest, &NavPath);
+//
+//		// 이동 요청 결과 로그 출력
+//		switch (MoveResult)
+//		{
+//		case EPathFollowingRequestResult::Failed:
+//			UE_LOG(LogTemp, Warning, TEXT("MoveTo request failed."));
+//			break;
+//		case EPathFollowingRequestResult::AlreadyAtGoal:
+//			UE_LOG(LogTemp, Warning, TEXT("Already at goal location."));
+//			break;
+//		case EPathFollowingRequestResult::RequestSuccessful:
+//			UE_LOG(LogTemp, Warning, TEXT("MoveTo request successful."));
+//			break;
+//		}
+//	}
+//
+//	if (room == 1)
+//	{
+//		RoomNum = 1;
+//		GetWorld()->GetTimerManager().SetTimer(Handle, this, &AChica::CanMove, MovableTime, false);
+//	}
+//}
 
 void AChica::CanMove()
 {

@@ -10,8 +10,8 @@ UCLASS()
 class PIZZA_API AEnemyFreddy : public AAllEnemyCharacter
 {
 	GENERATED_BODY()
-	
-public:	
+
+public:
 	// Sets default values for this actor's properties
 	AEnemyFreddy();
 
@@ -19,15 +19,13 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-public:	
+public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
 	// JumpScare
 	UFUNCTION()
 	void JumpScareFreddy();
-
-private:
 
 	UPROPERTY(EditAnywhere)
 	class UBoxComponent* Freddy0;
@@ -47,6 +45,8 @@ private:
 	UPROPERTY(EditAnywhere)
 	class USkeletalMeshComponent* FreddyMesh2;
 
+private:
+
 	// 큐브(Freddy) 3개 배열
 	TArray<USkeletalMeshComponent*> FreddysArr;
 
@@ -55,7 +55,7 @@ private:
 
 	// 큐브(Freddy) 스폰 구현부
 	void AttemptSpawnCube();
-	
+
 	// 큐브(Freddy) Hide
 	void HideFreddy(float DeltaTime);
 
@@ -77,7 +77,7 @@ private:
 
 	// 플레이어가 Main을 오래 보고 있으면 프레디의 스폰 타이머가 1.5초로 줄어들게
 	bool AddFreddyFastly();
-	
+
 	float CurrentTime = 0;
 
 	FTimerHandle FreddysVisibleFastlyTimerHandle;
@@ -88,5 +88,10 @@ private:
 
 	// 플레이어가 침대를 바라보고 있을때 점프스케어 발동
 	bool IsPlayerLookingAtBed();
+
+	bool Freddy0HideOnce = false;
+	bool Freddy1HideOnce = false;
+	bool Freddy2HideOnce = false;
+
 
 };

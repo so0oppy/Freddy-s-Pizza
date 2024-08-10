@@ -230,6 +230,9 @@ private:
 
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<UCameraShakeBase> JumpScareShake2;
+
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<UCameraShakeBase> JumpScareShake3;
 	// 위치 도착 후 문 열면서 몸 기울이기
 	// 문 변수 3개 흠... 배열?  LookAt으로 문 배열에 접근
 	UPROPERTY(VisibleAnywhere)

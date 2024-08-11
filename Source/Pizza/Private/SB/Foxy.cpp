@@ -77,7 +77,6 @@ void AFoxy::BeginPlay()
 
 	AActor* FoxDollInstance = UGameplayStatics::GetActorOfClass(GetWorld() , AFoxDoll::StaticClass());
 	ShowFoxyDoll(FoxDollInstance, false);
-	//멈춘 버전 mesh 적용
 	this->GetMesh()->SetVisibility(true); // skeletal 보이게
 	ShowFoxy(MeshState3 , false);
 
@@ -192,6 +191,32 @@ void AFoxy::Idle(float DeltaTime)
 			{
 				SetActorLocation(TagArr[9]);
 				RoomNum = 9;
+
+				this->GetMesh()->SetVisibility(false);
+			}
+
+			PlayFootStepsSound();
+			this->GetMesh()->SetVisibility(true);
+
+			//	만약, 손전등 ON -> room1로 이동 (순간이동X)
+			if ( bIsFlashlightOn == true )
+			{
+				StopFootStepsSound();
+
+				dir = TagArr[1] - GetActorLocation();
+				float Distance = dir.Size();
+
+				if ( Distance < 2000.f )
+				{
+					SetActorLocation(TagArr[1]); // 정확히 목표 위치에 위치시킴
+					RoomNum = 1;
+					CurrentState = ELocationState::MOVE;
+				}
+				else
+				{
+					dir.Normalize();
+					SetActorLocation(GetActorLocation() + dir * Speed * DeltaTime); // 위치 업데이트
+				}
 			}
 		}
 	}
@@ -207,6 +232,32 @@ void AFoxy::Idle(float DeltaTime)
 			{
 				SetActorLocation(TagArr[9]);
 				RoomNum = 9;
+
+				this->GetMesh()->SetVisibility(false);
+			}
+
+			PlayFootStepsSound();
+			this->GetMesh()->SetVisibility(true);
+
+			//	만약, 손전등 ON -> room1로 이동 (순간이동X)
+			if ( bIsFlashlightOn == true )
+			{
+				StopFootStepsSound();
+
+				dir = TagArr[1] - GetActorLocation();
+				float Distance = dir.Size();
+
+				if ( Distance < 2000.f )
+				{
+					SetActorLocation(TagArr[1]); // 정확히 목표 위치에 위치시킴
+					RoomNum = 1;
+					CurrentState = ELocationState::MOVE;
+				}
+				else
+				{
+					dir.Normalize();
+					SetActorLocation(GetActorLocation() + dir * Speed * DeltaTime); // 위치 업데이트
+				}
 			}
 		}
 	}
@@ -227,60 +278,60 @@ void AFoxy::Idle(float DeltaTime)
 			}
 			//////////////////////////////////////////////////////////////////////////////
 			// room5 -> (손전등만 room1)
-			else if (RoomNum == 5)
-			{
-				PlayFootStepsSound();
-				this->GetMesh()->SetVisibility(true);
+			//else if (RoomNum == 5)
+			//{
+				//PlayFootStepsSound();
+				//this->GetMesh()->SetVisibility(true);
 
-				//	만약, 손전등 ON -> room1로 이동 (순간이동X)
-				if (bIsFlashlightOn == true)
-				{
-					StopFootStepsSound();
-					
-					dir = TagArr[1] - GetActorLocation();
-					float Distance = dir.Size();
+				////	만약, 손전등 ON -> room1로 이동 (순간이동X)
+				//if (bIsFlashlightOn == true)
+				//{
+				//	StopFootStepsSound();
+				//	
+				//	dir = TagArr[1] - GetActorLocation();
+				//	float Distance = dir.Size();
 
-					if ( Distance < 100.f )
-					{
-						SetActorLocation(TagArr[1]); // 정확히 목표 위치에 위치시킴
-						RoomNum = 1;
-						CurrentState = ELocationState::MOVE;
-					}
-					else
-					{
-						dir.Normalize();
-						SetActorLocation(GetActorLocation() + dir * Speed * DeltaTime); // 위치 업데이트
-					}
-				}
-			}
+				//	if ( Distance < 100.f )
+				//	{
+				//		SetActorLocation(TagArr[1]); // 정확히 목표 위치에 위치시킴
+				//		RoomNum = 1;
+				//		CurrentState = ELocationState::MOVE;
+				//	}
+				//	else
+				//	{
+				//		dir.Normalize();
+				//		SetActorLocation(GetActorLocation() + dir * Speed * DeltaTime); // 위치 업데이트
+				//	}
+				//}
+			//}
 			//////////////////////////////////////////////////////////////////////////////
 			// room6 -> (손전등만 room1)
-			else if (RoomNum == 6)
-			{
-				PlayFootStepsSound();
-				this->GetMesh()->SetVisibility(true);
+			//else if (RoomNum == 6)
+			//{
+			//	PlayFootStepsSound();
+			//	this->GetMesh()->SetVisibility(true);
 
-				//	만약, 손전등 ON -> room1로 이동 (순간이동X)
-				if ( bIsFlashlightOn == true )
-				{
-					StopFootStepsSound();
+			//	//	만약, 손전등 ON -> room1로 이동 (순간이동X)
+			//	if ( bIsFlashlightOn == true )
+			//	{
+			//		StopFootStepsSound();
 
-					dir = TagArr[1] - GetActorLocation();
-					float Distance = dir.Size();
+			//		dir = TagArr[1] - GetActorLocation();
+			//		float Distance = dir.Size();
 
-					if ( Distance < 100.f )
-					{
-						SetActorLocation(TagArr[1]); // 정확히 목표 위치에 위치시킴
-						RoomNum = 1;
-						CurrentState = ELocationState::MOVE;
-					}
-					else
-					{
-						dir.Normalize();
-						SetActorLocation(GetActorLocation() + dir * Speed * DeltaTime); // 위치 업데이트
-					}
-				}
-			}
+			//		if ( Distance < 100.f )
+			//		{
+			//			SetActorLocation(TagArr[1]); // 정확히 목표 위치에 위치시킴
+			//			RoomNum = 1;
+			//			CurrentState = ELocationState::MOVE;
+			//		}
+			//		else
+			//		{
+			//			dir.Normalize();
+			//			SetActorLocation(GetActorLocation() + dir * Speed * DeltaTime); // 위치 업데이트
+			//		}
+			//	}
+			//}
 			//////////////////////////////////////////////////////////////////////////////
 			// room9 일 때
 			else if (RoomNum == 9)
@@ -299,18 +350,40 @@ void AFoxy::Idle(float DeltaTime)
 
 void AFoxy::Move()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Chica Move()"));
+	UE_LOG(LogTemp, Warning, TEXT("Foxy Move()"));
 	FVector CurrentLocation = this->GetActorLocation();
 	// 폭시 위치가 room number 몇 인지
+
+	AFreddyPlayer* FreddyPlayer = Cast<AFreddyPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld() , 0));
+	AFreddyPlayer::LookAt LookState;
+	LookState = FreddyPlayer->GetLookAtState();
 
 	// room1 -> room2, room3가능
 	if (RoomNum == 1)
 	{
-		TArray<int32> RoomTags = { 2, 3};
-		int32 RandomIndex = FMath::RandRange(0, RoomTags.Num() - 1);
+		
+		TArray<int32> RoomTags = { 2, 3 };
+		int32 RandomIndex = FMath::RandRange(0 , RoomTags.Num() - 1);
 
-		SetActorLocation(TagArr[RoomTags[RandomIndex]] );
-		RoomNum = RoomTags[RandomIndex];
+		if ( RoomTags[RandomIndex] == 2 )
+		{
+			// 플레이어가 왼쪽 문에 있고 문이 열려있을 때에는 안 움직이도록 설정
+			if ( LookState != AFreddyPlayer::LookAt::Left || bIsDoorClose == true )
+			{
+				SetActorLocation(TagArr[2]);
+				RoomNum = 2;
+			}
+		}
+		else if ( RoomTags[RandomIndex] == 3 )
+		{
+			// 플레이어가 오른쪽 문에 있고 문이 열려있을 때에는 안 움직이도록 설정
+			if ( LookState != AFreddyPlayer::LookAt::Right || bIsDoorClose == true )
+			{
+				SetActorLocation(TagArr[3]);
+				RoomNum = 3;
+			}
+		}
+		
 	}
 	// room2 -> room3, room5 가능
 	else if (RoomNum == 2)
@@ -320,8 +393,24 @@ void AFoxy::Move()
 		TArray<int32> RoomTags = { 3, 5 };
 		int32 RandomIndex = FMath::RandRange(0, RoomTags.Num() - 1);
 
-		SetActorLocation(TagArr[RoomTags[RandomIndex]]);
-		RoomNum = RoomTags[RandomIndex];
+		if ( RoomTags[RandomIndex] == 5 )
+		{
+			// 플레이어가 왼쪽 문에 있고 문이 열려있을 때에는 안 움직이도록 설정
+			if ( LookState != AFreddyPlayer::LookAt::Left || bIsDoorClose == true )
+			{
+				SetActorLocation(TagArr[5]);
+				RoomNum = 5;
+			}
+		}
+		else if ( RoomTags[RandomIndex] == 3 )
+		{
+			// 플레이어가 오른쪽 문에 있고 문이 열려있을 때에는 안 움직이도록 설정
+			if ( LookState != AFreddyPlayer::LookAt::Right || bIsDoorClose == true )
+			{
+				SetActorLocation(TagArr[3]);
+				RoomNum = 3;
+			}
+		}
 	}
 	// room3 -> room2, room6 가능
 	else if (RoomNum == 3)
@@ -331,8 +420,24 @@ void AFoxy::Move()
 		TArray<int32> RoomTags = { 2, 6 };
 		int32 RandomIndex = FMath::RandRange(0, RoomTags.Num() - 1);
 
-		SetActorLocation(TagArr[RoomTags[RandomIndex]]);
-		RoomNum = RoomTags[RandomIndex];
+		if ( RoomTags[RandomIndex] == 2 )
+		{
+			// 플레이어가 왼쪽 문에 있고 문이 열려있을 때에는 안 움직이도록 설정
+			if ( LookState != AFreddyPlayer::LookAt::Left || bIsDoorClose == true )
+			{
+				SetActorLocation(TagArr[2]);
+				RoomNum = 2;
+			}
+		}
+		else if ( RoomTags[RandomIndex] == 6 )
+		{
+			// 플레이어가 오른쪽 문에 있고 문이 열려있을 때에는 안 움직이도록 설정
+			if ( LookState != AFreddyPlayer::LookAt::Right || bIsDoorClose == true )
+			{
+				SetActorLocation(TagArr[6]);
+				RoomNum = 6;
+			}
+		}
 	}
 	
 	CurrentState = ELocationState::IDLE;
@@ -463,6 +568,7 @@ void AFoxy::Closet(float DeltaTime)
 		{
 			// 밖에선 둘 다 안 보이게
 			FoxyMeshComponent->SetHiddenInGame(true);
+			this->GetMesh()->SetVisibility(false);
 			ShowFoxyDoll(FoxDollInstance , false);
 		
 			// 옷장에서 점프스케어 조건이 찼으면 메인에 가면 점프스케어
@@ -572,8 +678,9 @@ void AFoxy::Closet(float DeltaTime)
 					{
 						// 애니메이션을 멈추고 멈춘 버전 Mesh 적용
 						FoxyAnimInstance->IsFakeScare = false;
-						this->GetMesh()->SetVisibility(false); // Skeletal Mesh는 안 보이게
+						//this->GetMesh()->SetVisibility(false); // Skeletal Mesh는 안 보이게
 						ShowFoxy(MeshState3 , true);
+						FoxyMeshComponent->SetRelativeLocation(FVector(0 , 0 , 90));
 
 						bFake = false; // 다시 불을 켰을 때 애니메이션이 재생되도록 초기화
 					}
@@ -587,6 +694,7 @@ void AFoxy::Closet(float DeltaTime)
 				ShowFoxyDoll(FoxDollInstance , false);
 				// 허리 구부리고 얼굴 약간 보이는 mesh 적용
 				FoxyMeshComponent->SetStaticMesh(MeshState2);
+				FoxyMeshComponent->SetRelativeLocation(FVector(0 , 0 , 0));
 			}
 			else if ( FoxyState == 1 && this->GetActorLocation().Equals(TagArr[9] , 0.1f) )
 			{
@@ -594,6 +702,7 @@ void AFoxy::Closet(float DeltaTime)
 				ShowFoxyDoll(FoxDollInstance , false);
 				// 오른쪽에 서 있고 갈고리 손만 보이는 mesh 적용
 				FoxyMeshComponent->SetStaticMesh(MeshState1);
+				FoxyMeshComponent->SetRelativeLocation(FVector(0 , 0 , 90));
 			}
 			else if ( FoxyState == 0 && this->GetActorLocation().Equals(TagArr[9] , 0.1f) )
 			{
@@ -615,6 +724,16 @@ void AFoxy::ShowFoxy(UStaticMesh* mesh , bool bShow)
 	FoxyMeshComponent->SetStaticMesh(mesh);
 //	FoxyMeshComponent->SetRenderInMainPass(bShow);
 	FoxyMeshComponent->SetHiddenInGame(!bShow);
+	if ( bShow )
+	{
+		FoxyMeshComponent->SetHiddenInGame(false);
+		this->GetMesh()->SetVisibility(false);  // 스켈레탈 메쉬 숨김
+	}
+	else
+	{
+		FoxyMeshComponent->SetHiddenInGame(true);
+		this->GetMesh()->SetVisibility(true);  // 스켈레탈 메쉬 표시
+	}
 }
 
 void AFoxy::ShowFoxyDoll(AActor* actor, bool bShow)
@@ -624,7 +743,7 @@ void AFoxy::ShowFoxyDoll(AActor* actor, bool bShow)
 	if (FoxyDoll && FoxyDoll->FoxyDollComp)
 	{
 //		FoxyDoll->FoxyDollComp->SetRenderInMainPass(bShow);
-		FoxyDoll->FoxyDollComp->SetRenderInMainPass(!bShow);
+		FoxyDoll->FoxyDollComp->SetHiddenInGame(!bShow);
 	}
 }
 

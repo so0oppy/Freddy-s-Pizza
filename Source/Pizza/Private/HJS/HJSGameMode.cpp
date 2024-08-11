@@ -9,6 +9,11 @@
 #include "JYS/EnemyBonnie.h"
 #include "JYS/EnemyFreddy.h"
 #include "HJS/MinimapUI.h"
+#include "HJS/GameStartUI.h"
+#include "Kismet/KismetSystemLibrary.h"
+#include "Components/AudioComponent.h"
+#include "HJS/ClearGameUI.h"
+#include "HJS/TimeUI.h"
 
 AHJSGameMode::AHJSGameMode()
 {
@@ -33,21 +38,56 @@ void AHJSGameMode::BeginPlay()
 	SetAILevelEnemy();
 	if ( GEngine )
 	{
-		GEngine->AddOnScreenDebugMessage(-1 , 30.f , FColor::Red , TEXT("12 AM"));
+		//GEngine->AddOnScreenDebugMessage(-1 , 30.f , FColor::Red , TEXT("12 AM"));
 	}
 	GetWorldTimerManager().SetTimer(HourHandle,this, &AHJSGameMode::TimePass,GamePlayRate,true);
 
 	// 미니맵 띄우기
-	if ( MinimapUIFactory )
+	//if ( MinimapUIFactory )
+	//{
+	//	// 뷰포트에 띄우기
+	//	MinimapUI = Cast<UMinimapUI>(CreateWidget(GetWorld() , MinimapUIFactory , FName("MiniMapUI")));
+
+	//	if ( MinimapUI )
+	//	{
+	//		MinimapUI->AddToViewport();
+	//	}
+
+	//}
+
+
+
+	// 게임을 시작하면 일단 퍼즈를 걸기.
+	UGameplayStatics::SetGamePaused(GetWorld() , true);
+	// 퍼즈를 건 채로 UI 애니메이션을 재생하고
+	if ( TimeUIFactory )
 	{
 		// 뷰포트에 띄우기
-		MinimapUI = Cast<UMinimapUI>(CreateWidget(GetWorld() , MinimapUIFactory , FName("MiniMapUI")));
-
-		if ( MinimapUI )
+		TimeUI = Cast<UTimeUI>(CreateWidget(GetWorld() , TimeUIFactory , FName("TimeUI")));
+		if ( TimeUI )
 		{
-			MinimapUI->AddToViewport();
+			TimeUI->AddToViewport();
+			TimeUI->SetTime(TEXT("12AM"));
+			TimeUI->SetVisibility(ESlateVisibility::Hidden);
 		}
+	}
 
+	if ( GameStartUIFactory )
+	{
+		// 뷰포트에 띄우기
+		GameStartUI = Cast<UGameStartUI>(CreateWidget(GetWorld() , GameStartUIFactory , FName("GameStartUI")));
+		if ( GameStartUI )
+		{
+			GameStartUI->AddToViewport();
+			GameStartUI->GameStart(TimeUI);
+		}
+	}
+
+	// 배경음악 재생
+	if ( BGM )
+	{
+		BGMComponent = UGameplayStatics::SpawnSound2D(GetWorld() , BGM);
+		CricketsComponent= UGameplayStatics::SpawnSound2D(GetWorld() , Crickets);
 	}
 
 }	
@@ -69,7 +109,6 @@ void AHJSGameMode::Tick(float DeltaTime)
 			MinimapUI->UpdateRoom(Foxy->RoomNum , 2 , 1);
 		}
 	}
-	
 
 
 }
@@ -88,11 +127,10 @@ void AHJSGameMode::TimePass()
 {
 	// 시간이 지나고, Enemy들을 업데이트 시켜주기.
 	Hour++;
-	if ( GEngine )
-	{
-		FString String = FString::Printf(TEXT("%d AM") , (int32)Hour);
-		GEngine->AddOnScreenDebugMessage(-1 , 30.f , FColor::Red , String);
-	}
+	FString String = FString::Printf(TEXT("%dAM") , (int32)Hour);
+
+	TimeUI->SetTime(String);
+
 	if ( Hour >= 6 )
 	{
 		DayPass();
@@ -107,6 +145,7 @@ void AHJSGameMode::DayPass()
 	// 날짜가 지나면 시연때는 클리어, 본 게임에서는 다음날로 넘어가기
 	Day++;
 	Hour = 0;
+	GameEnd();
 }
 
 void AHJSGameMode::SetAILevelEnemy()
@@ -134,13 +173,49 @@ void AHJSGameMode::SetAILevelEnemy()
 	if ( Bonnie )
 	{
 		Bonnie->SetAILevel(LV_bonnie[Day][Hour]);
-		Bonnie->SetAILevel(20);
+		//Bonnie->SetAILevel(20);
 	}
 
 	if ( Freddy )
 	{
 		Freddy->SetAILevel(LV_freddy[Day][Hour]);
-		// Freddy->SetAILevel(20);
+		//Freddy->SetAILevel(20);
 	}
 
 }
+
+void AHJSGameMode::GameEnd()
+{
+	if ( BGMComponent )
+	{
+		BGMComponent->Stop();
+	}
+
+	if ( CricketsComponent )
+	{
+		CricketsComponent->Stop();
+	}
+
+	UGameplayStatics::SpawnSound2D(GetWorld() , Alarm);
+
+	if ( ClearGameUIFactory )
+	{
+		// 뷰포트에 띄우기
+		ClearGameUI = Cast<UClearGameUI>(CreateWidget(GetWorld() , ClearGameUIFactory , FName("ClearGameUI")));
+		if ( ClearGameUI )
+		{
+			ClearGameUI->AddToViewport();
+			ClearGameUI->PlayBlink();
+		}
+	}
+	UGameplayStatics::SetGamePaused(GetWorld() , true);
+
+}
+
+void AHJSGameMode::GameStartAnim()
+{
+	// 퍼즈를 풀기
+	UGameplayStatics::SetGamePaused(GetWorld() , false);
+
+}
+

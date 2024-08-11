@@ -20,6 +20,8 @@ protected:
 	virtual void BeginPlay() override;
 
 public:
+
+	// 
 	enum class LookAt
 	{
 		Left,
@@ -28,6 +30,11 @@ public:
 		Main,
 		Bed,
 		Back,
+		LeftMove,
+		CenterMove,
+		RightMove,
+		MainMove,
+		BedMove,
 	};
 	enum class CameraMove
 	{
@@ -341,4 +348,12 @@ private:
 	class AFoxy* Foxy;
 
 	bool WarningCondition();
+
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<class UDeathUI> GameEndUIFactory;
+
+	UPROPERTY()
+	UDeathUI* GameEndUI;
+	// 엔드게임타이머핸들러
+
 };

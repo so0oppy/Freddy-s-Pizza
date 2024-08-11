@@ -18,6 +18,7 @@
 #include "JYS/EnemyBonnie.h"
 #include "JYS/EnemyFreddy.h"
 #include "HJS/CameraBlinkUI.h"
+#include "HJS/DeathUI.h"
 // Sets default values
 AFreddyPlayer::AFreddyPlayer()
 {
@@ -180,6 +181,7 @@ void AFreddyPlayer::SetUp()
 
 void AFreddyPlayer::SetDown()
 {	
+
 	if(bCompleteOpenOrClose || bClose == true)
 	{
 		return;
@@ -193,8 +195,15 @@ void AFreddyPlayer::SetDown()
 	{
 		return;
 	}
+
+	if ( bHeadUp )
+	{
+		return;
+	}
+
 	if (bAllowBack)
 	{
+		OffFlash();
 		// UP하기 전에는 다시 불리더라도 이동이 안되게 만들기
 		bAllowBack = false;
 		// 카메라 이동
@@ -205,7 +214,7 @@ void AFreddyPlayer::SetDown()
 		{
 			// 뒤돌기
 			APlayerController* PlayerController = Cast<APlayerController>(GetController());
-			LookAtState = LookAt::Bed;
+			LookAtState = LookAt::BedMove;
 			bMoving = true;
 			CurrentTime = 0.f;
 		}
@@ -223,7 +232,9 @@ void AFreddyPlayer::SetDown()
 			bMoving = true;
 			//bHeadDown = true;
 			HeadCurrentTime = 0.0f;
-			SetBackDoor(static_cast<int32>(LookAtState));
+			int BackNum = static_cast<int32>(LookAtState);
+			SetBackDoor(BackNum);
+			LookAtState = static_cast<LookAt>(BackNum+6);
 			if ( RunSound )
 			{
 				UGameplayStatics::PlaySound2D(GetWorld() , RunSound);
@@ -301,16 +312,56 @@ void AFreddyPlayer::OnDie()
 void AFreddyPlayer::OnDie(FString JumpScareName)
 {
 	bJumpScare = true;
+
+	// 점프 스케어 이름에 따라서 반응을 다르게 해야 한다.
+
+	// 1. Cupcake와 FreddyMain, Foxy, BonnieMain 의 경우 메인으로 고개를 돌려야 하며, Jumpscare2
+
+	// 1-1.FreddyBed는 JumpScare2
+	
+	// 2. BonnieDoor의 경우 Jumpscare1
+	
+	// 3. Chica의 경우 Jumpscare3
+	TSubclassOf<UCameraShakeBase> TempShake = JumpScareShake1;
+	
+	if ( JumpScareName.Equals(FString("CupCake")) || JumpScareName.Equals(FString("FreddyMain")) || JumpScareName.Equals(FString("Foxy")) || JumpScareName.Equals(FString("BonnieMain")) )
+	{
+		BoostSpeed = 8;
+		//(X=450.462318,Y=0.000000,Z=-140.000000)
+		SpringArmComp->SetRelativeLocation(FVector(450.f,0.f,-140.f));
+		//(Pitch=10.000000,Yaw=-30.000000,Roll=0.000000)
+		SpringArmComp->SetRelativeRotation(FRotator(10.f,0.f,0.f));
+		TempShake = JumpScareShake2;
+		FlashlightComp->SetHiddenInGame(false);
+
+	}else if(JumpScareName.Equals(FString("FreedyBed")))
+	{
+		TempShake = JumpScareShake2;
+	}
+	else if ( JumpScareName.Equals(FString("BonnieDoor")) )
+	{
+		TempShake = JumpScareShake1;
+	}
+	else if ( JumpScareName.Equals(FString("Chica")))
+	{
+		TempShake = JumpScareShake3;
+	}
+
 	APlayerController* PlayerController = Cast<APlayerController>(GetController());
 	if ( PlayerController )
 	{
 		//UGameplayStatics::PlayWorldCameraShake(GetWorld(), JumpScareShake1,SpringArmComp->GetComponentLocation(), 0.25,0.25);
+		
 		//UE_LOG(LogTemp,Warning,)
-		PlayerController->ClientStartCameraShake(JumpScareShake1);
+		PlayerController->ClientStartCameraShake(TempShake);
 		// 플레이어 조작 멈추기 -> 틱을 꺼버리자
 		SetActorTickEnabled(false);
 		// 다른 Enemy 이어서 작동 안되도록 게임 Pause 시키기
 		GetWorldTimerManager().SetTimer(PauseHandle , this , &AFreddyPlayer::OnMyPause , 1.f , false);
+		if ( JumpScareName.Equals(FString("BonnieDoor")) || JumpScareName.Equals(FString("CupCake")))
+		{
+			GetWorldTimerManager().SetTimer(PauseHandle , this , &AFreddyPlayer::OnMyPause , 0.7f , false);
+		}
 		FInputModeGameAndUI InputMode;
 		PlayerController->SetInputMode(InputMode);
 		PlayerController->EnableInput(PlayerController);
@@ -343,6 +394,18 @@ void AFreddyPlayer::OnRestart()
 
 void AFreddyPlayer::OnMyPause()
 {
+	
+	if ( GameEndUIFactory )
+	{
+		// 뷰포트에 띄우기
+		GameEndUI = Cast<UDeathUI>(CreateWidget(GetWorld() , GameEndUIFactory , FName("GameEndUI")));
+		if ( GameEndUI )
+		{
+			GameEndUI->AddToViewport();
+			GameEndUI->GameEnd();
+		}
+	}
+
 	APlayerController* PlayerController = Cast<APlayerController>(GetController());
 	if ( PlayerController )
 	{
@@ -354,6 +417,24 @@ void AFreddyPlayer::OnMyPause()
 
 void AFreddyPlayer::OnFlash()
 {
+	if ( bMoving )
+	{
+		return;
+	}
+	if ( bHeadUp )
+	{
+		return;
+	}
+	if ( bOpenDoor )
+	{
+		return;
+	}
+
+	if ( LookAtState == LookAt::Main )
+	{
+		return;
+	}
+
 	// 불 켜기
 	HandlightComp->SetVisibility(true);
 	bFlash = true;
@@ -376,6 +457,11 @@ void AFreddyPlayer::OffFlash()
 
 void AFreddyPlayer::CloseDoor()
 {
+	if ( bHeadUp )
+	{
+		return;
+	}
+
 	if ( bMoving )
 	{
 		return;
@@ -521,7 +607,6 @@ void AFreddyPlayer::Tick(float DeltaTime)
 	DoorRotAndCameraMove(DeltaTime);
 	GetCameraTransform();
 	DoorOpenAndClose(DeltaTime);
-
 	if ( WarningCondition() && bBlink == false)
 	{
 		bBlink = true;
@@ -574,7 +659,7 @@ void AFreddyPlayer::SetMoveDoor(int32 DoorNum)
 	}
 
 	bReverse = false;
-	LookAtState = static_cast<LookAt>(DoorNum);
+	LookAtState = static_cast<LookAt>(DoorNum+6);
 	CurrentTime = 0.0f;
 	bMoving = true;
 	bHeadDown = true; // 이동 시작 시 고개를 숙이기 시작
@@ -594,13 +679,13 @@ void AFreddyPlayer::Move(float DeltaTime)
 	int32 DoorNum = 0;
 	switch (LookAtState)
 	{
-	case LookAt::Left:
+	case LookAt::LeftMove:
 		DoorNum = 0;
 		break;
-	case LookAt::Center:
+	case LookAt::CenterMove:
 		DoorNum = 1;
 		break;
-	case LookAt::Right:
+	case LookAt::RightMove:
 		DoorNum = 2;
 		break;
 	default:
@@ -620,10 +705,9 @@ void AFreddyPlayer::Move(float DeltaTime)
 		MoveAmount = FMath::Clamp(1.f - (CurrentTime * MovementSpeed / SplineLength), 0.f, 1.f);
 		if (MoveAmount == 0.f)
 		{
-			LookAtState = LookAt::Main;
 			bHeadUp = true;
-			bMoving = false;
 			HeadCurrentTime = 0.0f;
+			bMoving = false;
 			bCloseDoor = false;
 			SpringArmComp->SetRelativeRotation(FRotator(-80.f,0.f,0.f));
 			//SetBackDoor(4);
@@ -723,7 +807,7 @@ void AFreddyPlayer::UpdateFlashlight(float DeltaTime)
 
 void AFreddyPlayer::LookBack(float DeltaTime)
 {
-	
+
 	if (!bMoving)
 	{
 		return;
@@ -732,26 +816,28 @@ void AFreddyPlayer::LookBack(float DeltaTime)
 	// Bed 상태면 메인으로 되돌리기
 	FRotator NewRotation = SpringArmComp->GetRelativeRotation();
 
-	if (LookAtState==LookAt::Bed)
+	if (LookAtState==LookAt::BedMove)
 	{
-		NewRotation.Yaw = FMath::Clamp(NewRotation.Yaw + RotationSpeed * 5*BoostSpeed * DeltaTime, 0, 178);
+		NewRotation.Yaw = FMath::Clamp(NewRotation.Yaw + RotationSpeed * 5*BoostSpeed * DeltaTime, 0, 180);
 		SpringArmComp->SetRelativeRotation(NewRotation);
-		if (NewRotation.Yaw > 177)
+		if (NewRotation.Yaw >= 177)
 		{
+			LookAtState = LookAt::Bed;
 			bMoving = false;
 		}
 		if (NewRotation.Yaw == -180)
 		{
 			NewRotation.Yaw = 180;
+			LookAtState = LookAt::Bed;
 			bMoving = false;
 		}
 	}
 	// Main 상태면 Bed로 되돌리기 인데..
 	else if (LookAtState == LookAt::Back)
 	{
-		NewRotation.Yaw = FMath::Clamp(NewRotation.Yaw - RotationSpeed *10*BoostSpeed * DeltaTime, 0, 180);
+		NewRotation.Yaw = FMath::Clamp(NewRotation.Yaw - RotationSpeed *5*BoostSpeed * DeltaTime, 0, 180);
 		SpringArmComp->SetRelativeRotation(NewRotation);
-		if (NewRotation.Yaw < 3)
+		if (NewRotation.Yaw < 2)
 		{
 			bMoving = false;
 			LookAtState = LookAt::Main;
@@ -799,11 +885,23 @@ void AFreddyPlayer::UpdateHeadMovement(float DeltaTime)
 		FRotator NewRotation = SpringArmComp->GetRelativeRotation();
 		NewRotation.Pitch = Pitch;
 		SpringArmComp->SetRelativeRotation(NewRotation);
-		
+
 		if (Alpha >= 1.0f)
 		{
+			// 뒤로 돌아가는 거라면
+			if(bHeadUp){
+				if ( bReverse )
+				{
+					LookAtState = LookAt::Main;
+				}
+				else if ( LookAtState == LookAt::CenterMove )
+				{
+					LookAtState = LookAt::Center;
+				}
+			}
 			bHeadDown = false;
 			bHeadUp = false;
+
 		}
 	}
 }
@@ -850,9 +948,31 @@ void AFreddyPlayer::DoorRotAndCameraMove(float DeltaTime)
 	if ( NewCameraOffset.Equals(CameraOffset, 0.1f)
 		&& NewCameraRotation.Equals(CameraRotation, 0.1f))
 	{
+		if ( bOpenDoor )
+		{
+			switch ( LookAtState )
+			{
+			case LookAt::LeftMove:
+				LookAtState = LookAt::Left;
+				break;
+			case LookAt::CenterMove:
+				LookAtState = LookAt::Center;
+				break;
+			case LookAt::RightMove:
+				LookAtState = LookAt::Right;
+				break;
+			}
+		}
+
+		if ( bCloseDoor )
+		{
+			LookAtState = LookAt::Main;
+		}
+
 		bCloseDoor = false;
 		bOpenDoor=false;
 		DoorIndex=-1;
+
 	}
 }
 
@@ -1009,7 +1129,10 @@ void AFreddyPlayer::OffCameraBlink()
 
 void AFreddyPlayer::CameraBlink()
 {
-	CameraBlinkUI->PlayBlinkAnim();
+	if ( !bJumpScare ) 
+	{
+		CameraBlinkUI->PlayBlinkAnim();
+	}
 }
 
 bool AFreddyPlayer::WarningCondition()

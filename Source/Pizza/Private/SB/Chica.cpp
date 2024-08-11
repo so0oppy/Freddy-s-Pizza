@@ -159,7 +159,7 @@ void AChica::Idle(float DeltaTime)
 				dir = TagArr[1] - GetActorLocation();
 				float Distance = dir.Size();
 
-				if ( Distance < 100.f )
+				if ( Distance < 2000.f )
 				{
 					SetActorLocation(TagArr[1]); // 정확히 목표 위치에 위치시킴
 					RoomNum = 1;
@@ -282,6 +282,8 @@ void AChica::Move() // 손전등 켜고 있으면 1,3,4로만 이동
 	//---------------------------------------------------------------------------
 	// 만약, 보니가 teleport한 후면 치카는 어디에 있든 움직이지 않음
 	AFreddyPlayer* FreddyPlayer = Cast<AFreddyPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld() , 0));
+	AFreddyPlayer::LookAt LookState;
+	LookState = FreddyPlayer->GetLookAtState();
 	if ( FreddyPlayer->bTeleport == true )
 		return;
 	//---------------------------------------------------------------------------
@@ -290,8 +292,12 @@ void AChica::Move() // 손전등 켜고 있으면 1,3,4로만 이동
 	if (RoomNum == 1 || RoomNum == 4)
 	{
 		CupCakeTimer = 0.f;
-		SetActorLocation(TagArr[3]);
-		RoomNum = 3;
+		// 플레이어가 오른쪽 문에 있고 문이 열려있을 때에는 안 움직이도록 설정
+		if(LookState != AFreddyPlayer::LookAt::Right || bIsDoorClose == true )
+		{
+			SetActorLocation(TagArr[3]);
+			RoomNum = 3;
+		}
 	}
 	// room3 -> room1 || room4 || room6 가능
 	else if (RoomNum == 3)
@@ -300,12 +306,14 @@ void AChica::Move() // 손전등 켜고 있으면 1,3,4로만 이동
 		StopBreathSound(); // 숨소리 안 들리게
 		PlayFootStepsSound(); //발자국 소리 들리게
 
+		if ( LookState != AFreddyPlayer::LookAt::Right || bIsDoorClose == true )
+		{
+			TArray<int32> RoomTags = { 1, 4, 6 };
+			int32 RandomIndex = FMath::RandRange(0 , RoomTags.Num() - 1);
 
-		TArray<int32> RoomTags = { 1, 4, 6 };
-		int32 RandomIndex = FMath::RandRange(0, RoomTags.Num() - 1);
-
-		SetActorLocation(TagArr[RoomTags[RandomIndex]] );
-		 RoomNum = RoomTags[RandomIndex];
+			SetActorLocation(TagArr[RoomTags[RandomIndex]]);
+			RoomNum = RoomTags[RandomIndex];
+		}
 	}
 	// room6 -> room8 가능
 	else if (RoomNum == 6)
@@ -313,8 +321,11 @@ void AChica::Move() // 손전등 켜고 있으면 1,3,4로만 이동
 		StopBreathSound(); // 숨소리 안 들리게
 		PlayFootStepsSound(); //발자국 소리 들리게
 
-		SetActorLocation(TagArr[8]);
-		RoomNum = 8;
+		if ( LookState != AFreddyPlayer::LookAt::Right || bIsDoorClose == true)
+		{
+			SetActorLocation(TagArr[8]);
+			RoomNum = 8;
+		}
 	}
 
 	CurrentState = ELocationState::IDLE;

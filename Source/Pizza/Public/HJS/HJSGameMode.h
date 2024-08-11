@@ -22,6 +22,7 @@ public:
 
 	class AEnemyBonnie* GetBonnie();
 
+	void GameStartAnim();
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -57,12 +58,41 @@ private:
 
 	// 타이머로 
 	UPROPERTY(EditAnywhere)
-	float GamePlayRate = 30.f;
+	float GamePlayRate = 20.f;
 
 	// UI 띄우기
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class UMinimapUI> MinimapUIFactory;
 
 	class UMinimapUI* MinimapUI;
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class UGameStartUI> GameStartUIFactory;
+
+	class UGameStartUI* GameStartUI;
+
+	UPROPERTY(EditDefaultsOnly, Category="SFX")
+	USoundBase* BGM;
+
+	UPROPERTY(EditDefaultsOnly, Category="SFX")
+	USoundBase* Crickets;
+
+	UAudioComponent* BGMComponent;
+	UAudioComponent* CricketsComponent;
+
+	void GameEnd();
+
+	UPROPERTY(EditDefaultsOnly, Category="SFX")
+	USoundBase* Alarm;
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class UClearGameUI> ClearGameUIFactory;
+
+	class UClearGameUI* ClearGameUI;
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class UTimeUI> TimeUIFactory;
+
+	class UTimeUI* TimeUI;
 
 };

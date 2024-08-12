@@ -52,7 +52,7 @@ void AEnemyFreddy::BeginPlay()
 {
 	Super::BeginPlay();
 
-	SetAILevel(3);
+	// SetAILevel(20);
 
 	// 큐브(Freddy) 스폰 타이머
 	GetWorld()->GetTimerManager().SetTimer(FreddysVisibleTimerHandle , this , &AEnemyFreddy::AttemptSpawnCube , 3.02f , true);
@@ -280,8 +280,7 @@ void AEnemyFreddy::JumpScareFreddy()
 	UE_LOG(LogTemp , Warning , TEXT("2"));
 	if ( IsPlayerLookingAtBed() == true )
 	{
-		FVector CameraLoc = Player->GetCameraTransform().GetLocation();
-		FVector CameraLocForwardVector = CameraLoc.RightVector * 100 + CameraLoc.DownVector * 100;
+		FVector CameraLoc = FVector(-63.13f , 3770.55f , 424.f);
 		FRotator FreddyYaw = FRotator(0 , 180 , 0);
 		SetActorRotation(FreddyYaw);
 
@@ -291,17 +290,15 @@ void AEnemyFreddy::JumpScareFreddy()
 			FreddyAnim->FreddyJumpscareAnimation();
 		}
 
-
-		CameraLoc += CameraLocForwardVector;
 		SetActorLocation(CameraLoc);
 		Player->OnDie(TEXT("FreddyBed"));
 	}
 	else
 	{
-		FVector CameraLoc = Player->GetCameraTransform().GetLocation();
-		CameraLoc.Y -= 100;
-		CameraLoc.Z -= 60;
+		FVector CameraLoc = FVector(-43.14f , 3624.01f , 414.f);
+		FRotator CameraRotator = FRotator(0.f , 6.f , 3.f);
 		SetActorLocation(CameraLoc);
+		SetActorRotation(CameraRotator);
 		auto* FreddyAnim = Cast<UFreddyAnimInstance>(GetMesh()->GetAnimInstance());
 		if ( FreddyAnim ) {
 			FreddyAnim->FreddyJumpscareAnimation();

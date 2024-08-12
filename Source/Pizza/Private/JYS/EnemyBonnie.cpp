@@ -157,7 +157,7 @@ void AEnemyBonnie::TickRoom0(const float& DeltaTime)
 		JumpscareCount = 0;
 	}
 	
-	if ( JumpscareCount >= 2 && LookingMain() )
+	if ( JumpscareCount >= 8 && LookingMain() )
 	{
 
 		if ( bJumpScare == false )
@@ -175,20 +175,9 @@ void AEnemyBonnie::TickRoom0(const float& DeltaTime)
 		{
 			bJumpScare = true;
 
-			FVector CameraLoc = Player->GetCameraTransform().GetLocation();
-			CameraLoc.Y -= 300;
-			CameraLoc.Z += 1000;
-			CameraLoc.X += 620;
-			SetActorLocation(CameraLoc);
-
-			auto* BonnieAnim = Cast<UBonnieAnimInstance>(GetMesh()->GetAnimInstance());
-			if ( BonnieAnim ) {
-				BonnieAnim->BonnieJumpscareAnimation();
-			}
-
+			JumpScareBonnie();
 			JumpScareSound();
 		}
-		Player->OnDie(TEXT("BonnieDoor"));
 	}
 
 	if (BreathSoundConditions())
@@ -218,6 +207,12 @@ void AEnemyBonnie::TickRoom3(const float& DeltaTime)
 
 void AEnemyBonnie::AttemptMove()
 {
+
+	if (Player->bTeleport)
+	{
+		return;
+	}
+
 	if ( Player->GetLookAtState() == AFreddyPlayer::LookAt::Left )
 	{	
 		return;
@@ -278,11 +273,7 @@ bool AEnemyBonnie::ShouldMoveToRoom3()
 
 void AEnemyBonnie::JumpScareBonnie()
 {
-	FVector CameraLoc = Player->GetCameraTransform().GetLocation();
-	CameraLoc.Y -= 300;
-	CameraLoc.Z += 1000;
-	CameraLoc.X += 620;
-	SetActorLocation(CameraLoc);
+
 
 	auto* BonnieAnim = Cast<UBonnieAnimInstance>(GetMesh()->GetAnimInstance());
 	if ( BonnieAnim ) {
@@ -292,10 +283,18 @@ void AEnemyBonnie::JumpScareBonnie()
 	if ( LookingMain() == true )
 	{
 		Player->OnDie(TEXT("BonnieMain"));
+		FVector CameraLoc = FVector(541.42f , 3355.61f , 1321.16f);
+		FRotator CameraRotator = FRotator(0.f , -10.4f , 15.7f);
+		SetActorLocation(CameraLoc);
+		GetMesh()->SetRelativeRotation(CameraRotator);
 	}
 	else 
 	{
 		Player->OnDie(TEXT("BonnieDoor"));
+		FVector CameraLoc = FVector(-1695.81f , 2342.84f , 1392.26f);
+		FRotator CameraRotator = FRotator(4.23f , -26.95f , 11.87f);
+		SetActorLocation(CameraLoc);
+		GetMesh()->SetRelativeRotation(CameraRotator);
 	}
 }
 

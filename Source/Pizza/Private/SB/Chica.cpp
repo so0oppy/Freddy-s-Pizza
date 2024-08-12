@@ -335,14 +335,14 @@ void AChica::Attack()
 {
 	// 카메라 앞으로 SetActorLocation
 	AFreddyPlayer* FreddyPlayer = Cast<AFreddyPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
-	//FTransform JmpScare = FreddyPlayer->GetCameraTransform();
-	//JmpScare.SetLocation(JmpScare.GetLocation() - FVector(0 , 100 , 60)); // 위치 조정
-	//FRotator rot = JmpScare.GetRotation().Rotator();
-	//rot.Yaw += 90.0;
-	//JmpScare.SetRotation(rot.Quaternion());
-	//SetActorTransform(JmpScare); // 카메라 위치로 이동 (점프스케어)
-	this->SetActorLocation(FVector(2157.41f , 2573.72f , 767.85f));
-	this->SetActorRotation(FRotator(-1.7f , 25.4f , 19.2f));
+	FTransform JmpScare = FreddyPlayer->GetCameraTransform();
+	JmpScare.SetLocation(FVector(2157.41f , 2573.72f , 767.85f)); // 위치 조정
+	FRotator rot = FRotator(-1.7f , 25.4f , 19.2f);
+//	rot.Yaw += 90.0;
+	JmpScare.SetRotation(rot.Quaternion());
+	SetActorTransform(JmpScare); // 카메라 위치로 이동 (점프스케어)
+// 	this->SetActorLocation(FVector(2157.41f , 2573.72f , 767.85f));
+// 	this->SetActorRotation(FRotator(-1.7f , 25.4f , 19.2f));
 
 	if ( bJSound == false )
 	{

@@ -94,6 +94,18 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category="Input")
 	class UInputAction* RestartAction;
 
+	UPROPERTY(EditDefaultsOnly, Category="Input")
+	class UInputAction* CheatAction;
+
+	UPROPERTY(EditDefaultsOnly, Category="Input")
+	class UInputAction* MiniMapAction;
+
+	UFUNCTION()
+	void CheatOn();
+
+	UFUNCTION()
+	void MinimapOn();
+
 	UFUNCTION()
 	void OnRestart();
 

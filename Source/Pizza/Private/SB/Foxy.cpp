@@ -361,7 +361,8 @@ void AFoxy::Move()
 	// room1 -> room2, room3가능
 	if (RoomNum == 1)
 	{
-		
+		StopFootStepsSound(); // 발소리 안 들리게
+
 		TArray<int32> RoomTags = { 2, 3 };
 		int32 RandomIndex = FMath::RandRange(0 , RoomTags.Num() - 1);
 
@@ -561,6 +562,7 @@ void AFoxy::Closet(float DeltaTime)
 
 	if ( FreddyPlayer )
 	{
+		StopFootStepsSound(); // 발소리 안 들리게
 		// 플레이어 위치 == 가운데, 옷장이 살짝 움직임 anim
 
 

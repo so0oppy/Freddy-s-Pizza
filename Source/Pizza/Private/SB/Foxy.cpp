@@ -582,7 +582,12 @@ void AFoxy::Closet(float DeltaTime)
 				if ( bAttack == true )
 				{
 					this->GetMesh()->SetVisibility(true); // skeletal 보이게
-					if ( FreddyPlayer->KeepJumpScare() == false ) { CurrentState = ELocationState::ATTACK; }
+					if ( FreddyPlayer->KeepJumpScare() == false ) 
+					{ 
+						CurrentState = ELocationState::ATTACK; 
+						Attack();
+					}
+					return;
 				}
 
 				if ( bClosetAnim == false )
@@ -620,8 +625,8 @@ void AFoxy::Closet(float DeltaTime)
 					if ( CurrentTime > 3.f )
 					{
 						bAttack = true;
+						CurrentTime = 0.f; // 초기화
 					}
-					CurrentTime = 0.f; // 초기화
 					// 메인으로 갔을 때 점프스케어
 				}
 				// 문 닫을 때마다 StateCount 감소 (3초 감소하면 State 변하게)  

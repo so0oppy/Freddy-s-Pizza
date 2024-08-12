@@ -341,8 +341,8 @@ void AChica::Attack()
 	//rot.Yaw += 90.0;
 	//JmpScare.SetRotation(rot.Quaternion());
 	//SetActorTransform(JmpScare); // 카메라 위치로 이동 (점프스케어)
-	this->SetActorRelativeLocation(FVector(2157.41f , 2573.72f , 767.85f));
-	this->SetActorRelativeRotation(FRotator(-1.7f , 25.4f , 19.2f));
+	this->SetActorLocation(FVector(2157.41f , 2573.72f , 767.85f));
+	this->SetActorRotation(FRotator(-1.7f , 25.4f , 19.2f));
 
 	if ( bJSound == false )
 	{

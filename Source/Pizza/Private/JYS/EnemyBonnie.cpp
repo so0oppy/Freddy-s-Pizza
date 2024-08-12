@@ -77,7 +77,7 @@ void AEnemyBonnie::Tick(float DeltaTime)
 	}
 	
 	// Room0에서 Room2로 이동
-	if (CloseDoorRoom0ToRoom2())
+	if (CloseDoorRoom0ToRoom2() && !Player->bTeleport)
 	{
 		Move(EBonnieState::Room2);
 	}

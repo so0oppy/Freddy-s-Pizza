@@ -16,7 +16,7 @@ AEnemyBonnie::AEnemyBonnie()
 	// Room0 
 	RoomPositions[0] = FVector(-320.0f, 810.0f, 0.0f);
 	// Room1
-	RoomPositions[1] = FVector(-320.0f, 360.0f, 0.0f);
+	RoomPositions[1] = FVector(-2018.149391f, -1358.837438f, 0.0f);
 	// Room2
 	RoomPositions[2] = FVector(-320.0f, -220.0f, 0.0f);
 	// Room3
@@ -27,7 +27,7 @@ AEnemyBonnie::AEnemyBonnie()
 	Player = nullptr; // Initialize Player to nullptr
 	TargetLocation = RoomPositions[0]; // Initialize TargetLocation
 	// 이동 속도 초기화
-	MoveSpeed = 500.0f;
+	MoveSpeed = 1000.0f;
 	// 이동 중 여부 초기화
 	bIsMovingToRoom3 = false;
 	
@@ -77,7 +77,7 @@ void AEnemyBonnie::Tick(float DeltaTime)
 	}
 	
 	// Room0에서 Room2로 이동
-	if (CloseDoorRoom0ToRoom2())
+	if (CloseDoorRoom0ToRoom2() && !Player->bTeleport)
 	{
 		Move(EBonnieState::Room2);
 	}

@@ -841,18 +841,19 @@ void AFreddyPlayer::LookBack(float DeltaTime)
 	if (LookAtState==LookAt::BedMove)
 	{
 		NewRotation.Yaw = FMath::Clamp(NewRotation.Yaw + RotationSpeed * 5*BoostSpeed * DeltaTime, 0, 180);
-		SpringArmComp->SetRelativeRotation(NewRotation);
-		if (NewRotation.Yaw >= 177)
-		{
-			LookAtState = LookAt::Bed;
-			bMoving = false;
-		}
-		if (NewRotation.Yaw == -180)
+		if ( NewRotation.Yaw >= 177 )
 		{
 			NewRotation.Yaw = 180;
 			LookAtState = LookAt::Bed;
 			bMoving = false;
 		}
+		if ( NewRotation.Yaw == -180 )
+		{
+			NewRotation.Yaw = 180;
+			LookAtState = LookAt::Bed;
+			bMoving = false;
+		}
+		SpringArmComp->SetRelativeRotation(NewRotation);
 	}
 	// Main 상태면 Bed로 되돌리기 인데..
 	else if (LookAtState == LookAt::Back)

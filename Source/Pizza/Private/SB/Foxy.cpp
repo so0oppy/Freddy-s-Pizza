@@ -448,12 +448,13 @@ void AFoxy::Attack()
 {
 	// 테스트용 -> 카메라 앞으로 SetActorLocation
 	AFreddyPlayer* FreddyPlayer = Cast<AFreddyPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
-	FTransform JmpScare = FreddyPlayer->GetCameraTransform();
-	JmpScare.SetLocation(JmpScare.GetLocation() - FVector(0 , 100 , 60)); // 위치 조정
-	FRotator rot = JmpScare.GetRotation().Rotator();
-	rot.Yaw -= 90.0;
-	JmpScare.SetRotation(rot.Quaternion());
-	SetActorTransform(JmpScare); // 카메라 위치로 이동 (점프스케어)
+// 	FTransform JmpScare = FreddyPlayer->GetCameraTransform();
+// 	JmpScare.SetLocation(JmpScare.GetLocation() - FVector(0 , 100 , 60)); // 위치 조정
+// 	FRotator rot = JmpScare.GetRotation().Rotator();
+// 	rot.Yaw -= 90.0;
+// 	JmpScare.SetRotation(rot.Quaternion());
+// 	SetActorTransform(JmpScare); // 카메라 위치로 이동 (점프스케어)
+	this->SetActorRelativeRotation(FRotator(7.84f , 10.12f , 13.63f));
 
 	if ( bJSound == false )
 	{

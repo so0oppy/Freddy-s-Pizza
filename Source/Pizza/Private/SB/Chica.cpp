@@ -335,12 +335,14 @@ void AChica::Attack()
 {
 	// 카메라 앞으로 SetActorLocation
 	AFreddyPlayer* FreddyPlayer = Cast<AFreddyPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
-	FTransform JmpScare = FreddyPlayer->GetCameraTransform();
-	JmpScare.SetLocation(JmpScare.GetLocation() - FVector(0 , 100 , 60)); // 위치 조정
-	FRotator rot = JmpScare.GetRotation().Rotator();
-	rot.Yaw += 90.0;
-	JmpScare.SetRotation(rot.Quaternion());
-	SetActorTransform(JmpScare); // 카메라 위치로 이동 (점프스케어)
+	//FTransform JmpScare = FreddyPlayer->GetCameraTransform();
+	//JmpScare.SetLocation(JmpScare.GetLocation() - FVector(0 , 100 , 60)); // 위치 조정
+	//FRotator rot = JmpScare.GetRotation().Rotator();
+	//rot.Yaw += 90.0;
+	//JmpScare.SetRotation(rot.Quaternion());
+	//SetActorTransform(JmpScare); // 카메라 위치로 이동 (점프스케어)
+	this->SetActorRelativeLocation(FVector(2157.41f , 2573.72f , 767.85f));
+	this->SetActorRelativeRotation(FRotator(-1.7f , 25.4f , 19.2f));
 
 	if ( bJSound == false )
 	{
@@ -366,14 +368,15 @@ void AChica::Cupcake()
 	AFreddyPlayer* FreddyPlayer = Cast<AFreddyPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
 	AActor* CupCakeInstance = UGameplayStatics::GetActorOfClass(GetWorld(), ACupCake::StaticClass());
 	ACupCake* CupCake = Cast<ACupCake>(CupCakeInstance);
-	FTransform JmpScare = FreddyPlayer->GetCameraTransform();
-	JmpScare.SetLocation(JmpScare.GetLocation() - FVector(0 , 300 , 0)); // 위치 조정
+// 	FTransform JmpScare = FreddyPlayer->GetCameraTransform();
+// 	JmpScare.SetLocation(JmpScare.GetLocation() - FVector(0 , 300 , 0)); // 위치 조정
 
 
 	if(CupCake)
 	{
-		// 컵케이크 임시 큐브로
-		CupCake->SetActorTransform(JmpScare); // 카메라 위치로 이동 (점프스케어)
+// 		CupCake->SetActorTransform(JmpScare); // 카메라 위치로 이동 (점프스케어)
+		CupCake->SetActorRelativeLocation(FVector(-50.2f , 3587.85f , 556.48f));
+		CupCake->SetActorRelativeRotation(FRotator(10.f , 3.33f , 0.f));
 
 		if(bJSound == false)
 		{	

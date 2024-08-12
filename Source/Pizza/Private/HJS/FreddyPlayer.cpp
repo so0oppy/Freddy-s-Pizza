@@ -843,7 +843,7 @@ void AFreddyPlayer::LookBack(float DeltaTime)
 		NewRotation.Yaw = FMath::Clamp(NewRotation.Yaw + RotationSpeed * 5*BoostSpeed * DeltaTime, 0, 180);
 		if ( NewRotation.Yaw >= 177 )
 		{
-			NewRotation.Yaw = 180;
+			NewRotation.Yaw = 179;
 			LookAtState = LookAt::Bed;
 			bMoving = false;
 		}

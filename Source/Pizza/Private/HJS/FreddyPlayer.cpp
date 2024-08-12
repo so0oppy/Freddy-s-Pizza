@@ -382,6 +382,20 @@ bool AFreddyPlayer::KeepJumpScare()
 	}
 }
 
+void AFreddyPlayer::CheatOn()
+{
+	AHJSGameMode* GM = Cast<AHJSGameMode>(GetWorld()->GetAuthGameMode());
+
+	GM->TimePass();
+}
+
+void AFreddyPlayer::MinimapOn()
+{
+	AHJSGameMode* GM = Cast<AHJSGameMode>(GetWorld()->GetAuthGameMode());
+
+	GM->MiniMapAdd();
+}
+
 void AFreddyPlayer::OnRestart()
 {
 	if ( bEnableRestart)
@@ -641,6 +655,14 @@ void AFreddyPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 		if ( RestartAction )
 		{
 			Input->BindAction(RestartAction, ETriggerEvent::Started , this , &AFreddyPlayer::OnRestart);
+		}
+		if ( CheatAction )
+		{
+			Input->BindAction(CheatAction , ETriggerEvent::Started , this , &AFreddyPlayer::CheatOn);
+		}
+		if ( MiniMapAction )
+		{
+			Input->BindAction(MiniMapAction , ETriggerEvent::Started , this , &AFreddyPlayer::MinimapOn);
 		}
 	}
 }

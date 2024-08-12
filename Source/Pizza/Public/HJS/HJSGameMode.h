@@ -23,13 +23,15 @@ public:
 	class AEnemyBonnie* GetBonnie();
 
 	void GameStartAnim();
+	// 시간이 흐르게 하고 싶다.
+	void TimePass();
+
+	void MiniMapAdd();
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
 private:
-	// 시간이 흐르게 하고 싶다.
-	void TimePass();
 	// 당장 구현하지 않겠지만, 날짜가 지나는 함수
 	void DayPass();
 	// 시간에는 날짜, 시간이 있다.

@@ -43,18 +43,6 @@ void AHJSGameMode::BeginPlay()
 	GetWorldTimerManager().SetTimer(HourHandle,this, &AHJSGameMode::TimePass,GamePlayRate,true);
 
 	// 미니맵 띄우기
-	//if ( MinimapUIFactory )
-	//{
-	//	// 뷰포트에 띄우기
-	//	MinimapUI = Cast<UMinimapUI>(CreateWidget(GetWorld() , MinimapUIFactory , FName("MiniMapUI")));
-
-	//	if ( MinimapUI )
-	//	{
-	//		MinimapUI->AddToViewport();
-	//	}
-
-	//}
-
 
 
 	// 게임을 시작하면 일단 퍼즈를 걸기.
@@ -138,6 +126,21 @@ void AHJSGameMode::TimePass()
 	else {
 		SetAILevelEnemy();
 	}
+}
+
+void AHJSGameMode::MiniMapAdd()
+{
+if ( MinimapUIFactory )
+{
+	// 뷰포트에 띄우기
+	MinimapUI = Cast<UMinimapUI>(CreateWidget(GetWorld() , MinimapUIFactory , FName("MiniMapUI")));
+
+	if ( MinimapUI )
+	{
+		MinimapUI->AddToViewport();
+	}
+
+}
 }
 
 void AHJSGameMode::DayPass()

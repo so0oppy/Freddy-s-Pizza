@@ -8,6 +8,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "JYS/FreddleAnimInstance.h"
 #include "JYS/FreddyAnimInstance.h"
+#include "JYS/ThreeFreddlesAnimInstance.h"
 
 
 // Sets default values
@@ -72,30 +73,35 @@ void AEnemyFreddy::BeginPlay()
 
 	UAnimInstance* Test = FreddyMesh0->GetAnimInstance();
 
-	auto* Anim = Cast<UFreddleAnimInstance>(Test);
+	auto* Anim = Cast<UThreeFreddlesAnimInstance>(Test);
 
 	if ( Anim )
 	{
 		Anim->Montage_Play(Anim->Freddle1Montage ,1);
+		Anim->StartIdleAnimation(0);
 	}
 
 	Test = FreddyMesh1->GetAnimInstance();
 
-	Anim = Cast<UFreddleAnimInstance>(Test);
+	Anim = Cast<UThreeFreddlesAnimInstance>(Test);
 
 	if ( Anim )
 	{
 		Anim->Montage_Play(Anim->Freddle1Montage , 1);
+		Anim->StartIdleAnimation(1);
+
 	}
 
 	Test = FreddyMesh2->GetAnimInstance();
 
-	Anim = Cast<UFreddleAnimInstance>(Test);
+	Anim = Cast<UThreeFreddlesAnimInstance>(Test);
 
 
 	if ( Anim )
 	{
 		Anim->Montage_Play(Anim->Freddle1Montage , 1);
+		Anim->StartIdleAnimation(2);
+
 	}
 }
 
@@ -183,12 +189,12 @@ void AEnemyFreddy::HideFreddy(float DeltaTime)
 	{
 		UAnimInstance* Test = FreddyMesh2->GetAnimInstance();
 
-		auto* Anim = Cast<UFreddleAnimInstance>(Test);
+		auto* Anim = Cast<UThreeFreddlesAnimInstance>(Test);
 		if ( Anim ) {
 			
 			if ( Freddy2HideOnce == false )
 			{
-				Anim->StartHideAnimation();
+				Anim->StartHideAnimation(2);
 				Freddy2HideOnce = true;
 			}
 		}
@@ -197,12 +203,12 @@ void AEnemyFreddy::HideFreddy(float DeltaTime)
 	{
 		UAnimInstance* Test = FreddyMesh1->GetAnimInstance();
 
-		auto* Anim = Cast<UFreddleAnimInstance>(Test);
+		auto* Anim = Cast<UThreeFreddlesAnimInstance>(Test);
 		if ( Anim ) {
 			UE_LOG(LogTemp , Warning , TEXT("55"));
 			if ( Freddy1HideOnce == false )
 			{
-				Anim->StartHideAnimation();
+				Anim->StartHideAnimation(1);
 				Freddy1HideOnce = true;
 			}
 		}
@@ -211,11 +217,11 @@ void AEnemyFreddy::HideFreddy(float DeltaTime)
 	{
 		UAnimInstance* Test = FreddyMesh0->GetAnimInstance();
 
-		auto* Anim = Cast<UFreddleAnimInstance>(Test);
+		auto* Anim = Cast<UThreeFreddlesAnimInstance>(Test);
 		if ( Anim ) {
 			if ( Freddy0HideOnce == false )
 			{
-				Anim->StartHideAnimation();
+				Anim->StartHideAnimation(0);
 				Freddy0HideOnce = true;
 			}
 		}

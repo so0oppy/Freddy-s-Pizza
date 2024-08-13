@@ -22,13 +22,16 @@ public:
 
 	class AEnemyBonnie* GetBonnie();
 
+	void GameStartAnim();
+	// 시간이 흐르게 하고 싶다.
+	void TimePass();
+
+	void MiniMapAdd();
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
 private:
-	// 시간이 흐르게 하고 싶다.
-	void TimePass();
 	// 당장 구현하지 않겠지만, 날짜가 지나는 함수
 	void DayPass();
 	// 시간에는 날짜, 시간이 있다.
@@ -57,12 +60,41 @@ private:
 
 	// 타이머로 
 	UPROPERTY(EditAnywhere)
-	float GamePlayRate = 30.f;
+	float GamePlayRate = 20.f;
 
 	// UI 띄우기
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class UMinimapUI> MinimapUIFactory;
 
 	class UMinimapUI* MinimapUI;
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class UGameStartUI> GameStartUIFactory;
+
+	class UGameStartUI* GameStartUI;
+
+	UPROPERTY(EditDefaultsOnly, Category="SFX")
+	USoundBase* BGM;
+
+	UPROPERTY(EditDefaultsOnly, Category="SFX")
+	USoundBase* Crickets;
+
+	UAudioComponent* BGMComponent;
+	UAudioComponent* CricketsComponent;
+
+	void GameEnd();
+
+	UPROPERTY(EditDefaultsOnly, Category="SFX")
+	USoundBase* Alarm;
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class UClearGameUI> ClearGameUIFactory;
+
+	class UClearGameUI* ClearGameUI;
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class UTimeUI> TimeUIFactory;
+
+	class UTimeUI* TimeUI;
 
 };

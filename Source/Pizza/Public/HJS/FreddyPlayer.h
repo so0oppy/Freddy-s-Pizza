@@ -20,6 +20,8 @@ protected:
 	virtual void BeginPlay() override;
 
 public:
+
+	// 
 	enum class LookAt
 	{
 		Left,
@@ -28,6 +30,11 @@ public:
 		Main,
 		Bed,
 		Back,
+		LeftMove,
+		CenterMove,
+		RightMove,
+		MainMove,
+		BedMove,
 	};
 	enum class CameraMove
 	{
@@ -86,6 +93,18 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, Category="Input")
 	class UInputAction* RestartAction;
+
+	UPROPERTY(EditDefaultsOnly, Category="Input")
+	class UInputAction* CheatAction;
+
+	UPROPERTY(EditDefaultsOnly, Category="Input")
+	class UInputAction* MiniMapAction;
+
+	UFUNCTION()
+	void CheatOn();
+
+	UFUNCTION()
+	void MinimapOn();
 
 	UFUNCTION()
 	void OnRestart();
@@ -230,6 +249,9 @@ private:
 
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<UCameraShakeBase> JumpScareShake2;
+
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<UCameraShakeBase> JumpScareShake3;
 	// 위치 도착 후 문 열면서 몸 기울이기
 	// 문 변수 3개 흠... 배열?  LookAt으로 문 배열에 접근
 	UPROPERTY(VisibleAnywhere)
@@ -338,4 +360,12 @@ private:
 	class AFoxy* Foxy;
 
 	bool WarningCondition();
+
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<class UDeathUI> GameEndUIFactory;
+
+	UPROPERTY()
+	UDeathUI* GameEndUI;
+	// 엔드게임타이머핸들러
+
 };

@@ -4,6 +4,7 @@
 #include "HJS/DownMouseUI.h"
 #include "Components/Button.h"
 #include "HJS/FreddyPlayer.h"
+#include "Kismet/GamePlayStatics.h"
 void UDownMouseUI::NativeConstruct()
 {
 	Super::NativeConstruct();
@@ -20,6 +21,12 @@ void UDownMouseUI::NativeConstruct()
 
 void UDownMouseUI::Down()
 {
+
+	if ( UGameplayStatics::IsGamePaused(GetWorld()) )
+	{
+		return;
+	}
+
 	if (Player)
 	{
 		Player->SetDown();
@@ -28,6 +35,10 @@ void UDownMouseUI::Down()
 
 void UDownMouseUI::Up()
 {
+	if ( UGameplayStatics::IsGamePaused(GetWorld()) )
+	{
+		return;
+	}
 	Player->SetUp();
 }
 

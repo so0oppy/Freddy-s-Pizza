@@ -6,6 +6,7 @@
 #include "EngineUtils.h"
 #include "Sound/SoundBase.h"
 #include "Kismet/GameplayStatics.h"
+#include "JYS/BonnieAnimInstance.h"
 
 // Sets default values
 AEnemyBonnie::AEnemyBonnie()
@@ -15,7 +16,7 @@ AEnemyBonnie::AEnemyBonnie()
 	// Room0 
 	RoomPositions[0] = FVector(-320.0f, 810.0f, 0.0f);
 	// Room1
-	RoomPositions[1] = FVector(-320.0f, 360.0f, 0.0f);
+	RoomPositions[1] = FVector(-2018.149391f, -1358.837438f, 0.0f);
 	// Room2
 	RoomPositions[2] = FVector(-320.0f, -220.0f, 0.0f);
 	// Room3
@@ -26,7 +27,7 @@ AEnemyBonnie::AEnemyBonnie()
 	Player = nullptr; // Initialize Player to nullptr
 	TargetLocation = RoomPositions[0]; // Initialize TargetLocation
 	// 이동 속도 초기화
-	MoveSpeed = 500.0f;
+	MoveSpeed = 1000.0f;
 	// 이동 중 여부 초기화
 	bIsMovingToRoom3 = false;
 	
@@ -59,7 +60,7 @@ void AEnemyBonnie::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	SetAILevel(7);
+	SetAILevel(20);
 
 	GetWorld()->GetTimerManager().SetTimer(MoveTimerHandle, this, &AEnemyBonnie::AttemptMove, 4.97f, true);
 }
@@ -76,7 +77,7 @@ void AEnemyBonnie::Tick(float DeltaTime)
 	}
 	
 	// Room0에서 Room2로 이동
-	if (CloseDoorRoom0ToRoom2())
+	if (CloseDoorRoom0ToRoom2() && !Player->bTeleport)
 	{
 		Move(EBonnieState::Room2);
 	}
@@ -143,11 +144,37 @@ void AEnemyBonnie::Move(EBonnieState MoveState)
 
 void AEnemyBonnie::TickRoom0(const float& DeltaTime)
 {
-	if (JumpScarConditions())
+	if ( State == EBonnieState::Room0 )
 	{
-		if (bJumpScare == false)
+		JumpscareCount += DeltaTime;
+	}
+	else if ( JumpScareConditions() || CloseDoorRoom0ToRoom2())
+	{
+		JumpscareCount = 0;
+	}
+	else if ( State == EBonnieState::Room2 || State == EBonnieState::Room3 )
+	{
+		JumpscareCount = 0;
+	}
+	
+	if ( JumpscareCount >= 8 && LookingMain() )
+	{
+
+		if ( bJumpScare == false )
 		{
 			bJumpScare = true;
+			JumpScareBonnie();
+			JumpScareSound();
+		}
+	}
+	
+	if ( JumpScareConditions() )
+	{
+
+		if ( bJumpScare == false )
+		{
+			bJumpScare = true;
+
 			JumpScareBonnie();
 			JumpScareSound();
 		}
@@ -180,6 +207,12 @@ void AEnemyBonnie::TickRoom3(const float& DeltaTime)
 
 void AEnemyBonnie::AttemptMove()
 {
+
+	if (Player->bTeleport)
+	{
+		return;
+	}
+
 	if ( Player->GetLookAtState() == AFreddyPlayer::LookAt::Left )
 	{	
 		return;
@@ -207,20 +240,6 @@ void AEnemyBonnie::AttemptMove()
 					NewState = EBonnieState::Room0;
 					break;
 				}
-				// 발자국 소리 (1번방에 있을때)
-				// int32 MoveChoice = FMath::RandRange(0, 2);
-				//switch (MoveChoice)
-				//{
-				//case 0:
-				//	NewState = EBonnieState::Room0;
-				//	break;
-				//case 1:
-				//	NewState = EBonnieState::Room2;
-				//	break;
-				//case 2:
-				//	NewState = EBonnieState::Room3;
-				//	break;
-				//}
 			}	
 				break;
 			// Room2는 Room1이랑 Room3으로 이동할 수 있다
@@ -254,13 +273,29 @@ bool AEnemyBonnie::ShouldMoveToRoom3()
 
 void AEnemyBonnie::JumpScareBonnie()
 {
-	FVector CameraLoc = Player->GetCameraTransform().GetLocation();
-	CameraLoc.Y -= 300;
-	CameraLoc.Z -= 450;
-	CameraLoc.X -= 150;
-	SetActorLocation(CameraLoc);
 
-	Player->OnDie();
+
+	auto* BonnieAnim = Cast<UBonnieAnimInstance>(GetMesh()->GetAnimInstance());
+	if ( BonnieAnim ) {
+		BonnieAnim->BonnieJumpscareAnimation();
+	}
+
+	if ( LookingMain() == true )
+	{
+		Player->OnDie(TEXT("BonnieMain"));
+		FVector CameraLoc = FVector(541.42f , 3355.61f , 1321.16f);
+		FRotator CameraRotator = FRotator(0.f , -10.4f , 15.7f);
+		SetActorLocation(CameraLoc);
+		GetMesh()->SetRelativeRotation(CameraRotator);
+	}
+	else 
+	{
+		Player->OnDie(TEXT("BonnieDoor"));
+		FVector CameraLoc = FVector(-1695.81f , 2342.84f , 1392.26f);
+		FRotator CameraRotator = FRotator(4.23f , -26.95f , 11.87f);
+		SetActorLocation(CameraLoc);
+		GetMesh()->SetRelativeRotation(CameraRotator);
+	}
 }
 
 // Bonnie가 0번방에 있고 플레이어가 문을 닫으면 2번방으로 이동
@@ -314,6 +349,16 @@ bool AEnemyBonnie::CloseDoorRoom1ToRoom0()
 
 }
 
+bool AEnemyBonnie::LookingMain()
+{
+// 플레이어가 Main을 보고 있을 때
+	if ( Player )
+	{
+		return Player->GetLookAtState() == AFreddyPlayer::LookAt::Main || Player->GetLookAtState() == AFreddyPlayer::LookAt::Bed;
+	}
+	return false;
+}
+
 bool AEnemyBonnie::BreathSoundConditions()
 {
 	// 플레이어가 왼쪽에 있고 Bonnie가 0번방에 있을 때 (Breath Sound 재생)
@@ -325,9 +370,9 @@ bool AEnemyBonnie::BreathSoundConditions()
 }
 
 
-bool AEnemyBonnie::JumpScarConditions()
+bool AEnemyBonnie::JumpScareConditions()
 {
-	// 플레이어가 왼쪽에서 Flash를 비추고 Bonnie가 0번방에 있을 때 (JumpScare)
+	// 플레이어가 왼쪽에서 Flash를 비추기
 	if (Player)
 	{
 		return Player->GetFlash() && Player->GetLookAtState() == AFreddyPlayer::LookAt::Left;

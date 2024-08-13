@@ -87,7 +87,7 @@ private:
 
 	void JumpScareSound();
 
-	bool JumpScarConditions();
+	bool JumpScareConditions();
 
 	UPROPERTY(EditAnywhere)
 	class USoundBase* FootStepsSFX;
@@ -113,4 +113,8 @@ private:
 
 	UFUNCTION()
 	bool CloseDoorRoom1ToRoom0();
+
+	bool LookingMain();
+
+	float JumpscareCount = 0;;
 };

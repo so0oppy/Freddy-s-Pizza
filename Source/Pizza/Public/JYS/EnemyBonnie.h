@@ -73,7 +73,7 @@ private:
 	// 1번방에서 3번방 이동 
 	// 목표 위치
 	FVector TargetLocation;
-	// 이동 속도Z
+	// 이동 속도
 	float MoveSpeed;
 	// 이동 중인지 여부
 	bool bIsMovingToRoom3;
@@ -116,5 +116,11 @@ private:
 
 	bool LookingMain();
 
-	float JumpscareCount = 0;;
+	float JumpscareCount = 0;
+
+	UPROPERTY(EditDefaultsOnly)
+	class UAudioComponent* BreathSoundComp; 
+
+	UPROPERTY(EditDefaultsOnly)
+	class UAudioComponent* FootStepsSoundComp;
 };

@@ -30,8 +30,15 @@ AFoxy::AFoxy()
 	FootStepsAudioComponent->SetupAttachment(RootComponent);
 	FootStepsAudioComponent->bAutoActivate = false; // sound가 바로 재생되지 않게
 
-	FoxyMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("FoxyMeshComponent"));
-	FoxyMeshComponent->SetupAttachment(RootComponent);
+	// static mesh 컴포넌트 (상태별로 나눔)
+	FoxyMesh1Component = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("FoxyMesh1Component"));
+	FoxyMesh1Component->SetupAttachment(RootComponent);
+
+	FoxyMesh2Component = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("FoxyMesh2Component"));
+	FoxyMesh2Component->SetupAttachment(RootComponent);
+
+	FoxyMesh3Component = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("FoxyMesh3Component"));
+	FoxyMesh3Component->SetupAttachment(RootComponent);
 	
 	// 폭시 상태 Mesh
 	ConstructorHelpers::FObjectFinder<UStaticMesh> StateThreeMesh(TEXT("/Script/Engine.StaticMesh'/Game/sym/animation_model/foxy/Mesh/SM_FoxyState3.SM_FoxyState3'"));
@@ -39,18 +46,21 @@ AFoxy::AFoxy()
 	if ( StateThreeMesh.Succeeded() )
 	{
 		MeshState3 = StateThreeMesh.Object;
+		FoxyMesh3Component->SetStaticMesh(MeshState3);
 	}
 
 	ConstructorHelpers::FObjectFinder<UStaticMesh> StateTwoMesh(TEXT("/Script/Engine.StaticMesh'/Game/sym/animation_model/foxy/Mesh/SM_FoxyState2.SM_FoxyState2'"));
 	if ( StateTwoMesh.Succeeded() )
 	{
 		MeshState2 = StateTwoMesh.Object;
+		FoxyMesh2Component->SetStaticMesh(MeshState2);
 	}
 
 	ConstructorHelpers::FObjectFinder<UStaticMesh> StateOneMesh(TEXT("/Script/Engine.StaticMesh'/Game/sym/animation_model/foxy/Mesh/SM_FoxyState1.SM_FoxyState1'"));
 	if ( StateOneMesh.Succeeded() )
 	{
 		MeshState1 = StateOneMesh.Object;
+		FoxyMesh1Component->SetStaticMesh(MeshState1);
 	}
 }
 
@@ -78,7 +88,7 @@ void AFoxy::BeginPlay()
 	AActor* FoxDollInstance = UGameplayStatics::GetActorOfClass(GetWorld() , AFoxDoll::StaticClass());
 	ShowFoxyDoll(FoxDollInstance, false);
 	this->GetMesh()->SetVisibility(true); // skeletal 보이게
-	ShowFoxy(MeshState3 , false);
+	ShowFoxy(false);
 
 	CurrentState = ELocationState::IDLE;
 
@@ -582,7 +592,7 @@ void AFoxy::Closet(float DeltaTime)
 		if ( LookState != AFreddyPlayer::LookAt::Center )
 		{
 			// 밖에선 둘 다 안 보이게
-			FoxyMeshComponent->SetHiddenInGame(true);
+			ShowFoxy(false);
 			this->GetMesh()->SetVisibility(false);
 			ShowFoxyDoll(FoxDollInstance , false);
 		
@@ -680,27 +690,27 @@ void AFoxy::Closet(float DeltaTime)
 					{
 						// 페이크 점프스케어 재생
 						this->GetMesh()->SetVisibility(true); // skeletal 보이게
-						FoxyMeshComponent->SetHiddenInGame(true); // 멈춘 버전 mesh는 안 보이게
+						ShowFoxy(false); // 멈춘 버전 mesh는 안 보이게
 						FoxyAnimInstance->IsFakeScare = true;
 						PlayFakeScare();
 						bFake = true;
 					}
 					else if ( bFake && bWasFlashlightOn )
 					{
-						// 애니메이션이 계속 재생되도록
+						// 불 다시 켜면 애니메이션 재생 안 되도록
 						FoxyAnimInstance->IsFakeScare = true;
 					}
 				}
+				// 불 껐을 때
 				else
 				{
-					// 불이 꺼졌을 때
 					if ( bWasFlashlightOn )
 					{
 						// 애니메이션을 멈추고 멈춘 버전 Mesh 적용
 						FoxyAnimInstance->IsFakeScare = false;
-						//this->GetMesh()->SetVisibility(false); // Skeletal Mesh는 안 보이게
-						ShowFoxy(MeshState3 , true);
-						FoxyMeshComponent->SetRelativeLocation(FVector(0 , 0 , 90));
+						this->GetMesh()->SetVisibility(false); // Skeletal Mesh는 안 보이게
+						
+						FoxyMesh3Component->SetHiddenInGame(false);
 
 						bFake = false; // 다시 불을 켰을 때 애니메이션이 재생되도록 초기화
 					}
@@ -713,16 +723,14 @@ void AFoxy::Closet(float DeltaTime)
 				// 폭시 인형은 안 보이게
 				ShowFoxyDoll(FoxDollInstance , false);
 				// 허리 구부리고 얼굴 약간 보이는 mesh 적용
-				FoxyMeshComponent->SetStaticMesh(MeshState2);
-				FoxyMeshComponent->SetRelativeLocation(FVector(0 , 0 , 0));
+				FoxyMesh2Component->SetHiddenInGame(false);
 			}
 			else if ( FoxyState == 1 && this->GetActorLocation().Equals(TagArr[9] , 0.1f) )
 			{
 				// 폭시 인형은 안 보이게
 				ShowFoxyDoll(FoxDollInstance , false);
 				// 오른쪽에 서 있고 갈고리 손만 보이는 mesh 적용
-				FoxyMeshComponent->SetStaticMesh(MeshState1);
-				FoxyMeshComponent->SetRelativeLocation(FVector(0 , 0 , 90));
+				FoxyMesh1Component->SetHiddenInGame(false);
 			}
 			else if ( FoxyState == 0 && this->GetActorLocation().Equals(TagArr[9] , 0.1f) )
 			{
@@ -730,7 +738,7 @@ void AFoxy::Closet(float DeltaTime)
 				//bIsFoxy = false; // Tick에서 CLOSET불러와서 ShowFoxyDoll 처리해 줄 것
 
 				StateToFoxy = true;
-				FoxyMeshComponent->SetHiddenInGame(true);
+				ShowFoxy(false);
 				ShowFoxyDoll(FoxDollInstance, true);
 				UE_LOG(LogTemp , Log , TEXT("Spawn Foxy Doll"));
 			}
@@ -738,20 +746,22 @@ void AFoxy::Closet(float DeltaTime)
 	}
 }
 
-void AFoxy::ShowFoxy(UStaticMesh* mesh , bool bShow)
+void AFoxy::ShowFoxy(bool bShow)
 {
-	// mesh 컴포넌트로 안 보이게 (처음엔 보이게, room9에서 인형으로 바뀌면 안 보이게)
-	FoxyMeshComponent->SetStaticMesh(mesh);
-//	FoxyMeshComponent->SetRenderInMainPass(bShow);
-	FoxyMeshComponent->SetHiddenInGame(!bShow);
-	if ( bShow )
-	{
-		FoxyMeshComponent->SetHiddenInGame(false);
+	// 처음엔 보이게, room9에서 인형으로 바뀌면 안 보이게
+	if ( bShow ) // true
+	{	// mesh 컴포넌트 보이게
+		FoxyMesh1Component->SetHiddenInGame(false);
+		FoxyMesh2Component->SetHiddenInGame(false);
+		FoxyMesh3Component->SetHiddenInGame(false);
 		this->GetMesh()->SetVisibility(false);  // 스켈레탈 메쉬 숨김
 	}
-	else
+	else // false
 	{
-		FoxyMeshComponent->SetHiddenInGame(true);
+		// mesh 컴포넌트 안 보이게
+		FoxyMesh1Component->SetHiddenInGame(true);
+		FoxyMesh2Component->SetHiddenInGame(true);
+		FoxyMesh3Component->SetHiddenInGame(true);
 		this->GetMesh()->SetVisibility(true);  // 스켈레탈 메쉬 표시
 	}
 }

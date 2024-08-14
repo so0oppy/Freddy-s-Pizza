@@ -358,7 +358,7 @@ void AFreddyPlayer::OnDie(FString JumpScareName)
 		SetActorTickEnabled(false);
 		// 다른 Enemy 이어서 작동 안되도록 게임 Pause 시키기
 		GetWorldTimerManager().SetTimer(PauseHandle , this , &AFreddyPlayer::OnMyPause , 1.f , false);
-		if ( JumpScareName.Equals(FString("BonnieDoor")) || JumpScareName.Equals(FString("CupCake")))
+		if (JumpScareName.Equals(FString("CupCake")))
 		{
 			GetWorldTimerManager().SetTimer(PauseHandle , this , &AFreddyPlayer::OnMyPause , 0.7f , false);
 		}

@@ -221,12 +221,13 @@ void AFoxy::Idle(float DeltaTime)
 			{
 				SetActorLocation(TagArr[9]);
 				RoomNum = 9;
-
-				this->GetMesh()->SetVisibility(false);
 			}
-
-			PlayFootStepsSound();
-			this->GetMesh()->SetVisibility(true);
+			// 플레이어 위치 == 왼쪽Door
+			else if(LookState == AFreddyPlayer::LookAt::Left )
+			{
+				PlayFootStepsSound();
+				this->GetMesh()->SetVisibility(true);
+			}
 
 			//	만약, 손전등 ON -> room1로 이동 (순간이동X)
 			if ( bIsFlashlightOn == true )
@@ -249,32 +250,19 @@ void AFoxy::Idle(float DeltaTime)
 			{
 				SetActorLocation(TagArr[9]);
 				RoomNum = 9;
-
-				this->GetMesh()->SetVisibility(false);
 			}
-
-			PlayFootStepsSound();
-			this->GetMesh()->SetVisibility(true);
+			else if ( LookState == AFreddyPlayer::LookAt::Right )
+			{
+				PlayFootStepsSound();
+				this->GetMesh()->SetVisibility(true);
+			}
 
 			//	만약, 손전등 ON -> room1로 이동 (순간이동X)
 			if ( bIsFlashlightOn == true )
 			{
 				StopFootStepsSound();
 
-				dir = TagArr[1] - GetActorLocation();
-				float Distance = dir.Size();
-
-				if ( Distance < 2000.f )
-				{
-					SetActorLocation(TagArr[1]); // 정확히 목표 위치에 위치시킴
-					RoomNum = 1;
-					CurrentState = ELocationState::MOVE;
-				}
-				else
-				{
-					dir.Normalize();
-					SetActorLocation(GetActorLocation() + dir * Speed * DeltaTime); // 위치 업데이트
-				}
+				bMoving = true;
 			}
 		}
 	}
@@ -577,6 +565,7 @@ void AFoxy::Closet(float DeltaTime)
 			/////////////////////////////////////////////////////////////////
 			if ( FoxyState == 3 && this->GetActorLocation().Equals(TagArr[9] , 0.1f) )
 			{
+				StateToFoxy = false;
 				// 폭시 인형은 안 보이게
 				ShowFoxyDoll(FoxDollInstance, false); 
 				
@@ -639,38 +628,43 @@ void AFoxy::Closet(float DeltaTime)
 				ShowFoxyDoll(FoxDollInstance, true);
 				UE_LOG(LogTemp , Log , TEXT("Spawn Foxy Doll"));
 			}
-			/////////////////////////////////////////////////////////////////
-
-			// 3단계 -> 인형 구간
-			if( StateToFoxy == false ) 
+		}
+		//////////////////////////////////////////////////////////////////////////////////////////
+		// 3단계 -> 인형 구간
+		if ( StateToFoxy == false )
+		{
+			// 문 닫을 때마다 StateCount 감소 (3초 감소하면 State 변하게)  
+			if ( bIsDoorClose == true )
 			{
-				// 문 닫을 때마다 StateCount 감소 (3초 감소하면 State 변하게)  
-				if ( bIsDoorClose == true )
+				StateCount -= DeltaTime;
+				if ( StateCount < -3.f && !(LookState==AFreddyPlayer::LookAt::Center && bIsDoorClose == false))
 				{
-					StateCount -= DeltaTime;
-					if ( StateCount < -3.f )
-						FoxyState--;
+					FoxyState--;
+					StateCount = 0;
 				}
 			}
-			// 인형 -> 3단계 구간
-			else if (StateToFoxy == true)
-			{	
-				// 문 열릴 때마다 StateCount 증가 
-				if ( bIsDoorClose == false )
+		}
+		// 인형 -> 3단계 구간
+		else if ( StateToFoxy == true )
+		{
+			// 문 열릴 때마다 StateCount 증가 
+			if ( bIsDoorClose == false )
+			{
+				StateCount += DeltaTime;
+				if ( StateCount > 3.f && !(LookState == AFreddyPlayer::LookAt::Center && bIsDoorClose == false) )
 				{
-					StateCount += DeltaTime;
-					if ( StateCount > 3.f )	{ FoxyState++;}
+					FoxyState++;
+					StateCount = 0;
+				}
 
-					// 3단계면 점프스케어 가능
-					if ( FoxyState == 4 ) // 4단계를 점프스케어로
-					{
-						// 3초 후 점프스케어 (공격) → GAME OVER
-						bAttack = true;
-						// 메인으로 갔을 때 점프스케어
-					}
+				// 3단계면 점프스케어 가능
+				if ( FoxyState == 4 ) // 4단계를 점프스케어로
+				{
+					// 3초 후 점프스케어 (공격) → GAME OVER
+					bAttack = true;
+					// 메인으로 갔을 때 점프스케어
 				}
 			}
-			
 		}
 	}
 }

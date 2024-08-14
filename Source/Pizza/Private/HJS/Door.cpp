@@ -16,6 +16,8 @@ ADoor::ADoor()
 	MoveButton->SetupAttachment(RootComponent);
 	MoveButton->SetWidgetSpace(EWidgetSpace::Screen);
 
+	ClosetComp = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("ClosetComp"));
+	ClosetComp->SetupAttachment(RootComponent);
 }
 
 // Called when the game starts or when spawned

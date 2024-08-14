@@ -358,7 +358,7 @@ void AFreddyPlayer::OnDie(FString JumpScareName)
 		SetActorTickEnabled(false);
 		// 다른 Enemy 이어서 작동 안되도록 게임 Pause 시키기
 		GetWorldTimerManager().SetTimer(PauseHandle , this , &AFreddyPlayer::OnMyPause , 1.f , false);
-		if ( JumpScareName.Equals(FString("BonnieDoor")) || JumpScareName.Equals(FString("CupCake")))
+		if (JumpScareName.Equals(FString("CupCake")))
 		{
 			GetWorldTimerManager().SetTimer(PauseHandle , this , &AFreddyPlayer::OnMyPause , 0.7f , false);
 		}
@@ -841,18 +841,19 @@ void AFreddyPlayer::LookBack(float DeltaTime)
 	if (LookAtState==LookAt::BedMove)
 	{
 		NewRotation.Yaw = FMath::Clamp(NewRotation.Yaw + RotationSpeed * 5*BoostSpeed * DeltaTime, 0, 180);
-		SpringArmComp->SetRelativeRotation(NewRotation);
-		if (NewRotation.Yaw >= 177)
+		if ( NewRotation.Yaw >= 177 )
 		{
+			NewRotation.Yaw = 179;
 			LookAtState = LookAt::Bed;
 			bMoving = false;
 		}
-		if (NewRotation.Yaw == -180)
+		if ( NewRotation.Yaw == -180 )
 		{
 			NewRotation.Yaw = 180;
 			LookAtState = LookAt::Bed;
 			bMoving = false;
 		}
+		SpringArmComp->SetRelativeRotation(NewRotation);
 	}
 	// Main 상태면 Bed로 되돌리기 인데..
 	else if (LookAtState == LookAt::Back)

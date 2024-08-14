@@ -43,8 +43,7 @@ void AHJSGameMode::BeginPlay()
 	GetWorldTimerManager().SetTimer(HourHandle,this, &AHJSGameMode::TimePass,GamePlayRate,true);
 
 	// 미니맵 띄우기
-
-
+	
 	// 게임을 시작하면 일단 퍼즈를 걸기.
 	UGameplayStatics::SetGamePaused(GetWorld() , true);
 	// 퍼즈를 건 채로 UI 애니메이션을 재생하고
@@ -182,7 +181,7 @@ void AHJSGameMode::SetAILevelEnemy()
 	if ( Freddy )
 	{
 		Freddy->SetAILevel(LV_freddy[Day][Hour]);
-		//Freddy->SetAILevel(20);
+		//Freddy->SetAILevel(10);
 	}
 
 }

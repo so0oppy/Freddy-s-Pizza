@@ -14,21 +14,21 @@ void ULobbyUI::NativeConstruct()
     FString TexturePath = "'/Game/HJS/Assets/LobbyFrame/";
 
     // 100개의 텍스처 로드
-    for ( int32 i = 1; i <= 62; ++i )
-    {
-        FString TextureNumber = FString::Printf(TEXT("Lobby-%03d.Lobby-%03d'") , i,i); // 001, 002, ..., 100
-        FString FullPath = TexturePath + TextureNumber;
+    //for ( int32 i = 1; i <= 62; ++i )
+    //{
+    //    FString TextureNumber = FString::Printf(TEXT("Lobby-%03d.Lobby-%03d'") , i,i); // 001, 002, ..., 100
+    //    FString FullPath = TexturePath + TextureNumber;
 
-        // 경로에서 텍스처 로드
-        UTexture2D* Texture = LoadObject<UTexture2D>(nullptr , *FullPath);
-        if ( Texture )
-        {
-            ImageSequence.Add(Texture);
-        }
-    }
+    //    // 경로에서 텍스처 로드
+    //    UTexture2D* Texture = LoadObject<UTexture2D>(nullptr , *FullPath);
+    //    if ( Texture )
+    //    {
+    //        ImageSequence.Add(Texture);
+    //    }
+    //}
 
 	// 타이머 시작, FrameRate는 초당 프레임 수입니다.
-	GetWorld()->GetTimerManager().SetTimer(FrameTimerHandle , this , &ULobbyUI::UpdateFrame , FrameRate , true);
+	//GetWorld()->GetTimerManager().SetTimer(FrameTimerHandle , this , &ULobbyUI::UpdateFrame , FrameRate , true);
 
     if ( Start )
     {

@@ -142,6 +142,13 @@ void AChica::Idle(float DeltaTime)
 	AFreddyPlayer* FreddyPlayer = Cast<AFreddyPlayer>(UGameplayStatics::GetPlayerCharacter(GetWorld() , 0));
 	if ( FreddyPlayer->bTeleport == true )
 		return;
+
+	// 만약, 손전등 안 켜면 mesh가 안 보이게 설정
+	if ( bIsFlashlightOn == false )
+		this->GetMesh()->SetVisibility(false);
+	else
+		this->GetMesh()->SetVisibility(true);
+
 	//---------------------------------------------------------------------------
 	AFreddyPlayer::LookAt LookState;
 	LookState = FreddyPlayer->GetLookAtState();
@@ -151,7 +158,7 @@ void AChica::Idle(float DeltaTime)
 		dir = TagArr[1] - GetActorLocation();
 		float Distance = dir.Size();
 
-		if ( Distance < 2000.f )
+		if ( Distance < 2500.f )
 		{
 			SetActorLocation(TagArr[1]); // 정확히 목표 위치에 위치시킴
 			RoomNum = 1;
@@ -311,6 +318,7 @@ void AChica::Move() // 손전등 켜고 있으면 1,3,4로만 이동
 		CupCakeTimer = 0.f;
 		StopBreathSound(); // 숨소리 안 들리게
 		PlayFootStepsSound(); //발자국 소리 들리게
+		UE_LOG(LogTemp, Log, TEXT("Chica footstep"));
 
 		if ( LookState != AFreddyPlayer::LookAt::Right || bIsDoorClose == true )
 		{
@@ -326,6 +334,7 @@ void AChica::Move() // 손전등 켜고 있으면 1,3,4로만 이동
 	{
 		StopBreathSound(); // 숨소리 안 들리게
 		PlayFootStepsSound(); //발자국 소리 들리게
+		UE_LOG(LogTemp , Log , TEXT("Chica footstep"));
 
 		if ( LookState != AFreddyPlayer::LookAt::Right || bIsDoorClose == true)
 		{

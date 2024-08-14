@@ -97,7 +97,7 @@ private:
 	FTimerHandle Handle;
 
 	FVector dir;
-	float Speed = 1000.f;
+	float Speed = 1300.f;
 	bool bMoving = false;
 
 	// 컨트롤 키 입력 함수 -> 손전등 ON/OFF

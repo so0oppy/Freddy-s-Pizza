@@ -180,7 +180,7 @@ void AFoxy::Idle(float DeltaTime)
 	if ( LookState == AFreddyPlayer::LookAt::Bed )
 	{
 		ScareCount += DeltaTime;
-		if ( ScareCount > 15.f )
+		if ( ScareCount > 30.f )
 		{
 			if(FreddyPlayer->KeepJumpScare() == false){CurrentState = ELocationState::ATTACK;}
 		}
@@ -194,20 +194,19 @@ void AFoxy::Idle(float DeltaTime)
 	{
 		dir = TagArr[1] - GetActorLocation();
 		float Distance = dir.Size();
-
-		if ( Distance < 2000.f )
+	
+		if ( Distance < 2500.f )
 		{
 			SetActorLocation(TagArr[1]); // 정확히 목표 위치에 위치시킴
 			RoomNum = 1;
 			CurrentState = ELocationState::MOVE;
+			bMoving = false;
 		}
 		else
 		{
 			dir.Normalize();
 			SetActorLocation(GetActorLocation() + dir * Speed * DeltaTime); // 위치 업데이트
 		}
-
-		bMoving = false;
 	}
 
 	if ( RoomNum == 5 )
@@ -226,6 +225,7 @@ void AFoxy::Idle(float DeltaTime)
 			else if(LookState == AFreddyPlayer::LookAt::Left )
 			{
 				PlayFootStepsSound();
+				UE_LOG(LogTemp , Log , TEXT("Foxy footstep"));
 				this->GetMesh()->SetVisibility(true);
 			}
 
@@ -254,6 +254,7 @@ void AFoxy::Idle(float DeltaTime)
 			else if ( LookState == AFreddyPlayer::LookAt::Right )
 			{
 				PlayFootStepsSound();
+				UE_LOG(LogTemp , Log , TEXT("Foxy footstep"));
 				this->GetMesh()->SetVisibility(true);
 			}
 
@@ -337,7 +338,11 @@ void AFoxy::Move()
 	// room2 -> room3, room5 가능
 	else if (RoomNum == 2)
 	{
-		PlayFootStepsSound(); // 발소리
+		if(LookState == AFreddyPlayer::LookAt::Left )
+		{
+			PlayFootStepsSound(); // 발소리
+			UE_LOG(LogTemp , Log , TEXT("Foxy footstep"));
+		}
 
 		TArray<int32> RoomTags = { 3, 5 };
 		int32 RandomIndex = FMath::RandRange(0, RoomTags.Num() - 1);
@@ -364,7 +369,11 @@ void AFoxy::Move()
 	// room3 -> room2, room6 가능
 	else if (RoomNum == 3)
 	{
-		PlayFootStepsSound(); // 발소리
+		if(LookState == AFreddyPlayer::LookAt::Right )
+		{
+			PlayFootStepsSound(); // 발소리
+			UE_LOG(LogTemp , Log , TEXT("Foxy footstep"));
+		}
 
 		TArray<int32> RoomTags = { 2, 6 };
 		int32 RandomIndex = FMath::RandRange(0, RoomTags.Num() - 1);
@@ -602,6 +611,8 @@ void AFoxy::Closet(float DeltaTime)
 			}
 			else if ( FoxyState == 2 && this->GetActorLocation().Equals(TagArr[9] , 0.1f) )
 			{
+				bAttack = false;
+
 				// 폭시 인형은 안 보이게
 				ShowFoxyDoll(FoxDollInstance , false);
 				// 허리 구부리고 얼굴 약간 보이는 mesh 적용

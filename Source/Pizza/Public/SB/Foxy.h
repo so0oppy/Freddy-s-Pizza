@@ -72,9 +72,13 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Meshes")
     UStaticMesh* MeshState3;
 
-    // Static Mesh Component to apply the mesh
+    // Static Mesh Component
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-    UStaticMeshComponent* FoxyMeshComponent;
+    UStaticMeshComponent* FoxyMesh1Component;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+    UStaticMeshComponent* FoxyMesh2Component;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+    UStaticMeshComponent* FoxyMesh3Component;
 
 	int32 FoxyState = 3; // 폭시 상태
 	// 3단계 = 폭시 얼굴 내미는 상태
@@ -88,12 +92,13 @@ public:
 
 private:
 	FVector FindActorsWithTag(FName Tag);
-//	void MoveToTaggedLocation(int32 room);
+
 	void CanMove();
 	FTimerHandle Handle;
 
 	FVector dir;
 	float Speed = 1000.f;
+	bool bMoving = false;
 
 	// 컨트롤 키 입력 함수 -> 손전등 ON/OFF
 	void FlashOn();
@@ -115,14 +120,14 @@ private:
 	bool bAttack = false; 
 
 	
-	void ShowFoxy(UStaticMesh* mesh, bool bShow);
+	void ShowFoxy(bool bShow);
 	void ShowFoxyDoll(AActor* actor, bool bShow);
 	bool bIsFoxy = true; // 폭시일 때(t), 인형일 때(f) 구분
 
 	// 발소리
 	UPROPERTY(EditDefaultsOnly)
 	class USoundBase* FootStepsSFX;
-	UPROPERTY()
+	UPROPERTY(EditDefaultsOnly)
     UAudioComponent* FootStepsAudioComponent;
 	
 	// 점프스케어 소리
@@ -130,7 +135,6 @@ private:
 	class USoundBase* JumpScareSFX;
 
 	bool bFSound = false; // 발소리 토글
-	bool bBSound = false; // 숨소리 토글
 	bool bJSound = false; // 점프스케어 소리 토글
 
 	void PlayFootStepsSound();

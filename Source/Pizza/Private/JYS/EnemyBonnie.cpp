@@ -7,6 +7,7 @@
 #include "Sound/SoundBase.h"
 #include "Kismet/GameplayStatics.h"
 #include "JYS/BonnieAnimInstance.h"
+#include "Components/AudioComponent.h"
 
 // Sets default values
 AEnemyBonnie::AEnemyBonnie()
@@ -53,6 +54,12 @@ AEnemyBonnie::AEnemyBonnie()
 	}
 
 	bIsBreathSoundPlaying = false;
+
+	BreathSoundComp = CreateDefaultSubobject<UAudioComponent>(TEXT("BreathSoundComp"));
+	BreathSoundComp->SetupAttachment(RootComponent);
+
+	FootStepsSoundComp = CreateDefaultSubobject<UAudioComponent>(TEXT("FootStepsSoundComp"));
+	FootStepsSoundComp->SetupAttachment(RootComponent);
 }
 
 // Called when the game starts or when spawned
@@ -60,15 +67,21 @@ void AEnemyBonnie::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	SetAILevel(20);
+	// SetAILevel(20);
 
 	GetWorld()->GetTimerManager().SetTimer(MoveTimerHandle, this, &AEnemyBonnie::AttemptMove, 4.97f, true);
+
 }
 
 // Called every frame
 void AEnemyBonnie::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	if ( !BreathSoundConditions() )
+	{
+		BreathSoundComp->Stop();
+	}
 
 	// Room1에서 Room3로 이동하기
 	if (ShouldMoveToRoom3())
@@ -116,7 +129,7 @@ void AEnemyBonnie::Tick(float DeltaTime)
 
 void AEnemyBonnie::Move(EBonnieState MoveState)
 {
-	if ( MoveState == EBonnieState::Room1 )
+	if ( MoveState == EBonnieState::Room1 || MoveState == EBonnieState::Room0)
 	{
 		FootStepsSound();
 	}
@@ -184,6 +197,7 @@ void AEnemyBonnie::TickRoom0(const float& DeltaTime)
 	{
 		BreathSound();
 	}
+	
 
 	// 보니가 1번방에서 0번방으로 텔레포트했을 경우 플레이어가 문을 닫으면 이동을 하지 않음 (진성오빠 텔레포트 bool값 가져오기)
 	// 보니가 원래 Room0에 있었고 플레이어가 문을 닫으면 1~2초 뒤에 2번방으로 이동
@@ -315,7 +329,8 @@ void AEnemyBonnie::JumpScareSound()
 // 발소리
 void AEnemyBonnie::FootStepsSound()
 {
-	UGameplayStatics::PlaySound2D(GetWorld(), FootStepsSFX);
+	// UGameplayStatics::PlaySound2D(GetWorld(), FootStepsSFX);
+	FootStepsSoundComp->Play();
 }
 // 숨소리
 void AEnemyBonnie::BreathSound()
@@ -325,7 +340,8 @@ void AEnemyBonnie::BreathSound()
 	{
 		bIsBreathSoundPlaying = true;
 
-		UGameplayStatics::PlaySound2D(GetWorld(), BreathSFX);
+		// UGameplayStatics::PlaySound2D(GetWorld(), BreathSFX);
+		BreathSoundComp->Play();
 
 		// 사운드 길이를 얻어서 그 시간 후에 OnBreathSoundFinished 함수 호출
 		float Duration = BreathSFX->GetDuration();

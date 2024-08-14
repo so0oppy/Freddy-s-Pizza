@@ -56,14 +56,14 @@ private:
 	float CupCakeTime = 8.f;
 
 	FVector FindActorsWithTag(FName Tag);
-	//void MoveToTaggedLocation(int32 room);
-	//void MoveToRoom(float DeltaTime);
+
 	void CanMove();
 	FTimerHandle Handle;
 
 	FVector dir;
-	float Speed = 1000.f;
-
+	float Speed = 2000.f;
+	bool bMoving = false;
+	
 	// 컨트롤 키 입력 함수 -> 손전등 ON/OFF
 	void FlashOn();
 	// Shift 키 입력 함수 -> 문/옷장 Open/Close
@@ -71,18 +71,15 @@ private:
 	bool bIsFlashlightOn = false;
 	bool bIsDoorClose = false;
 
-	//bool bIsAtDoor = false; // 테스트용 변수
-
-
 	// 발소리
 	UPROPERTY(EditDefaultsOnly)
 	class USoundBase* FootStepsSFX;
-	UPROPERTY()
+	UPROPERTY(EditDefaultsOnly)
     UAudioComponent* FootStepsAudioComponent;
 	// 숨소리
 	UPROPERTY(EditDefaultsOnly)
 	class USoundBase* BreathSFX;
-	UPROPERTY()
+	UPROPERTY(EditDefaultsOnly)
     UAudioComponent* BreathAudioComponent;
 	// 점프스케어 소리
 	UPROPERTY(EditDefaultsOnly)

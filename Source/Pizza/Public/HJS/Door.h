@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -25,6 +25,9 @@ public:
 private:
 	UPROPERTY(VisibleDefaultsOnly, Category="Components")
 	UStaticMeshComponent* MeshComp;
+
+	UPROPERTY(VisibleDefaultsOnly, Category="Components")
+	USkeletalMeshComponent* ClosetComp;
 
 	UPROPERTY(EditDefaultsOnly, Category="UI")
 	class UWidgetComponent* MoveButton;

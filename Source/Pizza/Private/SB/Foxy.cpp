@@ -552,6 +552,7 @@ void AFoxy::Closet(float DeltaTime)
 
 					bClosetAnim = true;
 					// 옷장 움직이는 anim(Loop안 함)
+					FreddyPlayer->PlayDoorAnim();
 					UE_LOG(LogTemp , Log , TEXT("Closet door Move !!"));
 
 					CurrentState = ELocationState::IDLE; // 아래 if를 실행하기 위함

@@ -15,7 +15,10 @@ class PIZZA_API UDoorAnimInstance : public UAnimInstance
 	GENERATED_BODY()
 	
 public:
+	UPROPERTY(BlueprintReadWrite)
 	bool bClose = false;
-
-
+	UPROPERTY(BlueprintReadWrite)
+	bool bFoxyIn = false;
+	UFUNCTION()
+	void AnimNotify_FoxyIn();
 };

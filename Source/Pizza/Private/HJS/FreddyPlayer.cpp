@@ -19,6 +19,7 @@
 #include "JYS/EnemyFreddy.h"
 #include "HJS/CameraBlinkUI.h"
 #include "HJS/DeathUI.h"
+#include "HJS/DoorAnimInstance.h"
 // Sets default values
 AFreddyPlayer::AFreddyPlayer()
 {
@@ -555,7 +556,14 @@ void AFreddyPlayer::CloseDoor()
 		break;
 		case LookAt::Center:
 		CameraOffset=SpringArmComp->GetRelativeLocation(); 
-		DoorLocation.X = DoorMovePoint;
+		// 옷장 문
+		UDoorAnimInstance* DoorAnimIns = Cast<UDoorAnimInstance>(Doors[1]->ClosetComp->GetAnimInstance());
+		if ( DoorAnimIns )
+		{
+			DoorAnimIns->bClose = true;
+		}
+
+		break;
 	}
 	bCompleteOpenOrClose = true;
 
@@ -603,7 +611,11 @@ void AFreddyPlayer::OpenDoor()
 		break;
 	case LookAt::Center:
 		CameraOffset=SpringArmComp->GetRelativeLocation();
-		DoorLocation.X=DoorOriginPoint;
+		UDoorAnimInstance* DoorAnimIns = Cast<UDoorAnimInstance>(Doors[1]->ClosetComp->GetAnimInstance());
+		if ( DoorAnimIns )
+		{
+			DoorAnimIns->bClose = false;
+		}
 	}
 	bCompleteOpenOrClose=true;
 }
@@ -840,16 +852,20 @@ void AFreddyPlayer::LookBack(float DeltaTime)
 
 	if (LookAtState==LookAt::BedMove)
 	{
-		NewRotation.Yaw = FMath::Clamp(NewRotation.Yaw + RotationSpeed * 5*BoostSpeed * DeltaTime, 0, 180);
-		if ( NewRotation.Yaw >= 177 )
+		NewRotation.Yaw = FMath::Clamp(NewRotation.Yaw + RotationSpeed * 5*BoostSpeed * DeltaTime, 0, 170);
+		NewRotation.Pitch =-3.07;
+		NewRotation.Roll = -0.47;
+		FVector NewLocation = FVector(490.55f,-24.41f,3.96f);
+		SpringArmComp->SetRelativeLocation(NewLocation);
+		if ( NewRotation.Yaw >= 168 )
 		{
-			NewRotation.Yaw = 179;
+			NewRotation.Yaw = 170;
 			LookAtState = LookAt::Bed;
 			bMoving = false;
 		}
 		if ( NewRotation.Yaw == -180 )
 		{
-			NewRotation.Yaw = 180;
+			NewRotation.Yaw = 170;
 			LookAtState = LookAt::Bed;
 			bMoving = false;
 		}
@@ -858,7 +874,11 @@ void AFreddyPlayer::LookBack(float DeltaTime)
 	// Main 상태면 Bed로 되돌리기 인데..
 	else if (LookAtState == LookAt::Back)
 	{
-		NewRotation.Yaw = FMath::Clamp(NewRotation.Yaw - RotationSpeed *5*BoostSpeed * DeltaTime, 0, 180);
+		NewRotation.Yaw = FMath::Clamp(NewRotation.Yaw - RotationSpeed *5*BoostSpeed * DeltaTime, 0, 170);
+		NewRotation.Pitch = 10.f;
+		NewRotation.Roll = 0.f;
+		FVector NewLocation = FVector(450.46f , 0.f , -140.f);
+		SpringArmComp->SetRelativeLocation(NewLocation);
 		SpringArmComp->SetRelativeRotation(NewRotation);
 		if (NewRotation.Yaw < 2)
 		{
@@ -906,6 +926,12 @@ void AFreddyPlayer::UpdateHeadMovement(float DeltaTime)
 		float Alpha = FMath::Clamp(HeadCurrentTime / HeadMovementTime, 0.0f, 1.0f);
 		float Pitch = bHeadDown ? FMath::Lerp(OriginCameraRotate.Pitch , -80.0f, Alpha) : FMath::Lerp(-80.0f, OriginCameraRotate.Pitch, Alpha);
 		FRotator NewRotation = SpringArmComp->GetRelativeRotation();
+		if ( bHeadUp && LookAtState == LookAt::CenterMove )
+		{
+			Pitch = FMath::Lerp(-80.0f , -0.36 , Alpha);
+			NewRotation.Yaw = -9.96;
+			NewRotation.Roll = 0.47;
+		}
 		NewRotation.Pitch = Pitch;
 		SpringArmComp->SetRelativeRotation(NewRotation);
 
@@ -920,7 +946,10 @@ void AFreddyPlayer::UpdateHeadMovement(float DeltaTime)
 				else if ( LookAtState == LookAt::CenterMove )
 				{
 					LookAtState = LookAt::Center;
+					NewRotation = FRotator(-0.36,-9.96,0.47);
+					SpringArmComp->SetRelativeRotation(NewRotation);
 				}
+
 			}
 			bHeadDown = false;
 			bHeadUp = false;

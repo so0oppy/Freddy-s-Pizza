@@ -22,12 +22,13 @@ protected:
 public:	
 	int32 GetDoorNum();
 
+	UPROPERTY(VisibleDefaultsOnly, Category="Components")
+	USkeletalMeshComponent* ClosetComp;
 private:
 	UPROPERTY(VisibleDefaultsOnly, Category="Components")
 	UStaticMeshComponent* MeshComp;
 
-	UPROPERTY(VisibleDefaultsOnly, Category="Components")
-	USkeletalMeshComponent* ClosetComp;
+
 
 	UPROPERTY(EditDefaultsOnly, Category="UI")
 	class UWidgetComponent* MoveButton;

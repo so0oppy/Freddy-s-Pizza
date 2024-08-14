@@ -362,6 +362,7 @@ void AChica::Attack()
 	if ( bJSound == false )
 	{
 		// 점프스퀘어 anim 재생
+		this->GetMesh()->SetVisibility(true);
 		ChicaAnimInstance->IsJumpScare = true;
 		PlayJumpScare();
 

@@ -928,9 +928,9 @@ void AFreddyPlayer::UpdateHeadMovement(float DeltaTime)
 		FRotator NewRotation = SpringArmComp->GetRelativeRotation();
 		if ( bHeadUp && LookAtState == LookAt::CenterMove )
 		{
-			Pitch = FMath::Lerp(-80.0f , -0.36 , Alpha);
-			NewRotation.Yaw = -9.96;
-			NewRotation.Roll = 0.47;
+			Pitch = FMath::Lerp(-80.0f , -6.80 , Alpha);
+			NewRotation.Yaw = -10.02;
+			NewRotation.Roll = 1.55;
 		}
 		NewRotation.Pitch = Pitch;
 		SpringArmComp->SetRelativeRotation(NewRotation);
@@ -946,7 +946,7 @@ void AFreddyPlayer::UpdateHeadMovement(float DeltaTime)
 				else if ( LookAtState == LookAt::CenterMove )
 				{
 					LookAtState = LookAt::Center;
-					NewRotation = FRotator(-0.36,-9.96,0.47);
+					NewRotation = FRotator(-6.8,-10.02,1.55);
 					SpringArmComp->SetRelativeRotation(NewRotation);
 				}
 

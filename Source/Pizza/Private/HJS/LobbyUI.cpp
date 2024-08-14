@@ -52,5 +52,5 @@ void ULobbyUI::UpdateFrame()
 
 void ULobbyUI::OnStartButtonClicked()
 {
-    UGameplayStatics::OpenLevel(this , FName("HJSAlphaMap"));
+    UGameplayStatics::OpenLevel(this , FName("HJSBetaMap"));
 }

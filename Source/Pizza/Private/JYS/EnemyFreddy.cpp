@@ -149,7 +149,7 @@ void AEnemyFreddy::AttemptSpawnCube()
 		// 랜덤 넘버가 Freddy의 레벨보다 낮거나 같다면
 		if ( RandomNumber <= Level )
 		{
-			HiddenTime += 1;
+			
 			// 프레디가 3마리이고 3초 이상이 지나면 점프스케어
 			if ( FreddyMesh2->bHiddenInGame == false && HiddenTime >= 6 )
 			{
@@ -160,7 +160,7 @@ void AEnemyFreddy::AttemptSpawnCube()
 			// Freddy를 차례대로 Visible
 			if ( FreddyMesh0->bHiddenInGame && !IsJumpscare )
 			{
-
+				HiddenTime += 1;
 				FreddyMesh0->SetHiddenInGame(false);
 				Freddy0HideOnce = false;
 			}
@@ -168,14 +168,21 @@ void AEnemyFreddy::AttemptSpawnCube()
 			{
 				if ( FreddyMesh1->bHiddenInGame )
 				{
+					HiddenTime += 1;
 					FreddyMesh1->SetHiddenInGame(false);
 					Freddy1HideOnce = false;
 				}
 				else
 				{
+					HiddenTime += 1;
 					FreddyMesh2->SetHiddenInGame(false);
 					Freddy2HideOnce = false;
 				}
+			}
+			// 3마리가 다 나온 이후 카운트 올라가는거 수정
+			else 
+			{
+				HiddenTime += 0.5f;
 			}
 		}
 	}

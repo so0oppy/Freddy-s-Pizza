@@ -157,6 +157,7 @@ void AEnemyBonnie::Move(EBonnieState MoveState)
 
 void AEnemyBonnie::TickRoom0(const float& DeltaTime)
 {
+	this->GetMesh()->SetVisibility(false);
 	if ( State == EBonnieState::Room0 )
 	{
 		JumpscareCount += DeltaTime;
@@ -205,6 +206,7 @@ void AEnemyBonnie::TickRoom0(const float& DeltaTime)
 
 void AEnemyBonnie::TickRoom1(const float& DeltaTime)
 {
+	this->GetMesh()->SetVisibility(true);
 	if ( CloseDoorRoom1ToRoom0() )
 	{
 		Move(EBonnieState::Room0); 
@@ -287,7 +289,7 @@ bool AEnemyBonnie::ShouldMoveToRoom3()
 
 void AEnemyBonnie::JumpScareBonnie()
 {
-
+	this->GetMesh()->SetVisibility(true);
 
 	auto* BonnieAnim = Cast<UBonnieAnimInstance>(GetMesh()->GetAnimInstance());
 	if ( BonnieAnim ) {

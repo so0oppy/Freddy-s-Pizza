@@ -383,6 +383,15 @@ bool AFreddyPlayer::KeepJumpScare()
 	}
 }
 
+void AFreddyPlayer::PlayDoorAnim()
+{
+	UDoorAnimInstance* DoorAnimIns = Cast<UDoorAnimInstance>(Doors[1]->ClosetComp->GetAnimInstance());
+	
+	DoorAnimIns->bFoxyIn = true;
+
+	UGameplayStatics::PlaySound2D(GetWorld(),OpenDoorSound);
+}
+
 void AFreddyPlayer::CheatOn()
 {
 	AHJSGameMode* GM = Cast<AHJSGameMode>(GetWorld()->GetAuthGameMode());

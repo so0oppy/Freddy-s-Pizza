@@ -80,6 +80,8 @@ public:
 
 	bool KeepJumpScare();
 
+	void PlayDoorAnim();
+
 private:
 
 	// 인핸스드 인풋

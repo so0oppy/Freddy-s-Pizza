@@ -3,3 +3,7 @@
 
 #include "HJS/DoorAnimInstance.h"
 
+void UDoorAnimInstance::AnimNotify_FoxyIn()
+{
+	bFoxyIn = false;
+}

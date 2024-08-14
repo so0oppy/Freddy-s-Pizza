@@ -190,6 +190,26 @@ void AFoxy::Idle(float DeltaTime)
 		ScareCount = 0.f;
 	//////////////////////////////////////////////////////////////////////////////
 
+	if ( bMoving == true )
+	{
+		dir = TagArr[1] - GetActorLocation();
+		float Distance = dir.Size();
+
+		if ( Distance < 2000.f )
+		{
+			SetActorLocation(TagArr[1]); // 정확히 목표 위치에 위치시킴
+			RoomNum = 1;
+			CurrentState = ELocationState::MOVE;
+		}
+		else
+		{
+			dir.Normalize();
+			SetActorLocation(GetActorLocation() + dir * Speed * DeltaTime); // 위치 업데이트
+		}
+
+		bMoving = false;
+	}
+
 	if ( RoomNum == 5 )
 	{
 		if ( FreddyPlayer ) // 플레이어와 연동될 부분
@@ -213,20 +233,7 @@ void AFoxy::Idle(float DeltaTime)
 			{
 				StopFootStepsSound();
 
-				dir = TagArr[1] - GetActorLocation();
-				float Distance = dir.Size();
-
-				if ( Distance < 2000.f )
-				{
-					SetActorLocation(TagArr[1]); // 정확히 목표 위치에 위치시킴
-					RoomNum = 1;
-					CurrentState = ELocationState::MOVE;
-				}
-				else
-				{
-					dir.Normalize();
-					SetActorLocation(GetActorLocation() + dir * Speed * DeltaTime); // 위치 업데이트
-				}
+				bMoving = true;
 			}
 		}
 	}

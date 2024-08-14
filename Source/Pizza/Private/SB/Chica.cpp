@@ -146,6 +146,25 @@ void AChica::Idle(float DeltaTime)
 	AFreddyPlayer::LookAt LookState;
 	LookState = FreddyPlayer->GetLookAtState();
 
+	if ( bMoving == true )
+	{
+		dir = TagArr[1] - GetActorLocation();
+		float Distance = dir.Size();
+
+		if ( Distance < 2000.f )
+		{
+			SetActorLocation(TagArr[1]); // 정확히 목표 위치에 위치시킴
+			RoomNum = 1;
+			CurrentState = ELocationState::MOVE;
+			bMoving = false;
+		}
+		else
+		{
+			dir.Normalize();
+			SetActorLocation(GetActorLocation() + dir * Speed * DeltaTime); // 위치 업데이트
+		}
+	}
+
 	// 현재 위치 == room1 || room3 || room4 || room6 || room8 가능
 	if ( RoomNum == 6 )
 	{
@@ -156,24 +175,11 @@ void AChica::Idle(float DeltaTime)
 			{
 				StopFootStepsSound(); // 발소리 멈춤
 
-				dir = TagArr[1] - GetActorLocation();
-				float Distance = dir.Size();
-
-				if ( Distance < 2000.f )
-				{
-					SetActorLocation(TagArr[1]); // 정확히 목표 위치에 위치시킴
-					RoomNum = 1;
-					CurrentState = ELocationState::MOVE;
-				}
-				else
-				{
-					dir.Normalize();
-					SetActorLocation(GetActorLocation() + dir * Speed * DeltaTime); // 위치 업데이트
-				}
+				bMoving = true;
 				
 			}
 			// 문 닫으면 -> room8로 이동
-			else if ( bIsDoorClose == true )
+			else if ( bIsDoorClose == true && LookState == AFreddyPlayer::LookAt::Right )
 			{
 				SetActorLocation(TagArr[8]);
 				RoomNum = 8;
@@ -435,48 +441,6 @@ FVector AChica::FindActorsWithTag(FName Tag)
 	return FVector::ZeroVector; // FoundActors가 비어있을 경우, 기본값 반환
 }
 
-//void AChica::MoveToTaggedLocation(int32 room)
-//{
-//	GetController()->StopMovement();
-//
-//	ACharacter* Character = Cast<ACharacter>(this);
-//	if (Character)
-//	{ 
-//		Character->bUseControllerRotationYaw = false; // 캐릭터 회전을 잠금
-//		Character->GetCharacterMovement()->bOrientRotationToMovement = false; // 이동 방향으로 회전하지 않음
-//	}
-//
-//	AAIController* AIController = Cast<AAIController>(GetController());
-//	if (AIController)
-//	{
-//		FAIMoveRequest MoveRequest;
-//		MoveRequest.SetGoalLocation(TagArr[room]);
-//		MoveRequest.SetAcceptanceRadius(5.0f); // 목표 위치에 도달하는 범위 설정
-//
-//		FNavPathSharedPtr NavPath;
-//		EPathFollowingRequestResult::Type MoveResult = AIController->MoveTo(MoveRequest, &NavPath);
-//
-//		// 이동 요청 결과 로그 출력
-//		switch (MoveResult)
-//		{
-//		case EPathFollowingRequestResult::Failed:
-//			UE_LOG(LogTemp, Warning, TEXT("MoveTo request failed."));
-//			break;
-//		case EPathFollowingRequestResult::AlreadyAtGoal:
-//			UE_LOG(LogTemp, Warning, TEXT("Already at goal location."));
-//			break;
-//		case EPathFollowingRequestResult::RequestSuccessful:
-//			UE_LOG(LogTemp, Warning, TEXT("MoveTo request successful."));
-//			break;
-//		}
-//	}
-//
-//	if (room == 1)
-//	{
-//		RoomNum = 1;
-//		GetWorld()->GetTimerManager().SetTimer(Handle, this, &AChica::CanMove, MovableTime, false);
-//	}
-//}
 
 void AChica::CanMove()
 {

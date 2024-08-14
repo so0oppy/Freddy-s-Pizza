@@ -92,12 +92,13 @@ public:
 
 private:
 	FVector FindActorsWithTag(FName Tag);
-//	void MoveToTaggedLocation(int32 room);
+
 	void CanMove();
 	FTimerHandle Handle;
 
 	FVector dir;
 	float Speed = 1000.f;
+	bool bMoving = false;
 
 	// 컨트롤 키 입력 함수 -> 손전등 ON/OFF
 	void FlashOn();
@@ -126,7 +127,7 @@ private:
 	// 발소리
 	UPROPERTY(EditDefaultsOnly)
 	class USoundBase* FootStepsSFX;
-	UPROPERTY()
+	UPROPERTY(EditDefaultsOnly)
     UAudioComponent* FootStepsAudioComponent;
 	
 	// 점프스케어 소리

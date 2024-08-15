@@ -36,7 +36,7 @@ private:
 	void DayPass();
 	// 시간에는 날짜, 시간이 있다.
 	UPROPERTY(EditAnywhere)
-	int32 Day = 3;
+	int32 Day = 2;
 	UPROPERTY(EditAnywhere)
 	int32 Hour = 0;
 	// 시간이 지날 때 Enemy들의 AILevel이 바뀐다.
@@ -60,7 +60,7 @@ private:
 
 	// 타이머로 
 	UPROPERTY(EditAnywhere)
-	float GamePlayRate = 20.f;
+	float GamePlayRate = 30.f;
 
 	// UI 띄우기
 	UPROPERTY(EditAnywhere)
@@ -96,5 +96,13 @@ private:
 	TSubclassOf<class UTimeUI> TimeUIFactory;
 
 	class UTimeUI* TimeUI;
+
+	UPROPERTY(EditAnywhere)
+	FString MySlotName = TEXT("bCheat");
+	UPROPERTY(EditAnywhere)
+	int32 UserIndex = 0;
+
+	// Function to create a text file
+	void CreateText();
 
 };

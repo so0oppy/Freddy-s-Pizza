@@ -157,7 +157,9 @@ void AEnemyBonnie::Move(EBonnieState MoveState)
 
 void AEnemyBonnie::TickRoom0(const float& DeltaTime)
 {
-	this->GetMesh()->SetVisibility(false);
+	if ( bJumpScare == false ) {
+		this->GetMesh()->SetVisibility(false);
+	}
 	if ( State == EBonnieState::Room0 )
 	{
 		JumpscareCount += DeltaTime;

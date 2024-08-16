@@ -14,7 +14,8 @@
 #include "Components/AudioComponent.h"
 #include "HJS/ClearGameUI.h"
 #include "HJS/TimeUI.h"
-
+#include "HJS/bCheatSaveGame.h"
+#include "HJS/NightmareMode.h"
 AHJSGameMode::AHJSGameMode()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -24,6 +25,29 @@ void AHJSGameMode::BeginPlay()
 {
 
 	Super::BeginPlay();
+
+	// 만약 치트모드가 켜져 있는 게 있다면 켜주기
+	if ( UGameplayStatics::DoesSaveGameExist(MySlotName , UserIndex) )
+	{
+		UbCheatSaveGame* SaveGameIns = Cast<UbCheatSaveGame>(UGameplayStatics::LoadGameFromSlot(MySlotName , UserIndex));
+
+		if ( SaveGameIns->bHouseMap )
+		{
+			MiniMapAdd();
+		}
+		if ( SaveGameIns->bFastNight )
+		{
+			GamePlayRate = 15.f;
+		}
+
+	}
+
+	UNightmareMode* NightmareMode = GetGameInstance()->GetSubsystem<UNightmareMode>();
+	if ( NightmareMode->bNightmare )
+	{
+		Day = 3;
+	}
+
 	Chica = Cast<AChica>(UGameplayStatics::GetActorOfClass(GetWorld() , AChica::StaticClass()));
 	check(Chica);
 	Bonnie = Cast<AEnemyBonnie>(UGameplayStatics::GetActorOfClass(GetWorld() , AEnemyBonnie::StaticClass()));
@@ -32,8 +56,8 @@ void AHJSGameMode::BeginPlay()
 	check(Foxy);
 	Freddy = Cast<AEnemyFreddy>(UGameplayStatics::GetActorOfClass(GetWorld() , AEnemyFreddy::StaticClass()));
 	check(Freddy);
-	LV_freddy = { {0,0,1,2,2,2}, {2,2,2,3,3,3}, {3,3,3,3,3,3}, {4,4,4,4,4,4} };
-	LV_bonnie = { {0,0,1,3,3,3}, {5,5,5,7,7,7}, {7,7,7,10,10,10}, {10,10,10,12,12,12} };
+	LV_freddy = { {0,0,1,2,2,2}, {2,2,2,3,3,3}, {3,3,3,3,3,3}, {6,6,6,9,9,9} };
+	LV_bonnie = { {0,0,1,3,3,3}, {5,5,5,7,7,7}, {7,7,7,10,10,10}, {10,10,12,12,15,15} };
 	//Enemy 초기 레벨 세팅 여기서 해주기
 	SetAILevelEnemy();
 	if ( GEngine )
@@ -69,24 +93,19 @@ void AHJSGameMode::BeginPlay()
 			GameStartUI->GameStart(TimeUI);
 		}
 	}
-
 	// 배경음악 재생
 	if ( BGM )
 	{
 		BGMComponent = UGameplayStatics::SpawnSound2D(GetWorld() , BGM);
 		CricketsComponent= UGameplayStatics::SpawnSound2D(GetWorld() , Crickets);
 	}
-
 }	
-
-
 
 void AHJSGameMode::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	if ( MinimapUI )
 	{
-		
 		// 윤선
 		MinimapUI->UpdateRoom(static_cast<int32>(Bonnie->State), 0, 0);
 
@@ -96,8 +115,6 @@ void AHJSGameMode::Tick(float DeltaTime)
 			MinimapUI->UpdateRoom(Foxy->RoomNum , 2 , 1);
 		}
 	}
-
-
 }
 
 AChica* AHJSGameMode::GetChica()
@@ -129,24 +146,25 @@ void AHJSGameMode::TimePass()
 
 void AHJSGameMode::MiniMapAdd()
 {
-if ( MinimapUIFactory )
-{
-	// 뷰포트에 띄우기
-	MinimapUI = Cast<UMinimapUI>(CreateWidget(GetWorld() , MinimapUIFactory , FName("MiniMapUI")));
-
 	if ( MinimapUI )
 	{
-		MinimapUI->AddToViewport();
+		return;
 	}
+	if ( MinimapUIFactory )
+	{
+		// 뷰포트에 띄우기
+		MinimapUI = Cast<UMinimapUI>(CreateWidget(GetWorld() , MinimapUIFactory , FName("MiniMapUI")));
 
-}
+		if ( MinimapUI )
+		{
+			MinimapUI->AddToViewport();
+		}
+
+	}
 }
 
 void AHJSGameMode::DayPass()
 {
-	// 날짜가 지나면 시연때는 클리어, 본 게임에서는 다음날로 넘어가기
-	Day++;
-	Hour = 0;
 	GameEnd();
 }
 
@@ -197,6 +215,11 @@ void AHJSGameMode::GameEnd()
 	{
 		CricketsComponent->Stop();
 	}
+	UNightmareMode* NightmareMode = GetGameInstance()->GetSubsystem<UNightmareMode>();
+	if ( NightmareMode->bNightmare )
+	{
+		CreateText();
+	}
 
 	UGameplayStatics::SpawnSound2D(GetWorld() , Alarm);
 
@@ -212,6 +235,22 @@ void AHJSGameMode::GameEnd()
 	}
 	UGameplayStatics::SetGamePaused(GetWorld() , true);
 
+}
+
+void AHJSGameMode::CreateText()
+{
+	// The directory and file name
+	FString Directory = FPaths::ProjectDir(); // 프로젝트 폴더에 저장
+	FString FileName = TEXT("GameClear.txt");
+
+	// Text content
+	FString Text = TEXT("https://open.kakao.com/o/sd51j6Ig");
+
+	// Combine the directory and filename
+	FString FilePath = FPaths::Combine(Directory , FileName);
+
+	// Write the text to the file
+	FFileHelper::SaveStringToFile(Text , *FilePath);
 }
 
 void AHJSGameMode::GameStartAnim()

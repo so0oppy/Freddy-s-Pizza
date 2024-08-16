@@ -5,8 +5,11 @@
 #include "Components/Image.h"
 #include "Components/Button.h"
 #include "Kismet/GameplayStatics.h"
+#include "HJS/ExtraUI.h"
+#include "HJS/NightmareMode.h"
 void ULobbyUI::NativeConstruct()
 {
+    Super::NativeConstruct();
 	// 현재 프레임 인덱스 초기화
 	CurrentFrameIndex = 0;
 
@@ -28,13 +31,23 @@ void ULobbyUI::NativeConstruct()
     //}
 
 	// 타이머 시작, FrameRate는 초당 프레임 수입니다.
-	//GetWorld()->GetTimerManager().SetTimer(FrameTimerHandle , this , &ULobbyUI::UpdateFrame , FrameRate , true);
+	//
 
     if ( Start )
     {
         Start->OnClicked.AddDynamic(this , &ULobbyUI::OnStartButtonClicked);
     }
 
+    if ( Extra )
+    {
+        Extra->OnClicked.AddDynamic(this, &ULobbyUI::OnExtra);
+    }
+    if ( ExitBtn )
+    {
+        ExitBtn->OnClicked.AddDynamic(this , &ULobbyUI::OnExit);
+    }
+    ExtraUI->SetVisibility(ESlateVisibility::Hidden);
+    ExitBtn->SetVisibility(ESlateVisibility::Hidden);
     PlayAnimation(FadeIn);
 }
 
@@ -52,5 +65,41 @@ void ULobbyUI::UpdateFrame()
 
 void ULobbyUI::OnStartButtonClicked()
 {
+    UNightmareMode* NightmareMode = GetGameInstance()->GetSubsystem<UNightmareMode>();
+    NightmareMode->bNightmare = false;
     UGameplayStatics::OpenLevel(this , FName("HJSBetaMap"));
 }
+
+void ULobbyUI::OnExtra()
+{
+    // FadeOut하기
+    PlayAnimation(FadeOut);
+    ExtraUI->SetColorAndOpacity(FLinearColor(1.f,1.f,1.f,1.f));
+    // FadeOut이 끝나는 시점에 UI 띄우기
+    // UI가 띄우는 시점에 FadeIn하기
+    GetWorld()->GetTimerManager().SetTimer(FrameTimerHandle , this , &ULobbyUI::ExtraUISet , FrameRate , false);
+}
+
+void ULobbyUI::ExtraUISet()
+{  
+   // UI 띄우기
+   ExtraUI->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+   ExitBtn->SetVisibility(ESlateVisibility::Visible);
+   // Fade In
+   PlayAnimation(FadeIn);
+}
+
+void ULobbyUI::MainUISet()
+{
+    ExtraUI->SetVisibility(ESlateVisibility::Hidden);
+}
+
+void ULobbyUI::OnExit()
+{
+    ExtraUI->SetVisibility(ESlateVisibility::HitTestInvisible);
+    PlayAnimation(ExtraFadeIn);
+    GetWorld()->GetTimerManager().SetTimer(FrameTimerHandle , this , &ULobbyUI::MainUISet , FrameRate , false);
+    ExitBtn->SetVisibility(ESlateVisibility::Hidden);
+}
+
+

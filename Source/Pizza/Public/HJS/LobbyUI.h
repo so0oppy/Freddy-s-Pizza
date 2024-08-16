@@ -26,16 +26,33 @@ public:
 	int32 CurrentFrameIndex;
 
 	UPROPERTY(EditDefaultsOnly , BlueprintReadWrite)
-    float FrameRate;
+    float FrameRate = 2.f;
 
 private:
 	UPROPERTY(EditAnywhere, meta=(BindWidgetAnim),Transient)
 	class UWidgetAnimation* FadeIn;
+
+	UPROPERTY(EditAnywhere, meta=(BindWidgetAnim),Transient)
+	class UWidgetAnimation* FadeOut;
+
+	UPROPERTY(EditAnywhere, meta=(BindWidgetAnim),Transient)
+	class UWidgetAnimation* ExtraFadeIn;
+
 	UPROPERTY(EditDefaultsOnly, meta=(BindWidget))
 	class UImage* MainImg;
 
 	UPROPERTY(EditDefaultsOnly, meta=(BindWidget))
 	class UButton* Start;
+
+	UPROPERTY(EditDefaultsOnly, meta=(BindWidget))
+	class UButton* Extra;
+
+
+	UPROPERTY(EditDefaultsOnly, meta=(BindWidget))
+	class UExtraUI* ExtraUI;
+
+	UPROPERTY(meta=(BindWidget))
+	UButton* ExitBtn;
 
 	FTimerHandle FrameTimerHandle;
 
@@ -43,5 +60,17 @@ private:
 
 	UFUNCTION()
     void OnStartButtonClicked();
+
+	UFUNCTION()
+	void OnExtra();
+
+	UFUNCTION()
+	void ExtraUISet();
+	UFUNCTION()
+	void MainUISet();
+
+	// Exit
+	UFUNCTION()
+	void OnExit();
 
 };

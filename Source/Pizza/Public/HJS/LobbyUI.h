@@ -47,7 +47,6 @@ private:
 	UPROPERTY(EditDefaultsOnly, meta=(BindWidget))
 	class UButton* Extra;
 
-
 	UPROPERTY(EditDefaultsOnly, meta=(BindWidget))
 	class UExtraUI* ExtraUI;
 

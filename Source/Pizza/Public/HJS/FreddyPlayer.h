@@ -102,6 +102,9 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category="Input")
 	class UInputAction* MiniMapAction;
 
+	UPROPERTY(EditDefaultsOnly, Category="Input")
+	class UInputAction* TutorialAction;
+
 	UFUNCTION()
 	void CheatOn();
 
@@ -125,6 +128,22 @@ private:
 	void CloseDoor();
 	UFUNCTION()
 	void OpenDoor();
+
+	UFUNCTION()
+	void HideTutorial();
+
+	UFUNCTION()
+	void RemoveTutorial();
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class UTutorialUI> TutorialUIFactory;
+
+	UPROPERTY()
+	class UTutorialUI* TutorialUI;
+
+	FTimerHandle TutoTimerHandle;
+
+	void TutorialOn();
 
 	// 스프링암 컴포넌트
 	UPROPERTY(VisibleDefaultsOnly, Category="Camera")

@@ -85,6 +85,7 @@ void ULobbyUI::ExtraUISet()
    // UI 띄우기
    ExtraUI->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
    ExitBtn->SetVisibility(ESlateVisibility::Visible);
+   ExtraUI->BGImage->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
    // Fade In
    PlayAnimation(FadeIn);
 }
@@ -97,6 +98,7 @@ void ULobbyUI::MainUISet()
 void ULobbyUI::OnExit()
 {
     ExtraUI->SetVisibility(ESlateVisibility::HitTestInvisible);
+    ExtraUI->BGImage->SetVisibility(ESlateVisibility::Hidden);
     PlayAnimation(ExtraFadeIn);
     GetWorld()->GetTimerManager().SetTimer(FrameTimerHandle , this , &ULobbyUI::MainUISet , FrameRate , false);
     ExitBtn->SetVisibility(ESlateVisibility::Hidden);

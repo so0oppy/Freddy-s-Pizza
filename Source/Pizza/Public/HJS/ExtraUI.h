@@ -55,6 +55,9 @@ public:
 	UImage* FastNightsCheck;
 
 	UPROPERTY(meta=(BindWidget))
+	class UImage* BGImage;
+
+	UPROPERTY(meta=(BindWidget))
 	UButton* NightmareStartBtn;
 	UPROPERTY(meta=(BindWidget))
 	UButton* RightBtn;
@@ -63,6 +66,15 @@ public:
 
 	UPROPERTY(meta=(BindWidget))
 	class UTextBlock* AnimatronicsText;
+
+	UPROPERTY(EditDefaultsOnly)
+	UTexture2D* FreddyTexture;
+	UPROPERTY(EditDefaultsOnly)
+	UTexture2D* BonnieTexture;
+	UPROPERTY(EditDefaultsOnly)
+	UTexture2D* ChicaTexture;
+	UPROPERTY(EditDefaultsOnly)
+	UTexture2D* FoxyTexture;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	TArray<UTexture2D*> AnimatronicsTextures;

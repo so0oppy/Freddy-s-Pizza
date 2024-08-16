@@ -30,22 +30,10 @@ void UExtraUI::NativeConstruct()
 	// 초기 화면은 왼쪽 글자들 중 Animatronics가 선택 되어있고, NightmareFreddy가 보이는 상태
 
 	// 텍스쳐 초기화 4개.
-	UTexture2D* Texture = LoadObject<UTexture2D>(nullptr , TEXT("/Script/Engine.Texture2D'/Game/HJS/UIAsset/NightmareFreddy.NightmareFreddy'"));
-	if(Texture){
-		AnimatronicsTextures.Add(Texture);
-	}
-	Texture = LoadObject<UTexture2D>(nullptr , TEXT("/Script/Engine.Texture2D'/Game/HJS/UIAsset/NightmareBonnie.NightmareBonnie'"));
-	if ( Texture ) {
-		AnimatronicsTextures.Add(Texture);
-	}
-	Texture = LoadObject<UTexture2D>(nullptr , TEXT("/Script/Engine.Texture2D'/Game/HJS/UIAsset/NightmareChica.NightmareChica'"));
-	if ( Texture ) {
-		AnimatronicsTextures.Add(Texture);
-	}
-	Texture = LoadObject<UTexture2D>(nullptr , TEXT("/Script/Engine.Texture2D'/Game/HJS/UIAsset/NightmareFoxy.NightmareFoxy'"));
-	if ( Texture ) {
-		AnimatronicsTextures.Add(Texture);
-	}
+	AnimatronicsTextures.Add(FreddyTexture);
+	AnimatronicsTextures.Add(BonnieTexture);
+	AnimatronicsTextures.Add(ChicaTexture);
+	AnimatronicsTextures.Add(FoxyTexture);
 
 	// 미디어 초기화 4개
 	MediaSources.Add(MediaSourceFreddy);

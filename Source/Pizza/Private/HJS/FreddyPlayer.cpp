@@ -20,6 +20,7 @@
 #include "HJS/CameraBlinkUI.h"
 #include "HJS/DeathUI.h"
 #include "HJS/DoorAnimInstance.h"
+#include "HJS/TutorialUI.h"
 // Sets default values
 AFreddyPlayer::AFreddyPlayer()
 {
@@ -159,6 +160,9 @@ void AFreddyPlayer::BeginPlay()
 		}
 
 	}
+
+	GetWorldTimerManager().SetTimer(TutoTimerHandle,this,&AFreddyPlayer::TutorialOn,0.3f,false);
+
 	//(Pitch=6.336300,Yaw=0.000000,Roll=0.000000)
 	OriginCameraRotate = FRotator(10.f, 0.f, 0.f);
 	//(X=498.913821,Y=0.000000,Z=-140.000000)
@@ -211,6 +215,7 @@ void AFreddyPlayer::SetDown()
 		// 
 		// 메인에 있을 때는 카메라를 돌려서 침대로 이동하기
 		// 카메라를 뒤로 돌릴건데..
+		HideTutorial();
 		if (LookAtState == LookAt::Main)
 		{
 			// 뒤돌기
@@ -629,6 +634,36 @@ void AFreddyPlayer::OpenDoor()
 	bCompleteOpenOrClose=true;
 }
 
+void AFreddyPlayer::HideTutorial()
+{
+	if ( TutorialUI )
+	{
+		TutorialUI->SetHidden();
+	}
+}
+
+void AFreddyPlayer::RemoveTutorial()
+{
+	if ( TutorialUI != nullptr )
+	{
+		TutorialUI->RemoveFromParent();  // 뷰포트에서 위젯을 제거
+		TutorialUI->ConditionalBeginDestroy();   // 인스턴스를 메모리에서 제거
+		TutorialUI = nullptr;            // 포인터를 nullptr로 설정
+	}
+}
+
+void AFreddyPlayer::TutorialOn()
+{
+	if ( TutorialUIFactory )
+	{
+		TutorialUI = Cast<UTutorialUI>(CreateWidget(GetWorld() , TutorialUIFactory , FName("TutorialUI")));
+		if ( TutorialUI )
+		{
+			TutorialUI->AddToViewport();
+		}
+	}
+}
+
 // Called every frame
 void AFreddyPlayer::Tick(float DeltaTime)
 {
@@ -685,6 +720,10 @@ void AFreddyPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 		{
 			Input->BindAction(MiniMapAction , ETriggerEvent::Started , this , &AFreddyPlayer::MinimapOn);
 		}
+		if ( TutorialAction )
+		{
+			Input->BindAction(TutorialAction, ETriggerEvent::Started, this, &AFreddyPlayer::RemoveTutorial);
+		}
 	}
 }
 
@@ -707,6 +746,7 @@ void AFreddyPlayer::SetMoveDoor(int32 DoorNum)
 	bMoving = true;
 	bHeadDown = true; // 이동 시작 시 고개를 숙이기 시작
 	HeadCurrentTime = 0.0f;
+	HideTutorial();
 	if ( RunSound )
 	{
 		UGameplayStatics::PlaySound2D(GetWorld() , RunSound);
@@ -871,6 +911,11 @@ void AFreddyPlayer::LookBack(float DeltaTime)
 			NewRotation.Yaw = 170;
 			LookAtState = LookAt::Bed;
 			bMoving = false;
+			if ( TutorialUI )
+			{
+				TutorialUI->SetVisibility(ESlateVisibility::HitTestInvisible);
+				TutorialUI->SetBed();
+			}
 		}
 		if ( NewRotation.Yaw == -180 )
 		{
@@ -893,6 +938,11 @@ void AFreddyPlayer::LookBack(float DeltaTime)
 		{
 			bMoving = false;
 			LookAtState = LookAt::Main;
+			if ( TutorialUI )
+			{
+				TutorialUI->SetVisibility(ESlateVisibility::HitTestInvisible);
+				TutorialUI->SetMain();
+			}
 		}
 	}
 }
@@ -959,6 +1009,23 @@ void AFreddyPlayer::UpdateHeadMovement(float DeltaTime)
 					SpringArmComp->SetRelativeRotation(NewRotation);
 				}
 
+				if ( LookAtState == LookAt::Center )
+				{
+					if ( TutorialUI )
+					{
+						TutorialUI->SetVisibility(ESlateVisibility::HitTestInvisible);
+						TutorialUI->SetBed();
+					}
+				}
+				else if ( LookAtState == LookAt::Main )
+				{
+					if ( TutorialUI )
+					{
+						TutorialUI->SetVisibility(ESlateVisibility::HitTestInvisible);
+						TutorialUI->SetMain();
+					}
+				}
+
 			}
 			bHeadDown = false;
 			bHeadUp = false;
@@ -991,12 +1058,15 @@ void AFreddyPlayer::DoorRotAndCameraMove(float DeltaTime)
 		Door=Doors[DoorIndex];
 	}
 	
-
-	if ( Door )
+	if ( DoorIndex != 1 )
 	{
-		FRotator NewRotation=FMath::RInterpConstantTo(Door->GetActorRotation(), DoorRotation, DeltaTime, DoorRotateSpeed);
-		Door->SetActorRotation(NewRotation);
+		if ( Door )
+		{
+			FRotator NewRotation = FMath::RInterpConstantTo(Door->GetActorRotation() , DoorRotation , DeltaTime , DoorRotateSpeed);
+			Door->SetActorRotation(NewRotation);
+		}
 	}
+
 
 	FVector NewCameraOffset=FMath::VInterpConstantTo(SpringArmComp->GetRelativeLocation(), CameraOffset, DeltaTime, CameraOffsetSpeed);
 	SpringArmComp->SetRelativeLocation(NewCameraOffset);
@@ -1015,12 +1085,22 @@ void AFreddyPlayer::DoorRotAndCameraMove(float DeltaTime)
 			{
 			case LookAt::LeftMove:
 				LookAtState = LookAt::Left;
+				if ( TutorialUI )
+				{
+					TutorialUI->SetVisibility(ESlateVisibility::HitTestInvisible);
+					TutorialUI->SetDoor();
+				}
 				break;
 			case LookAt::CenterMove:
 				LookAtState = LookAt::Center;
 				break;
 			case LookAt::RightMove:
 				LookAtState = LookAt::Right;
+				if ( TutorialUI )
+				{
+					TutorialUI->SetVisibility(ESlateVisibility::HitTestInvisible);
+					TutorialUI->SetDoor();
+				}
 				break;
 			}
 		}
@@ -1149,10 +1229,14 @@ void AFreddyPlayer::DoorOpenAndClose(float DeltaTime)
 
 	if ( Door )
 	{
+
 		FRotator NewRotation=FMath::RInterpConstantTo(Door->GetActorRotation(), DoorRotation, DeltaTime, DoorRotateSpeed);
-		Door->SetActorRotation(NewRotation);
 		FVector NewDoorOffset=FMath::VInterpConstantTo(Door->GetActorLocation(), DoorLocation, DeltaTime, DoorOffsetSpeed);
-		Door->SetActorLocation(NewDoorOffset);
+		if ( DoorIndex != 1 )
+		{
+			Door->SetActorRotation(NewRotation);
+			Door->SetActorLocation(NewDoorOffset);
+		}
 		UE_LOG(LogTemp,Warning,TEXT("%s"), *Door->GetActorRotation().ToString());
 		FVector NewCameraOffset=FMath::VInterpConstantTo(SpringArmComp->GetRelativeLocation(), CameraOffset, DeltaTime, CameraOffsetSpeed);
 		SpringArmComp->SetRelativeLocation(NewCameraOffset);

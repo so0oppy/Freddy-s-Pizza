@@ -573,7 +573,7 @@ void AFoxy::Closet(float DeltaTime)
 			// 옷장 문 닫았을 때 (폭시 사라질 시간동안), 그 자리에 인형 스폰 (프레디처럼 이제 동작), 폭시는 다른 데로 안 가고 상태변화만 함
 			
 			/////////////////////////////////////////////////////////////////
-			if ( FoxyState == 3 && this->GetActorLocation().Equals(TagArr[9] , 0.1f) )
+			if ( FoxyState == 3 )
 			{
 				StateToFoxy = false;
 				// 폭시 인형은 안 보이게
